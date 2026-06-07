@@ -578,3 +578,75 @@ function calculateBazi(solarDateStr, timeStr, gender) {
         canganRaw: Object.fromEntries(branchesList.map(b => [b, CANGAN[b] || []])),
     };
 }
+
+// ================================================================
+// 流年/流月/流日 计算 (expandable under 大运)
+// ================================================================
+
+// Get year pillar for any given year
+function getYearPillar(year) {
+    const gan = STEMS[((year - 4) % 10 + 10) % 10];
+    const zhi = BRANCHES[((year - 4) % 12 + 12) % 12];
+    return gan + zhi;
+}
+
+// Get all 12 month pillars for a given year stem
+function getLiuyuePillars(yearGan) {
+    const yinGan = TIGER_RULE[yearGan] || '甲';
+    const yinIdx = STEMS.indexOf(yinGan);
+    const months = [];
+    for (let m = 0; m < 12; m++) {
+        const gan = STEMS[(yinIdx + m) % 10];
+        const zhi = BRANCHES[(2 + m) % 12]; // 寅=idx2
+        const monthNames = ['寅月','卯月','辰月','巳月','午月','未月','申月','酉月','戌月','亥月','子月','丑月'];
+        months.push({ gan, zhi, pillar: gan + zhi, name: monthNames[m] });
+    }
+    return months;
+}
+
+// Get all 流年 for a given 大运 step, with 十神 relative to 日主
+function getLiunianForDayun(dayunStep, birthYear, riGan) {
+    const startYear = birthYear + Math.floor(dayunStep.startAge);
+    const endYear = birthYear + Math.floor(dayunStep.endAge) - 1;
+    const years = [];
+    for (let y = startYear; y <= endYear && y <= startYear + 9; y++) {
+        const pillar = getYearPillar(y);
+        const gan = pillar[0];
+        const shishen = getShishen(riGan, gan);
+        const liuyue = getLiuyuePillars(gan);
+        years.push({
+            year: y,
+            pillar,
+            gan,
+            shishen,
+            liuyue: liuyue.map(m => ({
+                ...m,
+                shishen: getShishen(riGan, m.gan),
+            })),
+        });
+    }
+    return years;
+}
+
+// Get 流日 for a specific month (returns ~30 days)
+function getLiuriForMonth(year, monthIdx, riGan) {
+    // monthIdx: 0=寅月, 1=卯月, ..., 11=丑月
+    // Approximate solar term dates to get actual month boundaries
+    const ref = new Date(1900, 0, 1);
+    const approxDate = new Date(year, monthIdx, 15); // mid-month approximation
+    const days = [];
+    const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, monthIdx, d);
+        const dayDiff = Math.floor((date - ref) / 86400000);
+        const dayIdx = ((10 + dayDiff) % 60 + 60) % 60;
+        const dayGan = STEMS[dayIdx % 10], dayZhi = BRANCHES[dayIdx % 12];
+        days.push({
+            day: d,
+            pillar: dayGan + dayZhi,
+            gan: dayGan,
+            shishen: getShishen(riGan, dayGan),
+        });
+    }
+    return days;
+}

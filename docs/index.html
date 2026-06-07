@@ -135,7 +135,16 @@ tr:last-child td{border-bottom:none}
 /* Empty state */
 .empty-state { text-align:center; padding:var(--s-2xl); color:var(--dim); }
 .empty-state p { margin:var(--s-sm) 0; }
-@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}}
+/* Expandable Dayun */
+.dy-expand { border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
+.dy-expand.cur { border-color:var(--gold); }
+.dy-expand-head { display:flex; align-items:center; gap:12px; padding:10px var(--s-md); cursor:pointer; background:var(--card); transition:background .2s; }
+.dy-expand-head:hover { background:rgba(200,164,92,.06); }
+.dy-expand.cur .dy-expand-head { background:rgba(200,164,92,.08); }
+.dy-arr { font-size:.7em; color:var(--dim); width:14px; display:inline-block; }
+.dy-expand table { width:100%; margin:0; }
+.dy-expand td { padding:6px 10px; border-bottom:1px solid var(--border); font-size:.82em; }
+@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}.dy-expand-head{gap:6px;font-size:.85em}}
 </style>
 </head>
 <body>
@@ -229,12 +238,12 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
 </div>
 
-<script src="terms_data.js?v=9"></script>
-<script src="bazi.js?v=9"></script>
-<script src="ziwei.js?v=9"></script>
-<script src="liuren.js?v=9"></script>
-<script src="liuyao.js?v=9"></script>
-<script src="analysis.js?v=9"></script>
+<script src="terms_data.js?v=10"></script>
+<script src="bazi.js?v=10"></script>
+<script src="ziwei.js?v=10"></script>
+<script src="liuren.js?v=10"></script>
+<script src="liuyao.js?v=10"></script>
+<script src="analysis.js?v=10"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -299,9 +308,44 @@ function renderBazi(d) {
       <div class="bazi-row">${pillars.map(p => `<div class="bz-p${p.m?' day':''}"><div class="lbl">${p.n}${p.m?' (日主)':''}</div><div class="ch">${p.v}</div><div class="ny">${getNayin(p.v)}</div></div>`).join('')}</div>
       <div style="color:var(--dim);font-size:.85em">日主 <b style="color:var(--goldL)">${d.riGan}</b> | 时辰: ${d.chineseHour} | 虚岁: ${d.currentAgeXusui}</div></div>`;
 
-    // Dayun
-    html += `<div class="card"><h3>📈 大运</h3><p style="color:var(--dim);font-size:.85em">${d.dayun.direction} | 起运: ${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天</p>
-      <div class="dy-list">${d.dayun.steps.map(s => `<div class="dy-item${d.currentDayun&&s.pillar===d.currentDayun.pillar?' cur':''}"><div class="dyp">${s.pillar}</div><div class="dya">${s.startAge}-${s.endAge}岁</div></div>`).join('')}</div></div>`;
+    // Dayun + 流年流月
+    html += `<div class="card"><h3>📈 大运 · 流年 · 流月</h3><p style="color:var(--dim);font-size:.85em">${d.dayun.direction} | 起运: ${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天 | <b>点击大运展开流年，再点流年展开流月</b></p>`;
+    const birthYear = parseInt(d.solarDate);
+    d.dayun.steps.forEach((s, di) => {
+        const isCur = d.currentDayun && s.pillar === d.currentDayun.pillar;
+        const liunian = getLiunianForDayun(s, birthYear, d.riGan);
+        const dyId = 'dy' + di;
+        html += `<div class="dy-expand ${isCur ? 'cur' : ''}" style="margin-bottom:4px">
+          <div class="dy-expand-head" onclick="var b=document.getElementById('${dyId}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.dy-arr').textContent=b.style.display==='none'?'▶':'▼';">
+            <span class="dy-arr">▶</span>
+            <span class="dyp" style="font-size:1.15em;font-weight:700;${isCur?'color:var(--goldL)':''}">${s.pillar}</span>
+            <span style="color:var(--dim);font-size:.85em">${s.startAge}-${s.endAge}岁</span>
+            <span style="color:var(--dim);font-size:.75em">| ${Math.floor(birthYear+s.startAge)}-${Math.floor(birthYear+s.endAge)-1}年</span>
+            ${isCur ? '<span class="tag tag-good">当前</span>' : ''}
+          </div>
+          <div id="${dyId}" style="display:none;background:var(--input);border-radius:0 0 var(--r-md) var(--r-md);overflow-x:auto">
+            <table style="font-size:.8em"><tr><th>年</th><th>干支</th><th>十神</th><th>流月（点击展开）</th></tr>`;
+        liunian.forEach((ln, li) => {
+            const lnId = dyId + '_ln' + li;
+            html += `<tr style="cursor:pointer" onclick="var b=document.getElementById('${lnId}');b.style.display=b.style.display==='none'?'table-row':'none';this.querySelector('.ln-arr').textContent=b.style.display==='none'?'▶':'▼';">
+              <td><span class="ln-arr">▶</span> ${ln.year}</td>
+              <td><b>${ln.pillar}</b></td>
+              <td><span class="tag ${ln.shishen.includes('杀')||ln.shishen.includes('伤')?'tag-warn':'tag-info'}">${ln.shishen}</span></td>
+              <td style="font-size:.75em;color:var(--dim)">12个月</td></tr>`;
+            // Liuyue row (hidden)
+            html += `<tr id="${lnId}" style="display:none;background:rgba(0,0,0,.15)"><td colspan="4" style="padding:4px 16px">`;
+            html += `<table style="font-size:.75em;width:auto;margin:4px auto"><tr>`;
+            ln.liuyue.forEach(m => {
+                html += `<td style="padding:2px 6px;border:none;text-align:center">
+                  <div style="color:var(--dim);font-size:.7em">${m.name}</div>
+                  <div style="font-weight:700">${m.pillar}</div>
+                  <div style="font-size:.7em"><span class="tag ${m.shishen.includes('杀')||m.shishen.includes('伤')?'tag-warn':'tag-info'}" style="font-size:.7em">${m.shishen}</span></div></td>`;
+            });
+            html += `</tr></table></td></tr>`;
+        });
+        html += `</table></div></div>`;
+    });
+    html += `</div>`;
 
     // All data cards wrapped in accordion
     html += makeAcc('📋 命盘数据', `
