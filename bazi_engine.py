@@ -130,7 +130,9 @@ def fix(n, m=12):
 
 def load_solar_terms():
     """Load the solar terms data file."""
-    with open(r'E:\AI\solar_terms_astro_cst.json', 'r', encoding='utf-8') as f:
+    import os as _os
+    _terms_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'solar_terms_astro_cst.json')
+    with open(_terms_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 # ============================================================
