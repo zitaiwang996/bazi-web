@@ -5,90 +5,137 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+
 :root {
   --bg:#1a1410; --card:#231d16; --input:#2a2219;
   --gold:#c8a45c; --goldL:#e0c878; --goldD:#8b6914;
   --text:#e8ddd0; --dim:#9a8e7e; --mute:#6b5f50;
-  --red:#c0392b; --redL:#e74c3c; --border:#3a3024;
+  --red:#c0392b; --redL:#e74c3c; --border:#3a3024; --borderL:#4a4034;
   --green:#5a8f5a; --wood:#5a9e5a; --fire:#d4734e; --water:#4a7db5; --earth:#b8965a; --metal:#c4a44a;
+  --r-sm:4px; --r-md:8px; --r-lg:12px;
+  --s-xs:4px; --s-sm:8px; --s-md:16px; --s-lg:24px; --s-xl:32px; --s-2xl:48px;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Microsoft YaHei','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7}
-body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 0%,rgba(200,164,92,0.08) 0%,transparent 60%);pointer-events:none;z-index:0}
-.container{max-width:1100px;margin:0 auto;padding:24px 16px;position:relative;z-index:1}
-.header{text-align:center;margin-bottom:32px}
-.header h1{font-family:'SimSun','Noto Serif SC',serif;font-size:2em;font-weight:900;color:var(--gold);letter-spacing:.15em;text-shadow:0 2px 8px rgba(200,164,92,.2)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+::selection{background:rgba(200,164,92,.25);color:#fff}
+::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--borderL);border-radius:3px}
+
+body{font-family:'Noto Serif SC','Microsoft YaHei','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(200,164,92,0.06) 0%,transparent 55%),
+             url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0}
+.container{max-width:1100px;margin:0 auto;padding:var(--s-2xl) var(--s-lg);position:relative;z-index:1}
+.header{text-align:center;margin-bottom:var(--s-2xl)}
+.header h1{font-family:'Noto Serif SC','SimSun',serif;font-size:2.2em;font-weight:900;color:var(--gold);letter-spacing:.12em;text-shadow:0 2px 12px rgba(200,164,92,.15)}
 .header .sub{font-size:.85em;color:var(--dim);letter-spacing:.08em}
-.header .div{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:12px auto}
+.header .div{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:var(--s-md) auto}
 /* Tabs */
-.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border)}
-.tab-btn{flex:1;padding:14px 8px;background:transparent;border:none;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;font-weight:600;transition:all .3s;letter-spacing:.05em;position:relative}
+.tabs{display:flex;gap:0;margin-bottom:var(--s-lg);border-bottom:2px solid var(--border)}
+.tab-btn{flex:1;padding:var(--s-md) var(--s-sm);background:transparent;border:none;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;font-weight:600;transition:color .25s cubic-bezier(.4,0,.2,1);letter-spacing:.05em;position:relative}
 .tab-btn:hover{color:var(--text)}
 .tab-btn.active{color:var(--goldL)}
 .tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:20%;right:20%;height:2px;background:var(--gold)}
-.tab-content{display:none}
-.tab-content.active{display:block}
+.tab-content{display:none}.tab-content.active{display:block}
 /* Cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.card h3{font-family:'SimSun',serif;color:var(--goldL);font-size:1.05em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s-lg) var(--s-lg);margin-bottom:var(--s-md);
+  box-shadow:0 2px 8px rgba(26,20,16,.4),0 8px 32px rgba(26,20,16,.12)}
+.card h3{font-family:'Noto Serif SC','SimSun',serif;color:var(--goldL);font-size:1.05em;margin-bottom:var(--s-md);padding-bottom:var(--s-sm);border-bottom:1px solid var(--border)}
 /* Forms */
-.form-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
-.fg{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+.form-row{display:flex;gap:var(--s-md);align-items:flex-end;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:var(--s-sm);flex:1;min-width:140px}
 .fg label{font-size:.8em;color:var(--dim);font-weight:500}
-.fg input,.fg select{background:var(--input);border:1px solid #4a4034;border-radius:8px;padding:10px 14px;color:var(--text);font-size:1em;font-family:inherit;outline:none;transition:.2s}
+.fg input,.fg select{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-md);padding:var(--s-md) var(--s-md);color:var(--text);font-size:1em;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
 .fg input:focus,.fg select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,92,.15)}
-.gender-tog{display:flex;border:1px solid #4a4034;border-radius:8px;overflow:hidden;background:var(--input)}
-.gender-tog button{flex:1;padding:10px 18px;border:none;background:transparent;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;transition:.2s}
-.gender-tog button.active{background:var(--goldD);color:#fff;font-weight:600}
-.btn-go{padding:10px 30px;background:linear-gradient(135deg,var(--goldD),var(--gold));color:#1a1410;border:none;border-radius:8px;font-weight:700;font-size:1em;cursor:pointer;letter-spacing:.05em;font-family:inherit;box-shadow:0 4px 16px rgba(200,164,92,.2);transition:.3s}
-.btn-go:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(200,164,92,.35);background:linear-gradient(135deg,var(--gold),var(--goldL))}
+.gender-tog{display:flex;border:1px solid var(--borderL);border-radius:var(--r-md);overflow:hidden;background:var(--input)}
+.gender-tog button{flex:1;padding:var(--s-md) var(--s-md);border:none;background:transparent;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;transition:all .2s}
+.gender-tog button.active{background:var(--goldD);color:var(--text);font-weight:600}
+.btn-go{padding:12px 32px;background:linear-gradient(135deg,var(--goldD),var(--gold));color:#1a1410;border:none;border-radius:var(--r-md);font-weight:700;font-size:1em;cursor:pointer;letter-spacing:.05em;font-family:inherit;
+  box-shadow:0 2px 8px rgba(200,164,92,.15),0 8px 24px rgba(200,164,92,.08);
+  transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s cubic-bezier(.16,1,.3,1),background .25s}
+.btn-go:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,164,92,.25),0 12px 32px rgba(200,164,92,.12);background:linear-gradient(135deg,var(--gold),var(--goldL))}
 /* Bazi display */
-.bazi-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.bazi-row{display:flex;gap:var(--s-md);justify-content:center;flex-wrap:wrap;margin:var(--s-md) 0}
 .bz-p{text-align:center;min-width:100px}
-.bz-p .lbl{font-size:.75em;color:var(--dim);margin-bottom:6px}
-.bz-p .ch{font-family:'SimSun',serif;font-size:2em;font-weight:900;color:var(--text)}
-.bz-p.day .ch{color:var(--goldL);text-shadow:0 0 12px rgba(200,164,92,.3)}
+.bz-p .lbl{font-size:.75em;color:var(--dim);margin-bottom:var(--s-sm)}
+.bz-p .ch{font-family:'Noto Serif SC','SimSun',serif;font-size:2.2em;font-weight:900;color:var(--text)}
+.bz-p.day .ch{color:var(--goldL);text-shadow:0 0 16px rgba(200,164,92,.25)}
 .bz-p .ny{font-size:.75em;color:var(--mute)}
 /* Tables */
 table{width:100%;border-collapse:collapse;font-size:.85em}
-th,td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--border)}
+th,td{padding:var(--s-sm) var(--s-md);text-align:center;border-bottom:1px solid var(--border)}
 th{color:var(--dim);font-weight:500;font-size:.8em}
 tr:last-child td{border-bottom:none}
 /* Tags */
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.78em;font-weight:600;margin:2px}
+.tag{display:inline-block;padding:2px 8px;border-radius:var(--r-sm);font-size:.78em;font-weight:600;margin:2px}
 .tag-warn{background:rgba(192,57,43,.2);color:var(--redL)}
-.tag-good{background:rgba(90,143,90,.2);color:#5a9e5a}
+.tag-good{background:rgba(90,143,90,.2);color:var(--green)}
 .tag-info{background:rgba(200,164,92,.15);color:var(--goldL)}
 .tag-neutral{background:rgba(154,142,126,.15);color:var(--dim)}
 /* Dayun */
-.dy-list{display:flex;flex-wrap:wrap;gap:8px}
-.dy-item{flex:1;min-width:110px;background:var(--input);border:1px solid #4a4034;border-radius:8px;padding:8px 12px;text-align:center}
+.dy-list{display:flex;flex-wrap:wrap;gap:var(--s-sm)}
+.dy-item{flex:1;min-width:110px;background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-md);padding:var(--s-sm) var(--s-md);text-align:center}
 .dy-item.cur{border-color:var(--gold);background:rgba(200,164,92,.1)}
-.dy-item .dyp{font-family:'SimSun',serif;font-size:1.1em;font-weight:700}
+.dy-item .dyp{font-family:'Noto Serif SC','SimSun',serif;font-size:1.1em;font-weight:700}
 .dy-item.cur .dyp{color:var(--goldL)}
 .dy-item .dya{font-size:.7em;color:var(--dim)}
 /* Highlight */
-.hl{background:var(--input);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;margin:8px 0;font-size:.85em}
+.hl{background:var(--input);border-left:3px solid var(--gold);border-radius:0 var(--r-md) var(--r-md) 0;padding:12px var(--s-md);margin:var(--s-sm) 0;font-size:.85em}
 /* Grid */
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--s-md)}
 /* Liuren specific */
-.lr-layout{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
-.lr-cell{padding:6px;background:var(--input);border-radius:6px;font-size:.8em}
+.lr-layout{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-sm);text-align:center}
+.lr-cell{padding:var(--s-sm);background:var(--input);border-radius:var(--r-md);font-size:.8em}
 /* Liuyao specific */
-.gua-display{font-family:monospace;white-space:pre;background:var(--input);padding:16px;border-radius:8px;overflow-x:auto;font-size:.9em;line-height:1.8}
+.gua-display{font-family:monospace;white-space:pre;background:var(--input);padding:var(--s-md);border-radius:var(--r-md);overflow-x:auto;font-size:.9em;line-height:1.8}
 .moving{color:var(--redL);font-weight:700}
-/* Section */
-.section-header{font-family:'SimSun',serif;color:var(--goldL);font-size:1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 /* Footer */
-.footer{text-align:center;margin-top:32px;padding:20px;color:var(--mute);font-size:.75em}
+.footer{text-align:center;margin-top:var(--s-2xl);padding:var(--s-lg);color:var(--mute);font-size:.75em}
 /* Ziwei palace grid */
-.zw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-.zw-cell{border:1px solid var(--border);border-radius:6px;padding:8px 6px;font-size:.78em;text-align:center;background:var(--bg)}
+.zw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-xs)}
+.zw-cell{border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-sm);font-size:.78em;text-align:center;background:var(--bg)}
 .zw-cell.highlight{border-color:var(--gold);background:rgba(200,164,92,.08)}
 .zw-cell .zw-name{font-weight:700;color:var(--goldL)}
 .zw-cell .zw-stars{color:var(--text);margin-top:2px}
 .zw-cell .zw-tags{font-size:.7em;color:var(--redL);margin-top:2px}
-@media(max-width:640px){.header h1{font-size:1.4em}.card{padding:16px}.form-row{flex-direction:column}.bz-p .ch{font-size:1.3em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}}
+/* ====== ACCORDION ====== */
+.acc { margin-bottom: var(--s-sm); }
+.acc-head {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--card); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:var(--s-md) var(--s-lg); cursor:pointer; user-select:none;
+  transition:border-color .2s,background .2s;
+  box-shadow:0 1px 4px rgba(26,20,16,.3),0 4px 16px rgba(26,20,16,.08);
+}
+.acc-head:hover { border-color: var(--gold); background: rgba(200,164,92,.04); }
+.acc-head h3 { margin:0; padding:0; border:none; font-size:.95em; }
+.acc-head .arr { font-size:.8em; color:var(--dim); transition:transform .3s cubic-bezier(.16,1,.3,1); }
+.acc.open .acc-head { border-color:var(--gold); border-radius:var(--r-lg) var(--r-lg) 0 0; }
+.acc.open .acc-head .arr { transform: rotate(180deg); color:var(--goldL); }
+.acc-body {
+  max-height:0; overflow:hidden;
+  background:var(--card); border:1px solid transparent; border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg);
+  transition:max-height .45s cubic-bezier(.16,1,.3,1),border-color .3s;
+}
+.acc.open .acc-body { max-height:8000px; border-color:var(--gold); }
+.acc-inner { padding:var(--s-md) var(--s-lg) var(--s-lg); }
+/* Nested cards in accordion lose shadow */
+.acc-body .card { box-shadow:none; border-color:var(--border); margin-bottom:var(--s-sm); }
+/* ====== ANIMATIONS ====== */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.fade-up { animation: fadeUp .4s cubic-bezier(.16,1,.3,1) both; }
+.fade-up:nth-child(2) { animation-delay: .04s; }
+.fade-up:nth-child(3) { animation-delay: .08s; }
+.fade-up:nth-child(4) { animation-delay: .12s; }
+.fade-up:nth-child(5) { animation-delay: .16s; }
+@media (prefers-reduced-motion:reduce) { .fade-up { animation:none; } }
+/* Empty state */
+.empty-state { text-align:center; padding:var(--s-2xl); color:var(--dim); }
+.empty-state p { margin:var(--s-sm) 0; }
+@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}}
 </style>
 </head>
 <body>
@@ -182,12 +229,12 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
 </div>
 
-<script src="terms_data.js?v=7"></script>
-<script src="bazi.js?v=7"></script>
-<script src="ziwei.js?v=7"></script>
-<script src="liuren.js?v=7"></script>
-<script src="liuyao.js?v=7"></script>
-<script src="analysis.js?v=7"></script>
+<script src="terms_data.js?v=8"></script>
+<script src="bazi.js?v=8"></script>
+<script src="ziwei.js?v=8"></script>
+<script src="liuren.js?v=8"></script>
+<script src="liuyao.js?v=8"></script>
+<script src="analysis.js?v=8"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -196,6 +243,11 @@ function switchTab(name) {
     document.querySelector(`.tab-btn[onclick*="${name}"]`)?.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ========== ACCORDION ==========
+function toggleAcc(el) {
+    el.closest('.acc').classList.toggle('open');
 }
 
 // ========== GENDER TOGGLES ==========
@@ -234,6 +286,13 @@ function doBazi() {
     document.getElementById('bz-loading').style.display = 'none';
 }
 
+function makeAcc(title, body) {
+    return `<div class="acc fade-up">
+      <div class="acc-head" onclick="toggleAcc(this)"><h3>${title}</h3><span class="arr">▼</span></div>
+      <div class="acc-body"><div class="acc-inner">${body}</div></div>
+    </div>`;
+}
+
 function renderBazi(d) {
     const pillars = [{n:'年柱',v:d.yearPillar},{n:'月柱',v:d.monthPillar},{n:'日柱',v:d.dayPillar,m:true},{n:'时柱',v:d.timePillar}];
     let html = `<div class="card" style="text-align:center"><h3>🏮 八字命盘</h3>
@@ -244,50 +303,58 @@ function renderBazi(d) {
     html += `<div class="card"><h3>📈 大运</h3><p style="color:var(--dim);font-size:.85em">${d.dayun.direction} | 起运: ${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天</p>
       <div class="dy-list">${d.dayun.steps.map(s => `<div class="dy-item${d.currentDayun&&s.pillar===d.currentDayun.pillar?' cur':''}"><div class="dyp">${s.pillar}</div><div class="dya">${s.startAge}-${s.endAge}岁</div></div>`).join('')}</div></div>`;
 
-    // Grid
-    html += `<div class="grid2">`;
+    // All data cards wrapped in accordion
+    html += makeAcc('📋 命盘数据', `
+      <div class="grid2">
 
-    // Nayin
-    html += `<div class="card"><h3>🔮 纳音</h3><table><tr><th>柱</th><th>干支</th><th>纳音</th><th>五行</th></tr>${d.nayin.map(n => `<tr><td>${n.name}</td><td>${n.pillar}</td><td>${n.nayin}</td><td>${n.wuxing}</td></tr>`).join('')}</table></div>`;
+      <div class="card"><h3>🔮 纳音</h3><table><tr><th>柱</th><th>干支</th><th>纳音</th><th>五行</th></tr>${d.nayin.map(n => `<tr><td>${n.name}</td><td>${n.pillar}</td><td>${n.nayin}</td><td>${n.wuxing}</td></tr>`).join('')}</table></div>
 
-    // Changsheng
-    html += `<div class="card"><h3>🌿 十二长生(日主)</h3><table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.changsheng.map(c => `<tr><td>${c.name}</td><td>${c.branch}</td><td>${c.stage}</td></tr>`).join('')}</table></div>`;
+      <div class="card"><h3>🌿 十二长生(日主)</h3><table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.changsheng.map(c => `<tr><td>${c.name}</td><td>${c.branch}</td><td>${c.stage}</td></tr>`).join('')}</table></div>
 
-    // Shishen
-    html += `<div class="card"><h3>🔗 十神(天干)</h3><table><tr><th>柱</th><th>干</th><th>十神</th></tr>${d.shishenStems.map(s => `<tr><td>${s.name}</td><td><b>${s.stem}</b></td><td><span class="tag ${s.shishen.includes('杀')||s.shishen.includes('伤')?'tag-warn':'tag-info'}">${s.shishen}</span></td></tr>`).join('')}</table></div>`;
+      <div class="card"><h3>🔗 十神(天干)</h3><table><tr><th>柱</th><th>干</th><th>十神</th></tr>${d.shishenStems.map(s => `<tr><td>${s.name}</td><td><b>${s.stem}</b></td><td><span class="tag ${s.shishen.includes('杀')||s.shishen.includes('伤')?'tag-warn':'tag-info'}">${s.shishen}</span></td></tr>`).join('')}</table></div>
 
-    // Cangan
-    html += `<div class="card"><h3>📦 藏干十神</h3><table><tr><th>柱</th><th>支</th><th>藏干(十神)</th></tr>${d.shishenCangan.map(sc => `<tr><td>${sc.name}</td><td>${sc.branch}</td><td>${sc.hiddens.map(h => `${h.stem}(${h.shishen})`).join('、')}</td></tr>`).join('')}</table></div>`;
+      <div class="card"><h3>📦 藏干十神</h3><table><tr><th>柱</th><th>支</th><th>藏干(十神)</th></tr>${d.shishenCangan.map(sc => `<tr><td>${sc.name}</td><td>${sc.branch}</td><td>${sc.hiddens.map(h => `${h.stem}(${h.shishen})`).join('、')}</td></tr>`).join('')}</table></div>
 
-    // Kong wang
-    html += `<div class="card"><h3>⛔ 空亡</h3><div class="hl">日柱 ${d.dayPillar} → 空亡: <span class="tag tag-warn">${d.kongBranches.join(' ')}</span></div>
-      <table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.kongWang.map(k => `<tr><td>${k.name}</td><td>${k.branch}</td><td>${k.isKong?'<span class="tag tag-warn">坐空!</span>':'<span class="tag tag-neutral">—</span>'}</td></tr>`).join('')}</table></div>`;
+      <div class="card"><h3>⛔ 空亡</h3><div class="hl">日柱 ${d.dayPillar} → 空亡: <span class="tag tag-warn">${d.kongBranches.join(' ')}</span></div>
+        <table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.kongWang.map(k => `<tr><td>${k.name}</td><td>${k.branch}</td><td>${k.isKong?'<span class="tag tag-warn">坐空!</span>':'<span class="tag tag-neutral">—</span>'}</td></tr>`).join('')}</table></div>
 
-    // Branch rels
-    html += `<div class="card"><h3>🔄 地支关系</h3>`;
-    const r = d.branchRelations;
-    if (r.冲.length) html += `<div class="hl">⚡ 冲: ${r.冲.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
-    if (r.合.length) html += `<div class="hl">🤝 合: ${r.合.map(x=>'<span class="tag tag-info">'+x+'</span>').join(' ')}</div>`;
-    if (r.穿&&r.穿.length) html += `<div class="hl">⚠️ 穿: ${r.穿.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
-    if (r.拱.length) html += `<div class="hl">🌈 拱: ${r.拱.map(x=>'<span class="tag tag-good">'+x+'</span>').join(' ')}</div>`;
-    if (r.三合.length) html += `<div class="hl">🔺 三合: ${r.三合.map(x=>'<span class="tag tag-info">'+x+'</span>').join(' ')}</div>`;
-    if (r.刑&&r.刑.length) html += `<div class="hl">💢 刑: ${r.刑.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
-    html += `</div>`;
+      <div class="card"><h3>🔄 地支关系</h3>
+      ${(()=>{ const r=d.branchRelations; let s='';
+        if(r.冲.length)s+=`<div class="hl">⚡ 冲: ${r.冲.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
+        if(r.合.length)s+=`<div class="hl">🤝 合: ${r.合.map(x=>'<span class="tag tag-info">'+x+'</span>').join(' ')}</div>`;
+        if(r.穿&&r.穿.length)s+=`<div class="hl">⚠️ 穿: ${r.穿.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
+        if(r.拱.length)s+=`<div class="hl">🌈 拱: ${r.拱.map(x=>'<span class="tag tag-good">'+x+'</span>').join(' ')}</div>`;
+        if(r.三合.length)s+=`<div class="hl">🔺 三合: ${r.三合.map(x=>'<span class="tag tag-info">'+x+'</span>').join(' ')}</div>`;
+        if(r.刑&&r.刑.length)s+=`<div class="hl">💢 刑: ${r.刑.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
+        return s||'<span class="tag tag-neutral">无明显特殊关系</span>'; })()}
+      </div>
 
-    // Wangshuai + taiyuan
-    html += `<div class="card"><h3>⚖️ 旺衰 & 胎元</h3>
-      <div class="hl"><b>日主${d.riGan}</b> | 月令: ${d.changsheng[1].stage} | 支撑 ${d.wangshuai.support} vs 克泄 ${d.wangshuai.oppose} | <span class="tag ${d.wangshuai.level==='身旺'?'tag-good':(d.wangshuai.level==='身弱'?'tag-warn':'tag-info')}">${d.wangshuai.level}</span></div>
-      <div class="hl" style="margin-top:8px"><b>胎元:</b> ${d.taiyuan} (${d.taiyuanNayin})</div></div>`;
+      <div class="card"><h3>⚖️ 旺衰 & 胎元</h3>
+        <div class="hl"><b>日主${d.riGan}</b> | 月令: ${d.changsheng[1].stage} | 支撑 ${d.wangshuai.support} vs 克泄 ${d.wangshuai.oppose} | <span class="tag ${d.wangshuai.level==='身旺'?'tag-good':(d.wangshuai.level==='身弱'?'tag-warn':'tag-info')}">${d.wangshuai.level}</span></div>
+        <div class="hl" style="margin-top:8px"><b>胎元:</b> ${d.taiyuan} (${d.taiyuanNayin})</div></div>
 
-    // Wuxing stats
-    html += `<div class="card"><h3>📊 五行 & 十神统计</h3>
-      <div>${Object.entries(d.wuxingCounts).map(([wx,c]) => `<span style="margin:0 6px">${wx}: ${'●'.repeat(Math.min(c,12))}(${c})</span>`).join(' ')}</div>
-      <div style="margin-top:8px">${Object.entries(d.shishenCounts).sort((a,b)=>b[1]-a[1]).map(([ss,c]) => `<span class="tag tag-neutral">${ss}:${c}</span>`).join(' ')}</div></div>`;
+      <div class="card"><h3>📊 五行 & 十神统计</h3>
+        <div>${Object.entries(d.wuxingCounts).map(([wx,c]) => `<span style="margin:0 6px">${wx}: ${'●'.repeat(Math.min(c,12))}(${c})</span>`).join(' ')}</div>
+        <div style="margin-top:8px">${Object.entries(d.shishenCounts).sort((a,b)=>b[1]-a[1]).map(([ss,c]) => `<span class="tag tag-neutral">${ss}:${c}</span>`).join(' ')}</div></div>
 
-    html += `</div>`; // end grid
+      </div>
+    `);
 
-    // Add SKILL-based analysis
-    try { html += generateAnalysis(d); } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
+    // Add SKILL-based analysis - each card becomes a collapsible accordion
+    try {
+      const analysisHTML = generateAnalysis(d);
+      // Wrap each .card in analysis output into an accordion
+      const cards = analysisHTML.split(/(?=<div class="card">)/);
+      for (const card of cards) {
+        if (!card.trim()) continue;
+        // Extract h3 text for accordion header
+        const h3Match = card.match(/<h3>(.*?)<\/h3>/);
+        const title = h3Match ? h3Match[1] : '分析';
+        // Remove the h3 from body since it's in the accordion header
+        const body = card.replace(/<h3>.*?<\/h3>/, '');
+        html += makeAcc(title, body);
+      }
+    } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
 
     // AI Deep Analysis button
     html += `<div class="card" style="text-align:center">
