@@ -280,11 +280,10 @@ function analyzeMarriage(riGan, riZhi, sz, bz, ps, d) {
 // ================================================================
 function analyzeChildren(riGan, riZhi, sz, bz, d) {
     let h = `<div class="card"><h3>👶 子息门 [食伤总纲 + 身旺财子/身衰印儿]</h3>`;
-
-    const ssStems = d.shishenStems;
-    const hasSS = ssStems.some(s=>s.shishen==='食神'), hasSG = ssStems.some(s=>s.shishen==='伤官');
-    const hasZC = ssStems.some(s=>s.shishen==='正财'), hasPC = ssStems.some(s=>s.shishen==='偏财');
-    const hasZY = ssStems.some(s=>s.shishen==='正印'), hasPY = ssStems.some(s=>s.shishen==='偏印');
+    const ssS2 = d.shishenStems;
+    const hasSS = ssS2.some(s=>s.shishen==='食神'), hasSG = ssS2.some(s=>s.shishen==='伤官');
+    const hasZC = ssS2.some(s=>s.shishen==='正财'), hasPC = ssS2.some(s=>s.shishen==='偏财');
+    const hasZY = ssS2.some(s=>s.shishen==='正印'), hasPY = ssS2.some(s=>s.shishen==='偏印');
 
     // 食伤是第一关
     h += `<div class="hl"><b>食伤(总纲)：</b>`;
@@ -600,6 +599,7 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
 function analyzeWealth(riGan, riZhi, sz, bz, d) {
     let h = `<div class="card"><h3>💰 财运 [比劫见财六模型 + 财内外]</h3>`;
 
+    const hasZC = d.shishenStems.some(s=>s.shishen==='正财'), hasPC = d.shishenStems.some(s=>s.shishen==='偏财');
     const homeCai = (CANGAN[bz[2]]||[]).concat(CANGAN[bz[3]]||[]).filter(c=>{const s=getShishen(riGan,c);return s==='正财'||s==='偏财'});
     const outerCai = (CANGAN[bz[0]]||[]).concat(CANGAN[bz[1]]||[]).filter(c=>{const s=getShishen(riGan,c);return s==='正财'||s==='偏财'});
     const ganCai = sz.filter(s=>{const ss=getShishen(riGan,s);return ss==='正财'||ss==='偏财'});
@@ -736,6 +736,8 @@ function analyzeHealth(riGan, riWx, bz, sz, d) {
     let h = `<div class="card"><h3>⚕️ 健康与五行交战 [五行反目 + 穿害疾病]</h3>`;
 
     const rels = d.branchRelations;
+    const allStems2 = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
+    const allWxSet = new Set(allStems2.map(wxOf));
     const issues = [];
 
     // 刑冲穿
@@ -760,7 +762,6 @@ function analyzeHealth(riGan, riWx, bz, sz, d) {
     }
 
     // 五行交战检查
-    const allWxSet = new Set([...sz.map(wxOf), ...bz.flatMap(b=>(CANGAN[b]||[]).map(wxOf))]);
     const dangerPairs = [
         ['金','木','金木交战→车祸/骨折/肝胆手术'],
         ['木','土','木土交战→脾胃/消化/坍塌'],
@@ -849,12 +850,13 @@ function analyzeCurrent(riGan, d) {
 // ================================================================
 function analyzePersonality(riGan, riWx, sz, bz) {
     let h = `<div class="card"><h3>🧠 五行性格速断</h3>`;
-
-    const allStems = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
+    const allStems3 = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
     const wxCount = {};
-    for (const s of allStems) { const w=wxOf(s); wxCount[w]=(wxCount[w]||0)+1; }
+    for (const s of allStems3) { const w=wxOf(s); wxCount[w]=(wxCount[w]||0)+1; }
     const sorted = Object.entries(wxCount).sort((a,b)=>b[1]-a[1]);
     const dominantWx = sorted[0]?.[0] || riWx;
+    // Update references
+    const allStems = allStems3;
 
     const personalities = {
         木:{pos:'仁慈、恻隐、直爽、柔和',neg:'胆怯、嫉妒、狭隘、固执'},
@@ -881,11 +883,11 @@ function analyzePersonality(riGan, riWx, sz, bz) {
 // ================================================================
 function analyzeDeepPattern(riGan, riZhi, sz, bz, ws, d) {
     let h = `<div class="card"><h3>📐 格局深度分析 [30+格局速查]</h3>`;
-
-    const ssS = d.shishenStems;
+    const ssS4 = d.shishenStems;
     const countSS = {食神:0,伤官:0,正财:0,偏财:0,正官:0,七杀:0,正印:0,偏印:0,比肩:0,劫财:0};
-    const allStems = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
-    for (const s of allStems) { const ss=getShishen(riGan,s); if (countSS[ss]!==undefined) countSS[ss]++; }
+    const allStems4 = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
+    for (const s of allStems4) { const ss=getShishen(riGan,s); if (countSS[ss]!==undefined) countSS[ss]++; }
+    const allStems = allStems4, ssS = ssS4;
 
     const patterns = [];
 
