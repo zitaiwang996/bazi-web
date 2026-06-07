@@ -182,12 +182,12 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
 </div>
 
-<script src="terms_data.js?v=6"></script>
-<script src="bazi.js?v=6"></script>
-<script src="ziwei.js?v=6"></script>
-<script src="liuren.js?v=6"></script>
-<script src="liuyao.js?v=6"></script>
-<script src="analysis.js?v=6"></script>
+<script src="terms_data.js?v=7"></script>
+<script src="bazi.js?v=7"></script>
+<script src="ziwei.js?v=7"></script>
+<script src="liuren.js?v=7"></script>
+<script src="liuyao.js?v=7"></script>
+<script src="analysis.js?v=7"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -289,7 +289,6 @@ function renderBazi(d) {
     // Add SKILL-based analysis
     try { html += generateAnalysis(d); } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
 
-    document.getElementById('bz-results').innerHTML = html;
     // AI Deep Analysis button
     html += `<div class="card" style="text-align:center">
       <h3>🤖 AI深度解读 (DeepSeek)</h3>
@@ -299,6 +298,7 @@ function renderBazi(d) {
       <div id="ds-response" style="margin-top:16px;text-align:left;display:none"></div>
     </div>`;
 
+    document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
 }
 
