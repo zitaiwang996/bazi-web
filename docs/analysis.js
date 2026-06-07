@@ -352,67 +352,242 @@ function analyzeChildren(riGan, riZhi, sz, bz, d) {
 }
 
 // ================================================================
-// 4. 工作关 (三步登天法)
+// 4. 工作关 — 职业方向+公职/生意判断+考试时机+行业建议
 // ================================================================
 function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
-    let h = `<div class="card"><h3>💼 工作关 [三步登天法 + 格局速查]</h3>`;
+    let h = `<div class="card"><h3>💼 工作关 — 职业方向与时机判断</h3>`;
 
     const ssS = d.shishenStems;
     const hasSS=ssS.some(s=>s.shishen==='食神'), hasSG=ssS.some(s=>s.shishen==='伤官');
     const hasQS=ssS.some(s=>s.shishen==='七杀'), hasZG=ssS.some(s=>s.shishen==='正官');
     const hasZY=ssS.some(s=>s.shishen==='正印'), hasPY=ssS.some(s=>s.shishen==='偏印');
     const hasZC=ssS.some(s=>s.shishen==='正财'), hasPC=ssS.some(s=>s.shishen==='偏财');
+    const hasBJ=ssS.some(s=>s.shishen==='比肩'||s.shishen==='劫财');
 
-    // 吃皇粮检查
-    const hlg = [];
-    if ((hasSS||hasSG) && (hasQS||hasZG) && (hasZY||hasPY)) hlg.push(`食伤制官杀+印`);
-    if (hasZG && hasZY) hlg.push(`化官生印`);
-    if (hasQS && hasZY) hlg.push(`杀印同宫`);
-    if (hasPY && hasZG) hlg.push(`印禄相随`);
-
-    h += `<div class="hl"><b>第一步-吃皇粮判断：</b>`;
-    if (hlg.length) h += `<span class="tag tag-good">${hlg.join(' + ')}</span>→体制内/稳定工作`;
-    else h += `<span class="tag tag-info">非典型皇粮格局</span>→自由职业/私企/创业`;
-    h += `</div>`;
-
-    // 格局成立检查
-    h += `<div class="hl"><b>第二步-格局成立检查：</b>`;
-    const patternChecks = [];
-    if (hasPY && hasZG) patternChecks.push(`枭+官虚透→<span class="tag tag-info">自己做生意</span>(偏印=非传统)`);
-    if (hasZY && hasZG) patternChecks.push(`正印+正官→<span class="tag tag-good">体制内稳定</span>`);
-    if (hasSS && hasQS && ws.level==='身弱') patternChecks.push(`身弱杀旺+食神→<span class="tag tag-warn">须有印化杀</span>(无印=破财)`);
-    if (hasSS && hasZC && ws.level==='身旺') patternChecks.push(`食神生财+身旺→<span class="tag tag-good">可大富</span>`);
-    if (!patternChecks.length) patternChecks.push(`<span class="tag tag-neutral">格局配置需结合大运</span>`);
-    h += patternChecks.join(' | ') + `</div>`;
-
-    // 五行取象
-    h += `<div class="hl"><b>第三步-五行职业取象：</b>`;
-    const wuxingPairs = [];
-    const allStems = [...sz,...bz.flatMap(b=>CANGAN[b]||[])];
+    // 所有天干地支的五行
+    const allStems = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
     const allWxSet = new Set(allStems.map(wxOf));
-    const jobMap = {'木-土':'土木工程/建筑/装修','火-金':'金融/网络/IT/驾驶','土-水':'工程/养殖/水利','金-木':'机械/制造/法律/手术','水-火':'消防/制冷/餐饮/能源'};
-    for (const [pair,job] of Object.entries(jobMap)) {
-        const [a,b]=pair.split('-');
-        if (allWxSet.has(a)&&allWxSet.has(b)) wuxingPairs.push(`<span class="tag tag-info">${pair}→${job}</span>`);
-    }
-    // 特殊
-    if (allWxSet.has('金') && allWxSet.has('木') && bz.some(b=>b==='酉'))
-        wuxingPairs.push(`<span class="tag tag-info">酉金→公安/白虎/机械</span>`);
+    const wxCount = {};
+    for (const s of allStems) { const w=wxOf(s); wxCount[w]=(wxCount[w]||0)+1; }
+    const dominantWx = Object.entries(wxCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
 
-    h += wuxingPairs.length ? wuxingPairs.join(' | ') : `<span class="tag tag-neutral">取象待大运流年明确</span>`;
+    // ===== STEP 1: 判断适合公职还是做生意 =====
+    let careerType = '';  // '公职' | '生意' | '技术' | '自由'
+    let careerConfidence = '';
+    const signals = {公职:[],生意:[],技术:[],自由:[]};
+
+    // 公职信号
+    if (hasZG && hasZY) signals.公职.push('正官+正印→化官生印，正宗吃皇粮');
+    if (hasQS && hasZY) signals.公职.push('杀印相生→以印化权，掌权之象');
+    if ((hasSS||hasSG) && (hasQS||hasZG) && (hasZY||hasPY)) signals.公职.push('食伤制官杀+印→体制内有实权');
+    if (hasZG && !hasPY) signals.公职.push('正官无枭扰→干净的公职命');
+    if (hasZY && hasZG && !hasSG) signals.公职.push('正印正官+无伤官→稳定公职');
+
+    // 生意信号
+    if (hasPY && hasZG) signals.生意.push('偏印配官→非传统路线，适合自己做生意');
+    if (hasPY && !hasZY) signals.生意.push('枭旺无正印→不走寻常路，创业型');
+    if (hasSS && hasZC && ws.level==='身旺') signals.生意.push('食神生财+身旺→可经商致富');
+    if ((hasZC||hasPC) && !hasZG && !hasZY) signals.生意.push('有财无官印→自由经商之命');
+    if (hasPY && hasSG) signals.生意.push('枭+伤官→技术型创业');
+
+    // 技术信号
+    if ((hasSS||hasSG) && !hasZG && !hasQS) signals.技术.push('食伤旺无官杀→靠技术/手艺吃饭');
+    if (hasSS && hasQS && ws.level==='身旺') signals.技术.push('食神制杀→技术型管理');
+    if (allWxSet.has('火') && allWxSet.has('金')) signals.技术.push('火金组合→网络/IT/电子技术');
+
+    // 自由职业信号
+    if (!hasZG && !hasZY && !hasZC && !hasPC) signals.自由.push('无官无印无财→自由职业/靠禄神吃饭');
+    if (hasSG && !hasZG) signals.自由.push('伤官无制→自由不羁，适合创意/艺术');
+
+    // 综合判断
+    const maxSignal = Object.entries(signals).sort((a,b)=>b[1].length-a[1].length)[0];
+    if (maxSignal && maxSignal[1].length >= 3) {
+        careerType = maxSignal[0];
+        careerConfidence = '高';
+    } else if (maxSignal && maxSignal[1].length >= 1) {
+        careerType = maxSignal[0];
+        careerConfidence = '中';
+    } else {
+        careerType = '自由';
+        careerConfidence = '低';
+    }
+
+    h += `<div class="hl" style="background:rgba(200,164,92,0.12);border-color:var(--gold);"><b>🎯 职业方向判断（${careerConfidence}置信度）：</b>`;
+
+    const typeLabels = {公职:'<span class="tag tag-good" style="font-size:1.1em">适合走公职/体制路线</span>',
+                        生意:'<span class="tag tag-info" style="font-size:1.1em">适合做生意/创业</span>',
+                        技术:'<span class="tag tag-info" style="font-size:1.1em">适合技术/手艺路线</span>',
+                        自由:'<span class="tag tag-neutral" style="font-size:1.1em">适合自由职业</span>'};
+    h += `${typeLabels[careerType]||''}</div>`;
+
+    // 各方信号展示
+    for (const [type, arr] of Object.entries(signals)) {
+        if (arr.length) {
+            const icon = {公职:'🏛️',生意:'💼',技术:'🔧',自由:'🎨'};
+            h += `<div class="hl">${icon[type]||''} <b>${type}信号(${arr.length}条)：</b>${arr.map(s=>`<br>· ${s}`).join('')}</div>`;
+        }
+    }
+
+    // ===== STEP 2: 适合行业建议 =====
+    h += `<div class="hl"><b>🏭 五行取象—适合行业：</b></div>`;
+    h += `<div class="hl">`;
+
+    const detailedJobs = {
+        '木-土': {jobs:['土木工程','建筑设计','房地产','园林绿化','装修装饰','农业种植'],bestFor:'公职/生意均可'},
+        '火-金': {jobs:['互联网/IT','金融/证券','电商运营','电子制造','汽车驾驶','冶炼加工'],bestFor:'生意/技术'},
+        '土-水': {jobs:['水利工程','养殖业','房地产','环保工程','仓储物流','食品加工'],bestFor:'生意/公职'},
+        '金-木': {jobs:['机械制造','法律/律师','外科医生','精密加工','伐木/林业','五金行业'],bestFor:'技术/公职'},
+        '水-火': {jobs:['餐饮业','消防工程','能源电力','影视传媒','冷链物流','饮料酒水'],bestFor:'生意'},
+    };
+
+    let matchedJobs = [];
+    for (const [pair, info] of Object.entries(detailedJobs)) {
+        const [a,b] = pair.split('-');
+        if (allWxSet.has(a) && allWxSet.has(b)) {
+            matchedJobs.push({pair, ...info});
+        }
+    }
+
+    if (matchedJobs.length) {
+        h += `<b>原局五行组合行业：</b><br>`;
+        for (const mj of matchedJobs) {
+            h += `<span class="tag tag-info">${mj.pair}</span> → ${mj.jobs.join(' / ')} (适合${mj.bestFor})<br>`;
+        }
+    }
+
+    // 主旺五行单独建议
+    if (dominantWx) {
+        const wxSoloJobs = {
+            木:'教育、出版、园林、中医、纺织',
+            火:'能源、餐饮、传媒、演艺、互联网',
+            土:'房地产、建筑、农业、矿产、仓储',
+            金:'金融、法律、机械、公安、五金',
+            水:'物流、贸易、旅游、渔业、饮料',
+        };
+        h += `<br><b>主旺五行${dominantWx}：</b>${wxSoloJobs[dominantWx]||''}`;
+    }
     h += `</div>`;
 
-    // 下岗/换工作判断
-    if (d.currentDayun) {
-        const dyGan = d.currentDayun.pillar[0];
-        const dyGanSS = getShishen(riGan, dyGan);
-        h += `<div class="hl"><b>换工作信号：</b>当前大运天干${dyGan}=${dyGanSS}→`;
-        if (dyGanSS.includes('印') || dyGanSS.includes('官') || dyGanSS.includes('财'))
-            h += `<span class="tag tag-info">有职业稳定性信号</span>`;
-        else if (dyGanSS.includes('食') || dyGanSS.includes('伤'))
-            h += `<span class="tag tag-info">适合技术/创意类工作</span>`;
-        else h += `<span class="tag tag-neutral">事业变动期</span>`;
+    // ===== STEP 3: 公职考试时机 =====
+    if (careerType === '公职' || signals.公职.length >= 1) {
+        h += `<div class="hl" style="background:rgba(90,143,90,0.12);"><b>📅 公职/考试有利时机：</b></div>`;
+
+        // 找出所有大运中的印/官运
+        const favorableYears = [];
+        const now = new Date().getFullYear();
+        for (const step of d.dayun.steps) {
+            const dyGan = step.pillar[0], dyZhi = step.pillar[1];
+            const dyGanSS = getShishen(riGan, dyGan);
+            const startYear = parseInt(d.solarDate) + Math.floor(step.startAge);
+            const endYear = parseInt(d.solarDate) + Math.floor(step.endAge);
+
+            // 印或官的大运 → 适合考试
+            if (dyGanSS.includes('印') || dyGanSS.includes('官')) {
+                favorableYears.push({
+                    period: `${startYear}-${endYear}`,
+                    dayun: step.pillar,
+                    reason: dyGanSS,
+                    age: `${step.startAge}-${step.endAge}岁`,
+                });
+            }
+        }
+
+        if (favorableYears.length) {
+            h += `<div class="hl">`;
+            for (const fy of favorableYears) {
+                const isCurrent = fy.period.includes(String(now));
+                h += `${isCurrent ? '✅ <b>当前</b>' : '·'} <b>${fy.period}</b>(${fy.age}) — ${fy.dayun}运 → ${fy.reason}到位`;
+                if (isCurrent) h += ` <span class="tag tag-good">考试有利期！</span>`;
+                h += `<br>`;
+            }
+            h += `</div>`;
+
+            // 建议
+            const currentFavorable = favorableYears.find(fy => fy.period.includes(String(now)));
+            if (currentFavorable) {
+                h += `<div class="hl"><span class="tag tag-good">🎯 当前正处于有利考试的大运！</span>建议把握今明两年的考试机会。</div>`;
+            } else {
+                // Find next favorable period
+                const nextFavorable = favorableYears.find(fy => {
+                    const startYr = parseInt(fy.period.split('-')[0]);
+                    return startYr > now;
+                });
+                if (nextFavorable) {
+                    h += `<div class="hl"><span class="tag tag-info">📌 下一个考试有利期：${nextFavorable.period}</span>，在此之前先积累准备。</div>`;
+                }
+            }
+        } else {
+            h += `<div class="hl"><span class="tag tag-neutral">原局公职信号较弱</span>——若坚持考公，选择印/官流年（如${now}-${now+5}年中的印官年）备考。</div>`;
+        }
+    }
+
+    // ===== STEP 4: 做生意行业建议 =====
+    if (careerType === '生意' || signals.生意.length >= 1) {
+        h += `<div class="hl" style="background:rgba(200,164,92,0.1);"><b>💡 做生意具体建议：</b></div>`;
+
+        // 行业匹配
+        const bizWx = dominantWx;
+        const bizIndustry = {
+            木:'教育培训、文化传媒、园林绿化、中医养生、家居布艺',
+            火:'餐饮连锁、网络科技、影视娱乐、新能源、美容美发',
+            土:'房地产中介、建筑装修、农产品贸易、仓储物流、矿产',
+            金:'金融理财、珠宝首饰、机械代理、法律咨询、安保服务',
+            水:'进出口贸易、水产批发、冷链物流、旅游业、酒水代理',
+        };
+
+        h += `<div class="hl"><b>主旺五行${bizWx}→首选行业：</b>${bizIndustry[bizWx]||'结合流年选择'}</div>`;
+
+        // 何时出手
+        if (d.currentDayun) {
+            const dyGanSS = getShishen(riGan, d.currentDayun.pillar[0]);
+            h += `<div class="hl"><b>当前大运${d.currentDayun.pillar}：</b>`;
+            if (dyGanSS.includes('财')) {
+                h += `<span class="tag tag-good">财运到→适合创业/扩大经营</span>`;
+            } else if (dyGanSS.includes('食')||dyGanSS.includes('伤')) {
+                h += `<span class="tag tag-info">食伤运→适合积累技术/人脉，为创业做准备</span>`;
+            } else if (dyGanSS.includes('印')) {
+                h += `<span class="tag tag-info">印运→稳扎稳打，不宜冒进扩张</span>`;
+            } else if (dyGanSS.includes('官')||dyGanSS.includes('杀')) {
+                h += `<span class="tag tag-warn">官杀运→注意合规/纠纷，谨慎投资</span>`;
+            }
+            h += `</div>`;
+        }
+
+        // 财年提示
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        const ref = new Date(1900, 0, 1);
+        const daysThisYear = Math.floor((new Date(thisYear, 0, 1) - ref) / 86400000);
+        const yearGan = STEMS[((10 + daysThisYear) % 10 + 10) % 10];
+        const yearZhi = BRANCHES[((10 + daysThisYear) % 12 + 12) % 12];
+        const yearSS = getShishen(riGan, yearGan);
+        h += `<div class="hl"><b>${thisYear}年${yearGan}${yearZhi}(${yearSS})：</b>`;
+        if (yearSS.includes('财')) h += `<span class="tag tag-good">财年——创业/投资的有利年份！</span>`;
+        else if (yearSS.includes('食')||yearSS.includes('伤')) h += `<span class="tag tag-info">食伤年——积累技术、筹备项目</span>`;
+        else h += `<span class="tag tag-neutral">平稳年——做好准备工作</span>`;
         h += `</div>`;
+    }
+
+    // ===== STEP 5: 当前行动建议 =====
+    h += `<div class="hl"><b>⚡ 当前行动建议：</b></div>`;
+    if (d.currentDayun) {
+        const dyGanSS = getShishen(riGan, d.currentDayun.pillar[0]);
+        const wsStage = getChangsheng(riGan, bz[1]);
+
+        if (careerType === '公职') {
+            h += `<div class="hl">🎯 路线：备考公职/事业单位 → 把握印/官大运流年 → 当前${d.currentDayun.pillar}运`;
+            h += dyGanSS.includes('印')||dyGanSS.includes('官')
+                ? ` <span class="tag tag-good">——时机已到，全力以赴！</span>`
+                : ` <span class="tag tag-info">——积累阶段，等印官运到来</span>`;
+            h += `</div>`;
+        } else if (careerType === '生意') {
+            h += `<div class="hl">💡 路线：选择${dominantWx||'匹配'}行业 → 食伤运积累 → 财运发力 → 当前${d.currentDayun.pillar}运</div>`;
+        } else if (careerType === '技术') {
+            h += `<div class="hl">🔧 路线：深耕技术领域 → 食伤为用 → 技术过硬=铁饭碗`;
+            if (allWxSet.has('火')&&allWxSet.has('金')) h += '<br>→ 推荐方向：<span class="tag tag-info">IT/互联网/软件开发</span></div>';
+        } else {
+            h += `<div class="hl">🎨 自由职业：靠${dominantWx||'自身'}吃饭 → 跟大运走，什么运来做什么事</div>`;
+        }
     }
 
     h += `</div>`;
