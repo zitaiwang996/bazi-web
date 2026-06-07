@@ -189,6 +189,7 @@ function analyzeXiyong(riGan, riWx, ws, sz, bz, d) {
 // ================================================================
 function analyzeMarriage(riGan, riZhi, sz, bz, ps, d) {
     let h = `<div class="card"><h3>💕 婚姻关 [五大法则 + 应期 + 离婚信号]</h3>`;
+    const wsLevel = d.wangshuai.level;
 
     // 法则1: 日主立得住？
     const riStage = getChangsheng(riGan, riZhi);
@@ -247,7 +248,7 @@ function analyzeMarriage(riGan, riZhi, sz, bz, ps, d) {
     const risks = [];
     // 伤官见官
     if (d.shishenStems.some(s=>s.shishen==='伤官') && d.shishenStems.some(s=>s.shishen==='正官'))
-        risks.push(`<span class="tag tag-warn">伤官见官</span>(${ws.level==='身弱'?'用印可解':'用比劫则不利'})`);
+        risks.push(`<span class="tag tag-warn">伤官见官</span>(${wsLevel==='身弱'?'用印可解':'用比劫则不利'})`);
     // 夫妻星被冲穿
     const rels = d.branchRelations;
     if ((rels.冲||[]).some(c=>c.includes(bz[2]))) risks.push(`<span class="tag tag-warn">配偶宫被冲</span>→婚姻动荡`);
@@ -296,11 +297,11 @@ function analyzeChildren(riGan, riZhi, sz, bz, d) {
 
     // 身旺/身弱判断子女
     h += `<div class="hl"><b>子女星判断：</b>`;
-    if (ws.level === '身旺') {
+    if (d.wangshuai.level === '身旺') {
         h += `身旺→财为子`;
         if (hasZC||hasPC) h += ` <span class="tag tag-good">有财→有子</span>`;
         else h += ` <span class="tag tag-warn">无财→等大运来财</span>`;
-    } else if (ws.level === '身弱') {
+    } else if (d.wangshuai.level === '身弱') {
         h += `身弱→印为儿`;
         if (hasZY||hasPY) h += ` <span class="tag tag-good">有印→有子</span>`;
         else h += ` <span class="tag tag-warn">无印→等大运来印</span>`;
