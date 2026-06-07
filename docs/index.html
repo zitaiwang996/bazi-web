@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
@@ -135,16 +138,36 @@ tr:last-child td{border-bottom:none}
 /* Empty state */
 .empty-state { text-align:center; padding:var(--s-2xl); color:var(--dim); }
 .empty-state p { margin:var(--s-sm) 0; }
-/* Expandable Dayun */
-.dy-expand { border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
+/* Tree: Dayun -> Liunian -> Liuyue -> Liuri */
+.dy-expand { border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; margin-bottom:6px; }
 .dy-expand.cur { border-color:var(--gold); }
-.dy-expand-head { display:flex; align-items:center; gap:12px; padding:10px var(--s-md); cursor:pointer; background:var(--card); transition:background .2s; }
+.dy-expand-head { display:flex; align-items:center; gap:12px; padding:12px var(--s-md); cursor:pointer; background:var(--card); transition:background .2s; }
 .dy-expand-head:hover { background:rgba(200,164,92,.06); }
 .dy-expand.cur .dy-expand-head { background:rgba(200,164,92,.08); }
-.dy-arr { font-size:.7em; color:var(--dim); width:14px; display:inline-block; }
-.dy-expand table { width:100%; margin:0; }
-.dy-expand td { padding:6px 10px; border-bottom:1px solid var(--border); font-size:.82em; }
-@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}.dy-expand-head{gap:6px;font-size:.85em}}
+.dy-arr { font-size:.7em; color:var(--dim); width:16px; display:inline-block; text-align:center; flex-shrink:0; }
+.dy-pillar { font-family:'Noto Serif SC','SimSun',serif; font-size:1.15em; font-weight:700; }
+.cur .dy-pillar { color:var(--goldL); }
+.dy-age { color:var(--dim); font-size:.85em; }
+.dy-year { color:var(--dim); font-size:.75em; margin-left:auto; }
+.dy-body { display:none; background:var(--input); border-top:1px solid var(--border); }
+/* 流年 */
+.ln-row { display:flex; align-items:center; gap:10px; padding:8px 16px 8px 32px; cursor:pointer; border-bottom:1px solid rgba(58,48,36,.5); transition:background .15s; }
+.ln-row:hover { background:rgba(200,164,92,.05); }
+.ln-row.expanded { background:rgba(200,164,92,.08); }
+.ln-year { color:var(--dim); font-size:.85em; min-width:50px; }
+.ln-body { display:none; background:rgba(0,0,0,.12); padding:8px 16px 8px 48px; }
+/* 流月 grid */
+.lm-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }
+.lm-cell { background:var(--card); border:1px solid var(--border); border-radius:4px; padding:6px; text-align:center; cursor:pointer; transition:background .15s; }
+.lm-cell:hover { background:rgba(200,164,92,.06); }
+.lm-cell.expanded { background:rgba(200,164,92,.1); border-color:var(--gold); }
+.lm-name { font-size:.65em; color:var(--dim); }
+.lm-pillar { font-family:'Noto Serif SC',serif; font-size:.85em; font-weight:700; margin:2px 0; }
+.lm-body { display:none; margin-top:4px; padding-top:4px; border-top:1px solid var(--border); }
+/* 流日 grid */
+.ld-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:2px; }
+.ld-cell { display:flex; flex-direction:column; align-items:center; padding:3px 2px; background:rgba(0,0,0,.15); border-radius:2px; font-size:.7em; }
+@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}.dy-expand-head{gap:6px;font-size:.85em}.lm-grid{grid-template-columns:repeat(3,1fr)}.ld-grid{grid-template-columns:repeat(7,1fr)}}
 </style>
 </head>
 <body>
@@ -238,12 +261,12 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
 </div>
 
-<script src="terms_data.js?v=10"></script>
-<script src="bazi.js?v=10"></script>
-<script src="ziwei.js?v=10"></script>
-<script src="liuren.js?v=10"></script>
-<script src="liuyao.js?v=10"></script>
-<script src="analysis.js?v=10"></script>
+<script src="terms_data.js?v=c86c1d2"></script>
+<script src="bazi.js?v=c86c1d2"></script>
+<script src="ziwei.js?v=c86c1d2"></script>
+<script src="liuren.js?v=c86c1d2"></script>
+<script src="liuyao.js?v=c86c1d2"></script>
+<script src="analysis.js?v=c86c1d2"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -254,9 +277,16 @@ function switchTab(name) {
     document.getElementById('tab-'+name).classList.add('active');
 }
 
-// ========== ACCORDION ==========
-function toggleAcc(el) {
-    el.closest('.acc').classList.toggle('open');
+// ========== ACCORDION + TREE TOGGLE ==========
+function toggleAcc(el) { el.closest('.acc').classList.toggle('open'); }
+function t(el, id) {
+    const body = document.getElementById(id);
+    const arr = document.getElementById(id+'_arr');
+    if (!body || !arr) return;
+    const isOpen = body.style.display === 'block';
+    body.style.display = isOpen ? 'none' : 'block';
+    arr.textContent = isOpen ? '▶' : '▼';
+    el.classList.toggle('expanded', !isOpen);
 }
 
 // ========== GENDER TOGGLES ==========
@@ -308,42 +338,55 @@ function renderBazi(d) {
       <div class="bazi-row">${pillars.map(p => `<div class="bz-p${p.m?' day':''}"><div class="lbl">${p.n}${p.m?' (日主)':''}</div><div class="ch">${p.v}</div><div class="ny">${getNayin(p.v)}</div></div>`).join('')}</div>
       <div style="color:var(--dim);font-size:.85em">日主 <b style="color:var(--goldL)">${d.riGan}</b> | 时辰: ${d.chineseHour} | 虚岁: ${d.currentAgeXusui}</div></div>`;
 
-    // Dayun + 流年流月
-    html += `<div class="card"><h3>📈 大运 · 流年 · 流月</h3><p style="color:var(--dim);font-size:.85em">${d.dayun.direction} | 起运: ${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天 | <b>点击大运展开流年，再点流年展开流月</b></p>`;
+    // === 大运 · 流年 · 流月 · 流日 (问真八字风格) ===
+    html += `<div class="card"><h3>📈 大运 · 流年 · 流月 · 流日</h3>
+      <p style="color:var(--dim);font-size:.85em;margin-bottom:12px">${d.dayun.direction} | 起运${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天 | <b>点击▶逐级展开</b></p>`;
     const birthYear = parseInt(d.solarDate);
     d.dayun.steps.forEach((s, di) => {
         const isCur = d.currentDayun && s.pillar === d.currentDayun.pillar;
         const liunian = getLiunianForDayun(s, birthYear, d.riGan);
         const dyId = 'dy' + di;
-        html += `<div class="dy-expand ${isCur ? 'cur' : ''}" style="margin-bottom:4px">
-          <div class="dy-expand-head" onclick="var b=document.getElementById('${dyId}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.dy-arr').textContent=b.style.display==='none'?'▶':'▼';">
-            <span class="dy-arr">▶</span>
-            <span class="dyp" style="font-size:1.15em;font-weight:700;${isCur?'color:var(--goldL)':''}">${s.pillar}</span>
-            <span style="color:var(--dim);font-size:.85em">${s.startAge}-${s.endAge}岁</span>
-            <span style="color:var(--dim);font-size:.75em">| ${Math.floor(birthYear+s.startAge)}-${Math.floor(birthYear+s.endAge)-1}年</span>
-            ${isCur ? '<span class="tag tag-good">当前</span>' : ''}
+        // 大运头部
+        html += `<div class="dy-expand ${isCur?'cur':''}">
+          <div class="dy-expand-head" onclick="t(this,'${dyId}')">
+            <span class="dy-arr" id="${dyId}_arr">▶</span>
+            <span class="dy-pillar">${s.pillar}</span>
+            <span class="dy-age">${s.startAge}-${s.endAge}岁</span>
+            <span class="dy-year">${Math.floor(birthYear+s.startAge)}-${Math.floor(birthYear+s.endAge)-1}</span>
+            ${isCur?'<span class="tag tag-good">当前</span>':''}
           </div>
-          <div id="${dyId}" style="display:none;background:var(--input);border-radius:0 0 var(--r-md) var(--r-md);overflow-x:auto">
-            <table style="font-size:.8em"><tr><th>年</th><th>干支</th><th>十神</th><th>流月（点击展开）</th></tr>`;
+          <div class="dy-body" id="${dyId}">`;
+        // 流年列表
         liunian.forEach((ln, li) => {
-            const lnId = dyId + '_ln' + li;
-            html += `<tr style="cursor:pointer" onclick="var b=document.getElementById('${lnId}');b.style.display=b.style.display==='none'?'table-row':'none';this.querySelector('.ln-arr').textContent=b.style.display==='none'?'▶':'▼';">
-              <td><span class="ln-arr">▶</span> ${ln.year}</td>
-              <td><b>${ln.pillar}</b></td>
-              <td><span class="tag ${ln.shishen.includes('杀')||ln.shishen.includes('伤')?'tag-warn':'tag-info'}">${ln.shishen}</span></td>
-              <td style="font-size:.75em;color:var(--dim)">12个月</td></tr>`;
-            // Liuyue row (hidden)
-            html += `<tr id="${lnId}" style="display:none;background:rgba(0,0,0,.15)"><td colspan="4" style="padding:4px 16px">`;
-            html += `<table style="font-size:.75em;width:auto;margin:4px auto"><tr>`;
-            ln.liuyue.forEach(m => {
-                html += `<td style="padding:2px 6px;border:none;text-align:center">
-                  <div style="color:var(--dim);font-size:.7em">${m.name}</div>
-                  <div style="font-weight:700">${m.pillar}</div>
-                  <div style="font-size:.7em"><span class="tag ${m.shishen.includes('杀')||m.shishen.includes('伤')?'tag-warn':'tag-info'}" style="font-size:.7em">${m.shishen}</span></div></td>`;
+            const lnId = dyId+'_ln'+li;
+            html += `<div class="ln-row" onclick="t(this,'${lnId}')">
+              <span class="dy-arr" id="${lnId}_arr">▶</span>
+              <span class="ln-year">${ln.year}</span>
+              <b>${ln.pillar}</b>
+              <span class="tag ${ln.shishen.includes('杀')||ln.shishen.includes('伤')?'tag-warn':'tag-info'}">${ln.shishen}</span></div>`;
+            // 流月
+            html += `<div class="ln-body" id="${lnId}"><div class="lm-grid">`;
+            ln.liuyue.forEach((m, mi) => {
+                const lmId = lnId+'_lm'+mi;
+                html += `<div class="lm-cell" onclick="t(this,'${lmId}')">
+                  <span class="dy-arr" id="${lmId}_arr" style="font-size:.6em">▶</span>
+                  <div class="lm-name">${m.name}</div>
+                  <div class="lm-pillar">${m.pillar}</div>
+                  <span class="tag ${m.shishen.includes('杀')||m.shishen.includes('伤')?'tag-warn':'tag-info'}" style="font-size:.65em">${m.shishen}</span>`;
+                // 流日
+                html += `<div class="lm-body" id="${lmId}"><div class="ld-grid">`;
+                const liuri = getLiuriForMonth(ln.year, mi, d.riGan);
+                liuri.forEach(ld => {
+                    html += `<span class="ld-cell" title="${ld.pillar} ${ld.shishen}">
+                      <span style="font-size:.6em;color:var(--dim)">${ld.day}</span>
+                      <span style="font-weight:700">${ld.pillar}</span>
+                      <span style="font-size:.55em;color:var(--dim)">${ld.shishen}</span></span>`;
+                });
+                html += `</div></div></div>`;
             });
-            html += `</tr></table></td></tr>`;
+            html += `</div></div>`;
         });
-        html += `</table></div></div>`;
+        html += `</div></div>`;
     });
     html += `</div>`;
 
