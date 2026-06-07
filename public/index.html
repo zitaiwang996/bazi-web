@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
+<style>
+:root {
+  --bg:#1a1410; --card:#231d16; --input:#2a2219;
+  --gold:#c8a45c; --goldL:#e0c878; --goldD:#8b6914;
+  --text:#e8ddd0; --dim:#9a8e7e; --mute:#6b5f50;
+  --red:#c0392b; --redL:#e74c3c; --border:#3a3024;
+  --green:#5a8f5a; --wood:#5a9e5a; --fire:#d4734e; --water:#4a7db5; --earth:#b8965a; --metal:#c4a44a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 50% 0%,rgba(200,164,92,0.08) 0%,transparent 60%);pointer-events:none;z-index:0}
+.container{max-width:1100px;margin:0 auto;padding:24px 16px;position:relative;z-index:1}
+.header{text-align:center;margin-bottom:32px}
+.header h1{font-family:'SimSun','Noto Serif SC',serif;font-size:2em;font-weight:900;color:var(--gold);letter-spacing:.15em;text-shadow:0 2px 8px rgba(200,164,92,.2)}
+.header .sub{font-size:.85em;color:var(--dim);letter-spacing:.08em}
+.header .div{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:12px auto}
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border)}
+.tab-btn{flex:1;padding:14px 8px;background:transparent;border:none;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;font-weight:600;transition:all .3s;letter-spacing:.05em;position:relative}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--goldL)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:20%;right:20%;height:2px;background:var(--gold)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.card h3{font-family:'SimSun',serif;color:var(--goldL);font-size:1.05em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+/* Forms */
+.form-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+.fg label{font-size:.8em;color:var(--dim);font-weight:500}
+.fg input,.fg select{background:var(--input);border:1px solid #4a4034;border-radius:8px;padding:10px 14px;color:var(--text);font-size:1em;font-family:inherit;outline:none;transition:.2s}
+.fg input:focus,.fg select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,92,.15)}
+.gender-tog{display:flex;border:1px solid #4a4034;border-radius:8px;overflow:hidden;background:var(--input)}
+.gender-tog button{flex:1;padding:10px 18px;border:none;background:transparent;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;transition:.2s}
+.gender-tog button.active{background:var(--goldD);color:#fff;font-weight:600}
+.btn-go{padding:10px 30px;background:linear-gradient(135deg,var(--goldD),var(--gold));color:#1a1410;border:none;border-radius:8px;font-weight:700;font-size:1em;cursor:pointer;letter-spacing:.05em;font-family:inherit;box-shadow:0 4px 16px rgba(200,164,92,.2);transition:.3s}
+.btn-go:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(200,164,92,.35);background:linear-gradient(135deg,var(--gold),var(--goldL))}
+/* Bazi display */
+.bazi-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.bz-p{text-align:center;min-width:100px}
+.bz-p .lbl{font-size:.75em;color:var(--dim);margin-bottom:6px}
+.bz-p .ch{font-family:'SimSun',serif;font-size:2em;font-weight:900;color:var(--text)}
+.bz-p.day .ch{color:var(--goldL);text-shadow:0 0 12px rgba(200,164,92,.3)}
+.bz-p .ny{font-size:.75em;color:var(--mute)}
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th,td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--border)}
+th{color:var(--dim);font-weight:500;font-size:.8em}
+tr:last-child td{border-bottom:none}
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.78em;font-weight:600;margin:2px}
+.tag-warn{background:rgba(192,57,43,.2);color:var(--redL)}
+.tag-good{background:rgba(90,143,90,.2);color:#5a9e5a}
+.tag-info{background:rgba(200,164,92,.15);color:var(--goldL)}
+.tag-neutral{background:rgba(154,142,126,.15);color:var(--dim)}
+/* Dayun */
+.dy-list{display:flex;flex-wrap:wrap;gap:8px}
+.dy-item{flex:1;min-width:110px;background:var(--input);border:1px solid #4a4034;border-radius:8px;padding:8px 12px;text-align:center}
+.dy-item.cur{border-color:var(--gold);background:rgba(200,164,92,.1)}
+.dy-item .dyp{font-family:'SimSun',serif;font-size:1.1em;font-weight:700}
+.dy-item.cur .dyp{color:var(--goldL)}
+.dy-item .dya{font-size:.7em;color:var(--dim)}
+/* Highlight */
+.hl{background:var(--input);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;margin:8px 0;font-size:.85em}
+/* Grid */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+/* Liuren specific */
+.lr-layout{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.lr-cell{padding:6px;background:var(--input);border-radius:6px;font-size:.8em}
+/* Liuyao specific */
+.gua-display{font-family:monospace;white-space:pre;background:var(--input);padding:16px;border-radius:8px;overflow-x:auto;font-size:.9em;line-height:1.8}
+.moving{color:var(--redL);font-weight:700}
+/* Section */
+.section-header{font-family:'SimSun',serif;color:var(--goldL);font-size:1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+/* Footer */
+.footer{text-align:center;margin-top:32px;padding:20px;color:var(--mute);font-size:.75em}
+/* Ziwei palace grid */
+.zw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.zw-cell{border:1px solid var(--border);border-radius:6px;padding:8px 6px;font-size:.78em;text-align:center;background:var(--bg)}
+.zw-cell.highlight{border-color:var(--gold);background:rgba(200,164,92,.08)}
+.zw-cell .zw-name{font-weight:700;color:var(--goldL)}
+.zw-cell .zw-stars{color:var(--text);margin-top:2px}
+.zw-cell .zw-tags{font-size:.7em;color:var(--redL);margin-top:2px}
+@media(max-width:640px){.header h1{font-size:1.4em}.card{padding:16px}.form-row{flex-direction:column}.bz-p .ch{font-size:1.3em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>命理推算系统</h1>
+  <div class="div"></div>
+  <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('bazi')">🏮 八字</button>
+  <button class="tab-btn" onclick="switchTab('ziwei')">⭐ 紫微斗数</button>
+  <button class="tab-btn" onclick="switchTab('liuren')">🔮 大六壬</button>
+  <button class="tab-btn" onclick="switchTab('liuyao')">🪙 六爻</button>
+</div>
+
+<!-- ==================== BAZI TAB ==================== -->
+<div id="tab-bazi" class="tab-content active">
+<div class="card">
+  <h3>📅 输入出生信息</h3>
+  <div class="form-row">
+    <div class="fg"><label>出生日期（公历）</label><input type="date" id="bz-date" value="2000-01-01"></div>
+    <div class="fg"><label>出生时间</label><input type="time" id="bz-time" value="12:00"><span style="font-size:.8em;color:var(--goldL)" id="bz-shichen"></span></div>
+    <div class="fg"><label>性别</label>
+      <div class="gender-tog" id="bz-gender">
+        <button data-g="male" class="active">男</button><button data-g="female">女</button>
+      </div>
+    </div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doBazi()">开始排盘</button></div>
+  </div>
+</div>
+<div id="bz-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">推算中...</div>
+<div id="bz-error" style="display:none;background:rgba(192,57,43,.15);border-radius:8px;padding:16px;color:var(--redL)"></div>
+<div id="bz-results"></div>
+</div>
+
+<!-- ==================== ZIWEI TAB ==================== -->
+<div id="tab-ziwei" class="tab-content">
+<div class="card">
+  <h3>📅 输入出生信息</h3>
+  <div class="form-row">
+    <div class="fg"><label>出生日期（公历）</label><input type="date" id="zw-date" value="2000-01-01"></div>
+    <div class="fg"><label>出生时间</label><input type="time" id="zw-time" value="12:00"></div>
+    <div class="fg"><label>性别</label>
+      <div class="gender-tog" id="zw-gender">
+        <button data-g="male" class="active">男</button><button data-g="female">女</button>
+      </div>
+    </div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doZiwei()">开始排盘</button></div>
+  </div>
+</div>
+<div id="zw-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">推算中...</div>
+<div id="zw-results"></div>
+</div>
+
+<!-- ==================== LIUREN TAB ==================== -->
+<div id="tab-liuren" class="tab-content">
+<div class="card">
+  <h3>🔮 大六壬占卜</h3>
+  <div class="form-row">
+    <div class="fg"><label>占卜日期</label><input type="date" id="lr-date"></div>
+    <div class="fg"><label>占卜时间</label><input type="time" id="lr-time" value="12:00"></div>
+    <div class="fg" style="flex:2"><label>占问事项</label><input type="text" id="lr-question" placeholder="例如：今日出行如何？"></div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doLiuren()">起课</button></div>
+  </div>
+</div>
+<div id="lr-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">起课中...</div>
+<div id="lr-results"></div>
+</div>
+
+<!-- ==================== LIUYAO TAB ==================== -->
+<div id="tab-liuyao" class="tab-content">
+<div class="card">
+  <h3>🪙 六爻起卦</h3>
+  <div class="form-row">
+    <div class="fg" style="flex:2"><label>占问事项</label><input type="text" id="ly-question" placeholder="例如：这次合作能否成功？"></div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doLiuyao()">摇卦</button></div>
+  </div>
+  <p style="color:var(--dim);font-size:.8em;margin-top:8px">每次点击「摇卦」随机生成六爻（模拟三枚铜钱六掷），无需输入日期。</p>
+</div>
+<div id="ly-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">起卦中...</div>
+<div id="ly-results"></div>
+</div>
+
+<div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
+</div>
+
+<script src="terms_data.js"></script>
+<script src="bazi.js"></script>
+<script src="ziwei.js"></script>
+<script src="liuren.js"></script>
+<script src="liuyao.js"></script>
+
+<script>
+// ========== TAB SWITCHING ==========
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tab-btn[onclick*="${name}"]`)?.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ========== GENDER TOGGLES ==========
+document.querySelectorAll('.gender-tog').forEach(gt => {
+    gt.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+function getGender(id) { return document.querySelector(`#${id} .gender-tog button.active`)?.dataset.g || 'male'; }
+
+// ========== BAZI ==========
+document.getElementById('bz-date').valueAsDate = new Date();
+document.getElementById('bz-time').addEventListener('change', () => {
+    const t = document.getElementById('bz-time').value;
+    if (t) document.getElementById('bz-shichen').textContent = '对应时辰: ' + getChineseHour(t);
+});
+
+function doBazi() {
+    const date = document.getElementById('bz-date').value;
+    const time = document.getElementById('bz-time').value;
+    const gender = getGender('bz-gender');
+    if (!date || !time) return alert('请填写完整信息');
+    document.getElementById('bz-loading').style.display = 'block';
+    document.getElementById('bz-error').style.display = 'none';
+    document.getElementById('bz-results').innerHTML = '';
+    try {
+        const d = calculateBazi(date, time, gender);
+        renderBazi(d);
+    } catch(e) {
+        document.getElementById('bz-error').textContent = '❌ ' + e.message;
+        document.getElementById('bz-error').style.display = 'block';
+    }
+    document.getElementById('bz-loading').style.display = 'none';
+}
+
+function renderBazi(d) {
+    const pillars = [{n:'年柱',v:d.yearPillar},{n:'月柱',v:d.monthPillar},{n:'日柱',v:d.dayPillar,m:true},{n:'时柱',v:d.timePillar}];
+    let html = `<div class="card" style="text-align:center"><h3>🏮 八字命盘</h3>
+      <div class="bazi-row">${pillars.map(p => `<div class="bz-p${p.m?' day':''}"><div class="lbl">${p.n}${p.m?' (日主)':''}</div><div class="ch">${p.v}</div><div class="ny">${getNayin(p.v)}</div></div>`).join('')}</div>
+      <div style="color:var(--dim);font-size:.85em">日主 <b style="color:var(--goldL)">${d.riGan}</b> | 时辰: ${d.chineseHour} | 虚岁: ${d.currentAgeXusui}</div></div>`;
+
+    // Dayun
+    html += `<div class="card"><h3>📈 大运</h3><p style="color:var(--dim);font-size:.85em">${d.dayun.direction} | 起运: ${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天</p>
+      <div class="dy-list">${d.dayun.steps.map(s => `<div class="dy-item${d.currentDayun&&s.pillar===d.currentDayun.pillar?' cur':''}"><div class="dyp">${s.pillar}</div><div class="dya">${s.startAge}-${s.endAge}岁</div></div>`).join('')}</div></div>`;
+
+    // Grid
+    html += `<div class="grid2">`;
+
+    // Nayin
+    html += `<div class="card"><h3>🔮 纳音</h3><table><tr><th>柱</th><th>干支</th><th>纳音</th><th>五行</th></tr>${d.nayin.map(n => `<tr><td>${n.name}</td><td>${n.pillar}</td><td>${n.nayin}</td><td>${n.wuxing}</td></tr>`).join('')}</table></div>`;
+
+    // Changsheng
+    html += `<div class="card"><h3>🌿 十二长生(日主)</h3><table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.changsheng.map(c => `<tr><td>${c.name}</td><td>${c.branch}</td><td>${c.stage}</td></tr>`).join('')}</table></div>`;
+
+    // Shishen
+    html += `<div class="card"><h3>🔗 十神(天干)</h3><table><tr><th>柱</th><th>干</th><th>十神</th></tr>${d.shishenStems.map(s => `<tr><td>${s.name}</td><td><b>${s.stem}</b></td><td><span class="tag ${s.shishen.includes('杀')||s.shishen.includes('伤')?'tag-warn':'tag-info'}">${s.shishen}</span></td></tr>`).join('')}</table></div>`;
+
+    // Cangan
+    html += `<div class="card"><h3>📦 藏干十神</h3><table><tr><th>柱</th><th>支</th><th>藏干(十神)</th></tr>${d.shishenCangan.map(sc => `<tr><td>${sc.name}</td><td>${sc.branch}</td><td>${sc.hiddens.map(h => `${h.stem}(${h.shishen})`).join('、')}</td></tr>`).join('')}</table></div>`;
+
+    // Kong wang
+    html += `<div class="card"><h3>⛔ 空亡</h3><div class="hl">日柱 ${d.dayPillar} → 空亡: <span class="tag tag-warn">${d.kongBranches.join(' ')}</span></div>
+      <table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.kongWang.map(k => `<tr><td>${k.name}</td><td>${k.branch}</td><td>${k.isKong?'<span class="tag tag-warn">坐空!</span>':'<span class="tag tag-neutral">—</span>'}</td></tr>`).join('')}</table></div>`;
+
+    // Branch rels
+    html += `<div class="card"><h3>🔄 地支关系</h3>`;
+    const r = d.branchRelations;
+    if (r.冲.length) html += `<div class="hl">⚡ 冲: ${r.冲.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
+    if (r.合.length) html += `<div class="hl">🤝 合: ${r.合.map(x=>'<span class="tag tag-info">'+x+'</span>').join(' ')}</div>`;
+    if (r.穿&&r.穿.length) html += `<div class="hl">⚠️ 穿: ${r.穿.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
+    if (r.拱.length) html += `<div class="hl">🌈 拱: ${r.拱.map(x=>'<span class="tag tag-good">'+x+'</span>').join(' ')}</div>`;
+    if (r.三合.length) html += `<div class="hl">🔺 三合: ${r.三合.map(x=>'<span class="tag tag-info">'+x+'</span>').join(' ')}</div>`;
+    if (r.刑&&r.刑.length) html += `<div class="hl">💢 刑: ${r.刑.map(x=>'<span class="tag tag-warn">'+x+'</span>').join(' ')}</div>`;
+    html += `</div>`;
+
+    // Wangshuai + taiyuan
+    html += `<div class="card"><h3>⚖️ 旺衰 & 胎元</h3>
+      <div class="hl"><b>日主${d.riGan}</b> | 月令: ${d.changsheng[1].stage} | 支撑 ${d.wangshuai.support} vs 克泄 ${d.wangshuai.oppose} | <span class="tag ${d.wangshuai.level==='身旺'?'tag-good':(d.wangshuai.level==='身弱'?'tag-warn':'tag-info')}">${d.wangshuai.level}</span></div>
+      <div class="hl" style="margin-top:8px"><b>胎元:</b> ${d.taiyuan} (${d.taiyuanNayin})</div></div>`;
+
+    // Wuxing stats
+    html += `<div class="card"><h3>📊 五行 & 十神统计</h3>
+      <div>${Object.entries(d.wuxingCounts).map(([wx,c]) => `<span style="margin:0 6px">${wx}: ${'●'.repeat(Math.min(c,12))}(${c})</span>`).join(' ')}</div>
+      <div style="margin-top:8px">${Object.entries(d.shishenCounts).sort((a,b)=>b[1]-a[1]).map(([ss,c]) => `<span class="tag tag-neutral">${ss}:${c}</span>`).join(' ')}</div></div>`;
+
+    html += `</div>`; // end grid
+    document.getElementById('bz-results').innerHTML = html;
+    document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
+}
+
+// ========== ZIWEI ==========
+document.getElementById('zw-date').valueAsDate = new Date();
+function doZiwei() {
+    const date = document.getElementById('zw-date').value;
+    const time = document.getElementById('zw-time').value;
+    const gender = getGender('zw-gender');
+    if (!date || !time) return alert('请填写完整信息');
+    document.getElementById('zw-loading').style.display = 'block';
+    document.getElementById('zw-results').innerHTML = '';
+    try {
+        const d = calculateZiwei(date, time, gender);
+        renderZiwei(d);
+    } catch(e) {
+        document.getElementById('zw-results').innerHTML = '<div class="card" style="color:var(--redL)">❌ ' + e.message + '</div>';
+    }
+    document.getElementById('zw-loading').style.display = 'none';
+}
+
+function renderZiwei(d) {
+    let html = `<div class="card" style="text-align:center"><h3>⭐ 紫微斗数命盘</h3>
+      <div style="font-size:1.1em">八字: ${d.bazi} | 日主: ${d.riGan}</div>
+      <div style="color:var(--dim);font-size:.85em">命宫: ${d.soulGZ} | 五行局: ${d.fiveElements} | 紫微在${d.zwBranch} 天府在${d.tfBranch}</div>
+      <div style="color:var(--dim);font-size:.85em">四化: ${d.sihua.lu}禄 ${d.sihua.quan}权 ${d.sihua.ke}科 ${d.sihua.ji}忌</div></div>`;
+
+    // Palace grid
+    html += `<div class="card"><h3>十二宫</h3><div class="zw-grid">`;
+    const layout = d.layout;
+    for (const row of layout) {
+        for (const branch of row) {
+            if (!branch) continue;
+            const p = d.palaces.find(pl => pl.branch === branch);
+            if (!p) continue;
+            const cls = (p.isSoul || p.isBody) ? ' highlight' : '';
+            const tags = [];
+            if (p.isSoul) tags.push('命');
+            if (p.isBody) tags.push('身');
+            html += `<div class="zw-cell${cls}">
+              <div class="zw-tags">${tags.join('·')||'·'}</div>
+              <div class="zw-name">${branch} ${p.name}</div>
+              <div class="zw-stars">${p.majors.length ? p.majors.map(s => s.star+(s.brightness||'')+(s.sihua?'['+s.sihua+']':'')).join(' ') : '空宫'}</div>
+              <div style="font-size:.7em;color:var(--dim)">${p.minors.slice(0,3).map(s=>s.star).join(' ')||''}</div>
+            </div>`;
+        }
+    }
+    html += `</div></div>`;
+
+    // Decadals
+    html += `<div class="card"><h3>📈 大运</h3><div class="dy-list">${d.decadals.map(dc => `<div class="dy-item${dc.range===d.currentDecadal.range?' cur':''}"><div class="dyp">${dc.stem}${dc.branch}</div><div class="dya">${dc.range}岁</div></div>`).join('')}</div>
+      <div style="margin-top:8px;color:var(--dim);font-size:.85em">当前: ${d.currentAge}岁 | 大运在${d.currentDecadal.stem}${d.currentDecadal.branch}</div></div>`;
+
+    document.getElementById('zw-results').innerHTML = html;
+    document.getElementById('zw-results').scrollIntoView({behavior:'smooth'});
+}
+
+// ========== LIUREN ==========
+document.getElementById('lr-date').valueAsDate = new Date();
+function doLiuren() {
+    const date = document.getElementById('lr-date').value;
+    const time = document.getElementById('lr-time').value;
+    const question = document.getElementById('lr-question').value;
+    if (!date || !time) return alert('请填写日期时间');
+    document.getElementById('lr-loading').style.display = 'block';
+    document.getElementById('lr-results').innerHTML = '';
+    try {
+        const d = calculateLiuren(date, time, question);
+        renderLiuren(d);
+    } catch(e) {
+        document.getElementById('lr-results').innerHTML = '<div class="card" style="color:var(--redL)">❌ ' + e.message + '</div>';
+    }
+    document.getElementById('lr-loading').style.display = 'none';
+}
+
+function renderLiuren(d) {
+    let html = `<div class="card" style="text-align:center"><h3>🔮 大六壬课</h3>
+      <div>占时: <b>${d.zhanShi}</b> | 月将: <b>${d.yueJiang}</b> | 日柱: <b>${d.dayPillar}</b> | ${d.isDay?'昼':'夜'}占</div>
+      ${d.question ? `<div style="color:var(--goldL);margin-top:4px">占问: "${d.question}"</div>` : ''}</div>`;
+
+    // 四课
+    html += `<div class="card"><h3>📋 四课</h3><table><tr><th>课</th><th>上神</th><th>下神</th><th>天将</th></tr>
+      ${d.siKe.map(k => `<tr><td>第${k.num}课</td><td><b>${k.shang}</b></td><td>${k.xia}</td><td>${k.shangJiang||'—'}</td></tr>`).join('')}</table></div>`;
+
+    // 三传
+    html += `<div class="card"><h3>📨 三传</h3>
+      <div style="display:flex;gap:16px;justify-content:center;font-size:1.2em">
+        <span>初传: <b style="color:var(--goldL)">${d.sanChuan.chu}</b></span> →
+        <span>中传: <b style="color:var(--goldL)">${d.sanChuan.zhong}</b></span> →
+        <span>末传: <b style="color:var(--goldL)">${d.sanChuan.mo}</b></span>
+      </div></div>`;
+
+    // 天地盘
+    html += `<div class="card"><h3>🌐 天地盘</h3><div class="lr-layout">`;
+    for (const cell of d.layout) {
+        html += `<div class="lr-cell"><div style="color:var(--dim);font-size:.75em">地${cell.diBranch}</div><div style="font-weight:700">天${cell.tianBranch}</div><div style="color:var(--dim);font-size:.7em">${cell.general||'—'}</div></div>`;
+    }
+    html += `</div></div>`;
+
+    // 课体 + 空亡
+    html += `<div class="card"><h3>📊 课体 & 神煞</h3>
+      <div>课体判断: ${d.keTi.length ? d.keTi.map(t=>'<span class="tag tag-info">'+t+'</span>').join(' ') : '<span class="tag tag-neutral">普通课</span>'}</div>
+      <div style="margin-top:8px">旬空: <span class="tag tag-warn">${d.xunKong.join(' ')}</span></div></div>`;
+
+    document.getElementById('lr-results').innerHTML = html;
+    document.getElementById('lr-results').scrollIntoView({behavior:'smooth'});
+}
+
+// ========== LIUYAO ==========
+function doLiuyao() {
+    const question = document.getElementById('ly-question').value;
+    document.getElementById('ly-loading').style.display = 'block';
+    document.getElementById('ly-results').innerHTML = '';
+    try {
+        const d = calculateLiuyao(question);
+        renderLiuyao(d);
+    } catch(e) {
+        document.getElementById('ly-results').innerHTML = '<div class="card" style="color:var(--redL)">❌ ' + e.message + '</div>';
+    }
+    document.getElementById('ly-loading').style.display = 'none';
+}
+
+function renderLiuyao(d) {
+    // Build gua display
+    const yaoSymbol = {少阳:'⚊',少阴:'⚋',老阳:'⚊○',老阴:'⚋×'};
+
+    let guaText = '';
+    for (let i = 5; i >= 0; i--) {
+        const l = d.lines[i];
+        const symbol = yaoSymbol[l.type] || '?';
+        const cls = l.moving ? ' class="moving"' : '';
+        guaText += `<span${cls}>爻${l.pos}  ${symbol.padEnd(6)}  ${l.qin.padEnd(4)} ${l.zhi} ${l.beast} ${l.shiyingLabel}\n</span>`;
+    }
+
+    let html = `<div class="card" style="text-align:center"><h3>🪙 六爻卦象</h3>
+      <div style="font-size:1.2em"><b>本卦: ${d.benGuaName}</b>${d.bianGuaName !== '—' ? ' → <b>变卦: '+d.bianGuaName+'</b>' : ''}</div>
+      ${d.question ? `<div style="color:var(--goldL);margin-top:4px">占问: "${d.question}"</div>` : ''}</div>`;
+
+    html += `<div class="card"><h3>📜 装卦</h3><pre class="gua-display">${guaText}</pre>
+      <div style="color:var(--dim);font-size:.8em;margin-top:8px">日干: ${d.dayGan} | 六兽: ${d.beasts.join(' → ')}</div></div>`;
+
+    html += `<div class="card"><h3>🔍 动爻分析</h3>
+      ${d.movingLines.length === 0 ? '<div class="hl">静卦——以本卦卦辞为主。</div>' :
+        d.movingLines.map(l => `<div class="hl"><b>${l.pos}爻 ${l.type}</b> ${l.qin} ${l.zhi} 发动 → 见变卦</div>`).join('')}
+      </div>`;
+
+    html += `<div class="card"><h3>📝 初步解读</h3><pre style="white-space:pre-wrap;color:var(--text)">${d.interpretation}</pre></div>`;
+
+    document.getElementById('ly-results').innerHTML = html;
+    document.getElementById('ly-results').scrollIntoView({behavior:'smooth'});
+}
+
+// Init: set today's date for all date inputs
+document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.valueAsDate = new Date(); });
+</script>
+</body>
+</html>
