@@ -1,539 +1,802 @@
-// analysis.js — 盲派八字断命分析引擎
-// Extract rules from 盲派八字大师 SKILL.md
-// Depends on: bazi.js (CANGAN, CHANGSHENG_MAP, TWELVE_STAGES, getChangsheng, getShishen)
+// ================================================================
+// analysis.js — 盲派八字完整断命分析引擎 v2.0
+// 金镖门老人参 + 段建业 + 郝金阳 + 京南道人
+// Rules extracted from 盲派八字大师-SKILL.md (3599 lines)
+// ================================================================
 
 function generateAnalysis(d) {
     const riGan = d.riGan, riZhi = d.riZhi;
-    const pillars = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
-    const branches = [pillars[0][1], pillars[1][1], pillars[2][1], pillars[3][1]];
-    const stems = [pillars[0][0], pillars[1][0], pillars[2][0], pillars[3][0]];
-    const allStems = [...stems];
-    for (const b of branches) {
-        for (const c of (CANGAN[b] || [])) allStems.push(c);
-    }
+    const ps = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
+    const bz = [ps[0][1], ps[1][1], ps[2][1], ps[3][1]]; // branches
+    const sz = [ps[0][0], ps[1][0], ps[2][0], ps[3][0]]; // stems
     const riWx = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[riGan];
+    const ws = d.wangshuai;
 
-    const sections = [];
+    let sections = [];
 
-    // ========== SECTION 1: 格局与做功 ==========
-    sections.push(analyzePattern(riGan, riZhi, pillars, stems, branches, d.wangshuai, d.shishenStems));
+    // === SECTION 0: 格局 + 做功 ===
+    sections.push(analyzePattern(riGan, riZhi, ps, sz, bz, ws, d));
 
-    // ========== SECTION 2: 喜用神 ==========
-    sections.push(analyzeXiyong(riGan, riWx, d.wangshuai, stems, branches, d.changsheng));
+    // === SECTION 1: 喜用神框架 ===
+    sections.push(analyzeXiyong(riGan, riWx, ws, sz, bz, d));
 
-    // ========== SECTION 3: 婚姻 ==========
-    sections.push(analyzeMarriage(riGan, riZhi, stems, branches, pillars, d.shishenCangan, d.branchRelations));
+    // === SECTION 2: 婚姻关 ===
+    sections.push(analyzeMarriage(riGan, riZhi, sz, bz, ps, d));
 
-    // ========== SECTION 4: 财运 ==========
-    sections.push(analyzeWealth(riGan, stems, branches, d.shishenCangan, d.shishenStems));
+    // === SECTION 3: 子息门 ===
+    sections.push(analyzeChildren(riGan, riZhi, sz, bz, d));
 
-    // ========== SECTION 5: 父母 ==========
-    sections.push(analyzeParents(riGan, stems, branches, d.shishenCangan, d.branchRelations));
+    // === SECTION 4: 工作关 ===
+    sections.push(analyzeCareer(riGan, riZhi, sz, bz, ws, d));
 
-    // ========== SECTION 6: 当前运势 ==========
-    sections.push(analyzeCurrent(d.riGan, d.currentDayun, d.currentAgePrecise, d.dayun, d.changsheng));
+    // === SECTION 5: 财运 ===
+    sections.push(analyzeWealth(riGan, riZhi, sz, bz, d));
 
-    // ========== SECTION 7: 健康与五行交战 ==========
-    sections.push(analyzeHealth(branches, stems, d.branchRelations, riGan, riWx));
+    // === SECTION 6: 父母 ===
+    sections.push(analyzeParents(riGan, riZhi, sz, bz, d));
+
+    // === SECTION 7: 兄弟姐妹 ===
+    sections.push(analyzeSiblings(riGan, sz, bz, d));
+
+    // === SECTION 8: 健康 + 五行交战 ===
+    sections.push(analyzeHealth(riGan, riWx, bz, sz, d));
+
+    // === SECTION 9: 当前运势 ===
+    sections.push(analyzeCurrent(riGan, d));
+
+    // === SECTION 10: 性格 ===
+    sections.push(analyzePersonality(riGan, riWx, sz, bz));
+
+    // === SECTION 11: 格局深度 ===
+    sections.push(analyzeDeepPattern(riGan, riZhi, sz, bz, ws, d));
+
+    // === SECTION 12: 干支取象 ===
+    sections.push(analyzeGanzhiImage(riGan, riZhi, sz, bz, ps));
 
     return sections.filter(s => s).join('\n');
 }
 
-// ========== HELPER ==========
-function wxOf(stem) {
-    return {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[stem] || '';
-}
-
-function branchTags(branches) {
-    const tags = [];
-    const chong = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
-    for (const [a,b] of chong) {
-        if (branches.includes(a) && branches.includes(b)) tags.push(a+b+'冲');
-    }
-    return tags;
-}
-
-// ========== 格局分析 ==========
-function analyzePattern(riGan, riZhi, pillars, stems, branches, ws, shishenStems) {
-    const yueZhi = branches[1];
-    const yueGan = stems[1];
+// ================================================================
+// 0. 格局与做功方式
+// ================================================================
+function analyzePattern(riGan, riZhi, ps, sz, bz, ws, d) {
+    const yueZhi = bz[1], yueGan = sz[1];
     const riStage = getChangsheng(riGan, yueZhi);
-
-    let html = `<div class="card"><h3>🏗️ 格局与做功方式</h3>`;
+    let h = `<div class="card"><h3>🏗️ 格局与做功方式</h3>`;
 
     // 月令格局
-    const monthPatterns = {
-        寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水',子:'水',丑:'土',
-    };
-    const yueWx = monthPatterns[yueZhi] || '?';
-    html += `<div class="hl"><b>月令：</b>${yueZhi}月(${yueWx}当令) | 日主${riGan}在${yueZhi}为<span class="tag ${riStage==='帝旺'||riStage==='临官'?'tag-good':(riStage==='死'||riStage==='绝'?'tag-warn':'tag-info')}">${riStage}</span></div>`;
-
-    // 格局类型
-    const ssYue = shishenStems[1]?.shishen || ''; // 月干十神
-    html += `<div class="hl"><b>月令格局：</b>月干${yueGan}=${ssYue}，月令${yueZhi}当令 → <span class="tag tag-info">${ssYue}格</span></div>`;
+    const wxMap = {寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水',子:'水',丑:'土'};
+    h += `<div class="hl"><b>月令${yueZhi}(${wxMap[yueZhi]}当令)：</b>日主${riGan}在${yueZhi}为<span class="tag ${riStage==='帝旺'||riStage==='临官'?'tag-good':(riStage==='死'||riStage==='绝'||riStage==='墓'?'tag-warn':'tag-info')}">${riStage}</span> | 月干${yueGan}=${d.shishenStems[1].shishen}→${d.shishenStems[1].shishen}格</div>`;
 
     // 做功方式推断
-    html += `<div class="hl"><b>做功方式推断：</b>`;
-    const workTendencies = [];
+    const ssAll = d.shishenStems.map(s=>s.shishen);
+    const hasSG=ssAll.includes('伤官'), hasSS=ssAll.includes('食神'), hasQS=ssAll.includes('七杀');
+    const hasZG=ssAll.includes('正官'), hasZC=ssAll.includes('正财'), hasPC=ssAll.includes('偏财');
+    const hasZY=ssAll.includes('正印'), hasPY=ssAll.includes('偏印'), hasBJ=ssAll.includes('比肩')||ssAll.includes('劫财');
 
-    // Check 食伤制杀/官
-    const hasShangGuan = stems.some(s => getShishen(riGan, s) === '伤官');
-    const hasShiShen = stems.some(s => getShishen(riGan, s) === '食神');
-    const hasQiSha = stems.some(s => getShishen(riGan, s) === '七杀');
-    const hasZhengGuan = stems.some(s => getShishen(riGan, s) === '正官');
-    const hasZhengCai = stems.some(s => getShishen(riGan, s) === '正财');
-    const hasPianCai = stems.some(s => getShishen(riGan, s) === '偏财');
-    const hasZhengYin = stems.some(s => getShishen(riGan, s) === '正印');
-    const hasPianYin = stems.some(s => getShishen(riGan, s) === '偏印');
+    h += `<div class="hl"><b>做功方式：</b>`;
+    const works = [];
 
-    if ((hasShangGuan || hasShiShen) && (hasQiSha || hasZhengGuan)) {
-        workTendencies.push('<span class="tag tag-info">食伤制官杀</span>——以技艺才能谋取权位');
+    // 食伤制杀/官
+    if ((hasSG||hasSS) && (hasQS||hasZG)) {
+        works.push(`<span class="tag tag-info">食伤制官杀</span>——以技艺才能谋取权位`);
+        if (hasSG && hasZG) works.push(`<span class="tag tag-warn">伤官见官</span>(${ws.level==='身弱'?'用印则无祸':'用比劫则为祸百端'})`);
     }
-    if (hasZhengCai || hasPianCai) {
-        workTendencies.push('<span class="tag tag-info">财星做功</span>——求财为主');
-
-        // 财在内外
-        const riZhiCai = (CANGAN[branches[2]] || []).some(c => getShishen(riGan, c).includes('财'));
-        const shiZhiCai = (CANGAN[branches[3]] || []).some(c => getShishen(riGan, c).includes('财'));
-        if (riZhiCai || shiZhiCai) {
-            workTendencies.push('财在家里(日时)——自己掌控钱财');
-        } else {
-            workTendencies.push('财在外面(年月)——与他人合作求财');
-        }
+    // 化官生印
+    if (hasZG && (hasZY||hasPY)) {
+        works.push(`<span class="tag tag-good">化官生印</span>——官来生印、印来生身，化敌为友最高境界`);
     }
-    if (hasZhengYin || hasPianYin) {
-        const yinStrong = stems.filter(s => getShishen(riGan, s).includes('印')).length;
-        if (yinStrong >= 3) {
-            workTendencies.push('<span class="tag tag-info">印旺为用</span>——文化/教育/研究类工作');
-        }
+    // 杀印相生
+    if (hasQS && (hasZY||hasPY)) {
+        works.push(`<span class="tag tag-info">杀印相生</span>——七杀化权，印星通关`);
     }
-
-    // 五行取象
-    const wxJobMap = {
-        '木克土':'工程/建筑/土木',
-        '火克金':'金融/网络/电子/驾驶',
-        '土克水':'养殖/水利/房地产',
-        '金克木':'机械/制造/法律',
-        '水克火':'消防/餐饮/能源',
-    };
-    for (const [wxPair, job] of Object.entries(wxJobMap)) {
-        const [sender, receiver] = wxPair.split('克');
-        const hasSender = allStems.some(s => wxOf(s) === sender);
-        const hasReceiver = allStems.some(s => wxOf(s) === receiver);
-        if (hasSender && hasReceiver) {
-            workTendencies.push(`<span class="tag tag-info">${wxPair}象</span>→ ${job}`);
-        }
+    // 食神生财
+    if (hasSS && (hasZC||hasPC)) {
+        works.push(`<span class="tag tag-good">食神生财</span>——${ws.level==='身旺'?'身旺可大富':'需印帮身'}`);
     }
-
-    if (workTendencies.length === 0) {
-        workTendencies.push('<span class="tag tag-neutral">做功方式较隐蔽，需结合大运判断</span>');
+    // 印禄相随
+    if ((hasZY||hasPY) && hasBJ) {
+        works.push(`<span class="tag tag-info">印禄相随</span>——有文化有根基`);
     }
-    html += workTendencies.join(' | ') + `</div>`;
+    // 吃皇粮判断
+    const eatHuangLiang = (hasSS&&hasQS||hasZG&&hasZY||hasPY) && (hasBJ||hasZY);
+    if (eatHuangLiang) works.push(`<span class="tag tag-good">吃皇粮格局</span>——体制内有稳定工作`);
 
-    // 清浊
-    const ganCount = stems.length;
-    const zhiCount = branches.flatMap(b => CANGAN[b] || []).length;
-    html += `<div class="hl"><b>清浊：</b>天干${ganCount}明现为<span class="tag tag-info">清</span>(公开)，地支藏干${zhiCount}为<span class="tag tag-neutral">浊</span>(隐藏)</div>`;
+    if (!works.length) works.push(`<span class="tag tag-neutral">需结合大运判断具体做功</span>`);
+    h += works.join(' | ') + `</div>`;
 
-    html += `</div>`;
-    return html;
+    // 清浊 + 家里家外
+    const homeStems = [...(CANGAN[bz[2]]||[]), ...(CANGAN[bz[3]]||[])];
+    const outerStems = [...(CANGAN[bz[0]]||[]), ...(CANGAN[bz[1]]||[])];
+    const homeSS = homeStems.map(c=>getShishen(riGan,c));
+    const outerSS = outerStems.map(c=>getShishen(riGan,c));
+
+    h += `<div class="hl"><b>清浊分判：</b>天干${sz.map(s=>`<span class="tag tag-info">${s}</span>`).join(' ')}=清(公开) | `;
+    h += `藏干家里/外面=浊(隐藏)</div>`;
+
+    // 纳音分析
+    const nyData = d.nayin;
+    const nianNayin = nyData[0], riNayin = nyData[2];
+    h += `<div class="hl"><b>纳音根基：</b>年柱${nianNayin.pillar}=${nianNayin.nayin}(祖辈质地/出身) | 日柱${riNayin.pillar}=${riNayin.nayin}(自身本质)`;
+    const nianWx = nianNayin.wuxing, riNWx = riNayin.wuxing;
+    const wxSheng = {木:'火',火:'土',土:'金',金:'水',水:'木'};
+    if (nianWx && riNWx && wxSheng[nianWx]===riNWx) h += `<br>纳音年生→日：祖上庇荫自己`;
+    else if (nianWx && riNWx && wxSheng[riNWx]===nianWx) h += `<br>纳音日生→年：自己超越祖辈`;
+    h += `</div>`;
+
+    h += `</div>`;
+    return h;
 }
 
-// ========== 喜用神分析 ==========
-function analyzeXiyong(riGan, riWx, ws, stems, branches, changshengData) {
-    let html = `<div class="card"><h3>💎 喜用神分析</h3>`;
-
+// ================================================================
+// 1. 喜用神框架 (铁律12)
+// ================================================================
+function analyzeXiyong(riGan, riWx, ws, sz, bz, d) {
     const helpMap = {木:'水',火:'木',土:'火',金:'土',水:'金'};
     const harmMap = {木:'金',火:'水',土:'木',金:'火',水:'土'};
-    const helpWx = helpMap[riWx];
-    const harmWx = harmMap[riWx];
+    const helpWx = helpMap[riWx], harmWx = harmMap[riWx];
+    let xiYong = ws.level==='身弱'?[helpWx,riWx]:ws.level==='身旺'?[harmWx]:[helpWx];
 
-    const level = ws.level;
-    let xiYong = [];
-    if (level === '身弱') {
-        xiYong = [helpWx, riWx]; // 需要印比帮身
-    } else if (level === '身旺') {
-        xiYong = [harmWx]; // 需要克泄耗
-    } else {
-        xiYong = [helpWx];
+    let h = `<div class="card"><h3>💎 喜用神分析 [铁律12·五步框架]</h3>`;
+
+    h += `<div class="hl"><b>第一步-日主${riGan}(${riWx})-${ws.level}：</b>${ws.level==='身弱'?`喜<span class="tag tag-good">${xiYong.join('、')}</span>帮身 忌<span class="tag tag-warn">${harmWx}</span>`:ws.level==='身旺'?`喜<span class="tag tag-good">${xiYong.join('、')}</span>克泄耗 忌<span class="tag tag-warn">${helpWx}、${riWx}</span>再来`:'较均衡，大运左右'}</div>`;
+
+    // 第二步：查喜用神位置
+    const posNames = ['年柱','月柱','日柱','时柱'];
+    const posMsgs = ['祖上有助/少年运好','父母有助','自己有能/配偶助力','晚年好/子女有助'];
+    for (let i=0; i<4; i++) {
+        const pillarWx = new Set([wxOf(sz[i]), ...(CANGAN[bz[i]]||[]).map(wxOf)]);
+        const found = xiYong.filter(xy=>pillarWx.has(xy));
+        if (found.length) h += `<div class="hl">✅ <b>${posNames[i]}：</b>喜用神${found.join('、')}在此——${posMsgs[i]}</div>`;
+        else h += `<div class="hl">❌ <b>${posNames[i]}：</b>无喜用神</div>`;
     }
 
-    html += `<div class="hl"><b>日主${riGan}(${riWx})</b> — ${level}`;
-    if (level === '身弱') {
-        html += ` → 喜<span class="tag tag-good">${xiYong.join('、')}</span>帮身 ｜ 忌<span class="tag tag-warn">${harmWx}</span>克身`;
-    } else if (level === '身旺') {
-        html += ` → 喜<span class="tag tag-good">${xiYong.join('、')}</span>克泄耗 ｜ 忌<span class="tag tag-warn">${helpWx}、${riWx}</span>再来帮身`;
-    } else {
-        html += ` → 较均衡，大运来什么走什么运`;
-    }
-    html += `</div>`;
-
-    // 喜用神位置
-    const pillarNames = ['年柱','月柱','日柱','时柱'];
-    const positionMsgs = {'年柱':'祖上有助，少年运好','月柱':'父母有助','日柱':'自己有能力，配偶有帮助','时柱':'晚年好，子女有助'};
-
-    for (let i = 0; i < 4; i++) {
-        const pillarWx = [wxOf(stems[i])];
-        for (const c of (CANGAN[branches[i]] || [])) pillarWx.push(wxOf(c));
-        const hasXiYong = xiYong.some(xy => pillarWx.includes(xy));
-        if (hasXiYong) {
-            html += `<div class="hl">✅ 喜用神在<b>${pillarNames[i]}</b> — ${positionMsgs[pillarNames[i]]}</div>`;
-        }
+    // 第三步：喜用神何时来
+    if (d.currentDayun) {
+        const dyPillar = d.currentDayun.pillar;
+        const dyWx = new Set([wxOf(dyPillar[0]), ...(CANGAN[dyPillar[1]]||[]).map(wxOf)]);
+        const dyFound = xiYong.filter(xy=>dyWx.has(xy));
+        h += `<div class="hl"><b>第三步-当前大运${dyPillar}：</b>`;
+        if (dyFound.length) h += `<span class="tag tag-good">好运！喜用神${dyFound.join('、')}到位</span>`;
+        else h += `<span class="tag tag-info">喜用神未到，等后续大运</span>`;
+        h += `</div>`;
     }
 
-    // 拱局填实
-    const rels = getBranchRelations(branches);
-    if (rels.拱.length) {
-        html += `<div class="hl">🌈 <b>拱局：</b>${rels.拱.map(g => {
-            const archWx = g.includes('火')?'火':g.includes('水')?'水':g.includes('金')?'金':g.includes('木')?'木':'土';
-            const isXi = xiYong.includes(archWx);
-            return `<span class="tag ${isXi?'tag-good':'tag-info'}">${g}${isXi?'(喜神到位!)':''}</span>`;
-        }).join(' ')}</div>`;
+    // 第五步：各六亲单独找喜用神
+    h += `<div class="hl"><b>第五步-六亲喜用神(单独定位)：</b></div>`;
+    const qinStars = [];
+    // Father: 偏财
+    for (const s of [...sz,...bz.flatMap(b=>CANGAN[b]||[])]) {
+        if (wxOf(s)==={木:'土',火:'金',土:'水',金:'木',水:'火'}[riWx]) { qinStars.push({label:'父星(偏财)',stem:s}); break; }
+    }
+    // Mother: 正印
+    const yinWx2 = {木:'水',火:'木',土:'火',金:'土',水:'金'}[riWx];
+    for (const s of [...sz,...bz.flatMap(b=>CANGAN[b]||[])]) {
+        if (wxOf(s)===yinWx2) { qinStars.push({label:'母星(正印)',stem:s}); break; }
+    }
+    for (const q of qinStars) {
+        const qWx = wxOf(q.stem);
+        const qHelp = helpMap[qWx], qHarm = harmMap[qWx];
+        h += `<div class="hl" style="margin-left:16px">• ${q.label}(${q.stem}${qWx})：喜${qHelp}、忌${qHarm}——${q.label}的运势独立判断</div>`;
     }
 
-    html += `</div>`;
-    return html;
+    h += `</div>`;
+    return h;
 }
 
-// ========== 婚姻分析 ==========
-function analyzeMarriage(riGan, riZhi, stems, branches, pillars, shishenCangan, branchRels) {
-    let html = `<div class="card"><h3>💕 婚姻分析（盲派五大法则）</h3>`;
+// ================================================================
+// 2. 婚姻关 (五大法则 + 应期细则 + 离婚原因)
+// ================================================================
+function analyzeMarriage(riGan, riZhi, sz, bz, ps, d) {
+    let h = `<div class="card"><h3>💕 婚姻关 [五大法则 + 应期 + 离婚信号]</h3>`;
 
-    const riZhiBranch = branches[2];
-    const shiZhiBranch = branches[3];
+    // 法则1: 日主立得住？
+    const riStage = getChangsheng(riGan, riZhi);
+    const canStand = ['临官','帝旺','冠带','长生'].includes(riStage);
+    h += `<div class="hl"><b>①日主立得住？</b> 日主${riGan}坐${riZhi}(${riStage}) → ${canStand?'<span class="tag tag-good">有根气，能立</span>':'<span class="tag tag-warn">弱，需大运扶身</span>'}</div>`;
 
-    // 1. 日主能否立得住
-    const riStage = getChangsheng(riGan, riZhiBranch);
-    const riCanStand = (riStage === '临官' || riStage === '帝旺' || riStage === '冠带' || riStage === '长生');
-    html += `<div class="hl"><b>①日主立得住？</b> 日主${riGan}坐${riZhiBranch}(${riStage}) → ${riCanStand ? '<span class="tag tag-good">是，有根气</span>' : '<span class="tag tag-warn">较弱，需大运帮身</span>'}</div>`;
+    // 法则2+3: 夫妻星定位
+    const homeCang = [...(CANGAN[bz[2]]||[]), ...(CANGAN[bz[3]]||[])];
+    const outerCang = [...(CANGAN[bz[0]]||[]), ...(CANGAN[bz[1]]||[])];
+    let fuqiStar = null, fuqiLoc = '';
+    const targetSS = ['正官','七杀']; // 女命标准化 (simplification: 统一找官杀)
 
-    // 2. 夫妻星定位（家里找）
-    const riCangan = CANGAN[riZhiBranch] || [];
-    const shiCangan = CANGAN[shiZhiBranch] || [];
-    const homeStems = [...riCangan, ...shiCangan];
-
-    let fuqiStar = null;
-    // 女命找官杀，男命找财
-    const targetSS = d => d.gender === 'female' ? ['正官','七杀'] : ['正财','偏财'];
-
-    // 在家里找
-    for (const c of homeStems) {
+    // 家里找
+    for (const c of homeCang) {
         const ss = getShishen(riGan, c);
-        if (ss === '正官' || ss === '七杀' || ss === '正财' || ss === '偏财') {
-            fuqiStar = {stem: c, shishen: ss, location: '家里(日时)'};
-            break;
-        }
+        if (targetSS.includes(ss)) { fuqiStar = {stem:c, shishen:ss}; fuqiLoc = '家里(日时)'; break; }
     }
     // 外面找
-    if (!fuqiStar) {
-        const nianCangan = CANGAN[branches[0]] || [];
-        const yueCangan = CANGAN[branches[1]] || [];
-        for (const c of [...nianCangan, ...yueCangan]) {
-            const ss = getShishen(riGan, c);
-            if (ss === '正官' || ss === '七杀' || ss === '正财' || ss === '偏财') {
-                fuqiStar = {stem: c, shishen: ss, location: '外面(年月)'};
-                break;
-            }
-        }
+    if (!fuqiStar) for (const c of outerCang) {
+        const ss = getShishen(riGan, c);
+        if (targetSS.includes(ss)) { fuqiStar = {stem:c, shishen:ss}; fuqiLoc = '外面(年月)'; break; }
     }
     // 天干找
-    if (!fuqiStar) {
-        for (let i = 0; i < stems.length; i++) {
-            const ss = getShishen(riGan, stems[i]);
-            if ((ss === '正官' || ss === '七杀') || (ss === '正财' || ss === '偏财')) {
-                fuqiStar = {stem: stems[i], shishen: ss, location: `天干(${['年','月','日','时'][i]})`};
-                break;
-            }
-        }
+    if (!fuqiStar) for (let i=0; i<4; i++) {
+        const ss = d.shishenStems[i].shishen;
+        if (['正官','七杀','正財','偏财'].includes(ss)) { fuqiStar = {stem:sz[i], shishen:ss}; fuqiLoc = `天干${['年','月','日','时'][i]}`; break; }
     }
 
     if (fuqiStar) {
-        const starStage = getChangsheng(fuqiStar.stem, riZhiBranch);
-        html += `<div class="hl"><b>②夫妻星：</b>${fuqiStar.stem}(${fuqiStar.shishen}) 在${fuqiStar.location}
-          → 日支${riZhiBranch}处为<span class="tag ${starStage==='临官'||starStage==='帝旺'?'tag-good':(starStage==='死'?'tag-warn':'tag-info')}">${starStage}</span></div>`;
+        const starStage = getChangsheng(fuqiStar.stem, bz[2]);
+        h += `<div class="hl"><b>②夫妻星立得住？</b> ${fuqiStar.stem}(${fuqiStar.shishen})在${fuqiLoc}`;
+        h += `→ 日支${bz[2]}处<span class="tag ${starStage==='临官'||starStage==='帝旺'?'tag-good':(starStage==='死'?'tag-warn':'tag-info')}">${starStage}</span>`;
+        h += fuqiLoc==='家里(日时)'?' <span class="tag tag-good">家里有星=正缘</span>':' <span class="tag tag-warn">星在外面=缘分不稳定</span>';
+        h += `</div>`;
     } else {
-        html += `<div class="hl"><b>②夫妻星：</b><span class="tag tag-warn">原局不显</span> → 等大运/流年来</div>`;
+        h += `<div class="hl"><b>②夫妻星：</b><span class="tag tag-warn">原局不显</span>→等大运/流年带来。大运夫妻星到位=婚期</div>`;
     }
 
-    // 3. 配偶宫分析
-    html += `<div class="hl"><b>③配偶宫(日支${riZhiBranch})：</b>`;
-    const riCangStr = riCangan.map(c => `${c}(${getShishen(riGan, c)})`).join('、');
-    html += `藏干: ${riCangStr || '无'} | `;
-
-    // 检查日支是否被冲
-    const hasChong = (branchRels.冲 || []).some(c => c.includes(riZhiBranch));
-    const hasChuan = (branchRels.穿 || []).some(c => c.includes(riZhiBranch));
-    const hasHe = (branchRels.合 || []).some(c => c.includes(riZhiBranch));
-
-    if (hasChong) html += `<span class="tag tag-warn">配偶宫被冲→婚姻动荡</span> `;
-    if (hasChuan) html += `<span class="tag tag-warn">配偶宫被穿→婚姻易破裂</span> `;
-    if (hasHe) html += `<span class="tag tag-info">配偶宫被合→感情稳定</span> `;
-    if (!hasChong && !hasChuan && !hasHe) html += `<span class="tag tag-neutral">配偶宫安静</span>`;
-    html += `</div>`;
-
-    // 4. 大运提示
+    // 法则4: 大运提示
     if (d.currentDayun) {
-        const dy = d.currentDayun;
-        const dyCang = CANGAN[dy.pillar[1]] || [];
-        let hasFuQiYun = false;
+        const dyZhi = d.currentDayun.pillar[1];
+        const dyCang = CANGAN[dyZhi]||[];
+        let dyFuqi = [];
         for (const c of dyCang) {
             const ss = getShishen(riGan, c);
-            if (ss === '正官' || ss === '七杀' || ss === '正財' || ss === '偏财') {
-                hasFuQiYun = true;
-                html += `<div class="hl"><b>④大运提示：</b>当前${dy.pillar}运(${dy.startAge}-${dy.endAge}岁)，大运藏<span class="tag tag-good">${c}(${ss})</span>——婚缘运</div>`;
-                break;
-            }
+            if (['正官','七杀','正財','偏财'].includes(ss)) dyFuqi.push(`${c}(${ss})`);
         }
-        if (!hasFuQiYun) {
-            html += `<div class="hl"><b>④大运提示：</b>当前${dy.pillar}运，夫妻星未到，关注后续大运</div>`;
-        }
+        h += `<div class="hl"><b>③大运提示：</b>当前${d.currentDayun.pillar}(${d.currentDayun.startAge}-${d.currentDayun.endAge}岁)`;
+        if (dyFuqi.length) h += ` 藏<span class="tag tag-good">${dyFuqi.join('、')}</span>——婚缘运`;
+        else h += ` 夫妻星未到`;
+        h += `</div>`;
     }
 
-    // 5. 伤官见官的检查
-    if (hasShangGuan && hasZhengGuan) {
-        html += `<div class="hl"><span class="tag tag-warn">⚠️ 伤官见官</span>——婚姻易出问题，需配印星化解</div>`;
-    }
+    // 离婚信号检查
+    h += `<div class="hl"><b>④离婚信号检查：</b>`;
+    const risks = [];
+    // 伤官见官
+    if (d.shishenStems.some(s=>s.shishen==='伤官') && d.shishenStems.some(s=>s.shishen==='正官'))
+        risks.push(`<span class="tag tag-warn">伤官见官</span>(${ws.level==='身弱'?'用印可解':'用比劫则不利'})`);
+    // 夫妻星被冲穿
+    const rels = d.branchRelations;
+    if ((rels.冲||[]).some(c=>c.includes(bz[2]))) risks.push(`<span class="tag tag-warn">配偶宫被冲</span>→婚姻动荡`);
+    if ((rels.穿||[]).some(c=>c.includes(bz[2]))) risks.push(`<span class="tag tag-warn">配偶宫被穿</span>→婚姻易破裂`);
+    // 比劫合财/官
+    if (d.shishenStems.some(s=>s.shishen==='比肩'||s.shishen==='劫财') && fuqiStar)
+        risks.push(`<span class="tag tag-warn">比劫夺夫/妻</span>→感情竞争`);
+    // 关财门 (女命)
+    if (d.shishenStems.some(s=>s.shishen==='伤官') && d.shishenCangan.some(sc=>sc.hiddens.some(h=>h.shishen==='正财'||h.shishen==='偏财')))
+        risks.push(`<span class="tag tag-warn">关财门</span>→官杀失源→婚姻不利`);
+    // 夫妻星虚透
+    if (fuqiStar && !homeCang.includes(fuqiStar.stem))
+        risks.push(`<span class="tag tag-warn">夫妻星虚透/在外</span>→大运来新根=换人`);
 
-    html += `</div>`;
-    return html;
+    if (!risks.length) risks.push(`<span class="tag tag-neutral">原局无明显婚姻风险</span>`);
+    h += risks.join(' | ') + `</div>`;
+
+    // 阴阳吸引
+    const riYY = '甲丙戊庚壬'.includes(riGan) ? '阳' : '阴';
+    h += `<div class="hl"><b>⑤阴阳配婚：</b>日主${riGan}=${riYY} →
+      ${riYY==='阳'?'宜配阴旺之人→金水旺者':'宜配阳旺之人→木火旺者'} | 阴阳互补=自然吸引</div>`;
+
+    h += `</div>`;
+    return h;
 }
 
-// ========== 财运分析 ==========
-function analyzeWealth(riGan, stems, branches, shishenCangan, shishenStems) {
-    let html = `<div class="card"><h3>💰 财运分析</h3>`;
+// ================================================================
+// 3. 子息门 (完整铁律)
+// ================================================================
+function analyzeChildren(riGan, riZhi, sz, bz, d) {
+    let h = `<div class="card"><h3>👶 子息门 [食伤总纲 + 身旺财子/身衰印儿]</h3>`;
 
-    // 财在内外
-    const riCai = (CANGAN[branches[2]] || []).filter(c => {
-        const ss = getShishen(riGan, c);
-        return ss === '正财' || ss === '偏财';
-    });
-    const shiCai = (CANGAN[branches[3]] || []).filter(c => {
-        const ss = getShishen(riGan, c);
-        return ss === '正财' || ss === '偏财';
-    });
-    const homeCai = [...riCai, ...shiCai];
+    const ssStems = d.shishenStems;
+    const hasSS = ssStems.some(s=>s.shishen==='食神'), hasSG = ssStems.some(s=>s.shishen==='伤官');
+    const hasZC = ssStems.some(s=>s.shishen==='正财'), hasPC = ssStems.some(s=>s.shishen==='偏财');
+    const hasZY = ssStems.some(s=>s.shishen==='正印'), hasPY = ssStems.some(s=>s.shishen==='偏印');
 
-    const nianCai = (CANGAN[branches[0]] || []).filter(c => {
-        const ss = getShishen(riGan, c);
-        return ss === '正财' || ss === '偏财';
-    });
-    const yueCai = (CANGAN[branches[1]] || []).filter(c => {
-        const ss = getShishen(riGan, c);
-        return ss === '正财' || ss === '偏财';
-    });
-    const outerCai = [...nianCai, ...yueCai];
-
-    // 天干财
-    const ganCai = stems.filter(s => {
-        const ss = getShishen(riGan, s);
-        return ss === '正财' || ss === '偏财';
-    });
-
-    html += `<div class="hl"><b>财星分布：</b>`;
-    if (homeCai.length) html += `家里(日时): ${homeCai.map(c => c+'('+getShishen(riGan,c)+')').join('、')} <span class="tag tag-good">自己能掌控</span> `;
-    if (outerCai.length) html += `外面(年月): ${outerCai.map(c => c+'('+getShishen(riGan,c)+')').join('、')} <span class="tag tag-info">需合作获取</span> `;
-    if (ganCai.length) html += `天干明现: ${ganCai.map(c => c+'('+getShishen(riGan,c)+')').join('、')} `;
-    if (!homeCai.length && !outerCai.length && !ganCai.length) {
-        html += `<span class="tag tag-warn">原局无财</span>——等大运来财`;
+    // 食伤是第一关
+    h += `<div class="hl"><b>食伤(总纲)：</b>`;
+    if (hasSS || hasSG) {
+        h += `食神/伤官有气→有生育基础`;
+    } else {
+        h += `<span class="tag tag-warn">食伤不显→需大运来补</span>`;
     }
-    html += `</div>`;
+    h += `</div>`;
 
-    // 比劫见财检查
-    const hasBiJie = stems.some(s => getShishen(riGan, s) === '比肩' || getShishen(riGan, s) === '劫财');
-    if (hasBiJie && (ganCai.length > 0)) {
-        const biJieInside = (CANGAN[branches[2]] || []).concat(CANGAN[branches[3]] || []).some(c => {
+    // 身旺/身弱判断子女
+    h += `<div class="hl"><b>子女星判断：</b>`;
+    if (ws.level === '身旺') {
+        h += `身旺→财为子`;
+        if (hasZC||hasPC) h += ` <span class="tag tag-good">有财→有子</span>`;
+        else h += ` <span class="tag tag-warn">无财→等大运来财</span>`;
+    } else if (ws.level === '身弱') {
+        h += `身弱→印为儿`;
+        if (hasZY||hasPY) h += ` <span class="tag tag-good">有印→有子</span>`;
+        else h += ` <span class="tag tag-warn">无印→等大运来印</span>`;
+    } else {
+        h += `中和→食伤/财印皆可看`;
+    }
+    h += `</div>`;
+
+    // 具体口诀判断
+    const checks = [];
+    // 印重食伤轻
+    if ((hasZY||hasPY) && !(hasSS||hasSG))
+        checks.push(`<span class="tag tag-warn">印重食伤轻→子少</span>`);
+    // 印重食伤轻+有财
+    if ((hasZY||hasPY) && (hasSS||hasSG) && (hasZC||hasPC))
+        checks.push(`<span class="tag tag-good">印重+食伤+财→财破印救食伤→子多而贤</span>`);
+    // 穿倒财星
+    if ((d.branchRelations.穿||[]).length && (hasZC||hasPC))
+        checks.push(`<span class="tag tag-warn">穿倒财星无子息</span>`);
+    // 伤官不见财
+    if (hasSG && !hasZC && !hasPC)
+        checks.push(`<span class="tag tag-warn">伤官不见财→男孩不见面</span>`);
+    // 子星落空亡
+    const kong = d.kongBranches;
+    for (const b of [bz[2], bz[3]]) {
+        for (const c of (CANGAN[b]||[])) {
             const ss = getShishen(riGan, c);
-            return ss === '比肩' || ss === '劫财';
-        });
-        html += `<div class="hl">⚡ <b>比劫见财：</b>`;
-        if (biJieInside) {
-            html += `比劫在内→<span class="tag tag-warn">制住发财，制不住破财</span>`;
-        } else {
-            html += `比劫在外→<span class="tag tag-info">管不住手，易破财</span>`;
+            if ((ss==='食神'||ss==='伤官') && kong.includes(b))
+                checks.push(`<span class="tag tag-warn">命中子星落空亡→亲生儿女防早丧</span>`);
         }
-        html += `</div>`;
     }
+    // 金寒水冷
+    const allWx = [...sz.map(wxOf), ...bz.flatMap(b=>(CANGAN[b]||[]).map(wxOf))];
+    const jinCount = allWx.filter(w=>w==='金').length, shuiCount = allWx.filter(w=>w==='水').length;
+    const huoCount = allWx.filter(w=>w==='火').length;
+    if (jinCount+shuiCount>=6 && huoCount===0) checks.push(`<span class="tag tag-warn">金寒水冷→无子</span>`);
+    if (allWx.filter(w=>w==='火'||w==='土').length>=6 && allWx.filter(w=>w==='水').length===0)
+        checks.push(`<span class="tag tag-warn">火炎土焦→无子</span>`);
 
-    // 印星生财
-    const hasYin = stems.some(s => getShishen(riGan, s).includes('印'));
-    if (hasYin && (homeCai.length || outerCai.length)) {
-        html += `<div class="hl">印星通关：有印化杀护财，财运较稳</div>`;
-    }
+    if (checks.length) h += `<div class="hl">${checks.join(' | ')}</div>`;
+    else h += `<div class="hl"><span class="tag tag-neutral">无极端无子信号</span></div>`;
 
-    html += `</div>`;
-    return html;
+    // 大运决定论
+    h += `<div class="hl"><b>临界点法则：</b>食伤力量模棱两可→<span class="tag tag-info">大运决定</span>。大运帮食伤=能生子女，大运没帮=只能生女或推迟。</div>`;
+
+    h += `</div>`;
+    return h;
 }
 
-// ========== 父母分析 ==========
-function analyzeParents(riGan, stems, branches, shishenCangan, branchRels) {
-    let html = `<div class="card"><h3>👨‍👩‍👧 父母分析（星宫同参）</h3>`;
+// ================================================================
+// 4. 工作关 (三步登天法)
+// ================================================================
+function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
+    let h = `<div class="card"><h3>💼 工作关 [三步登天法 + 格局速查]</h3>`;
 
-    // 父星=偏财，母星=正印
-    const fuWx = wxOf(riGan);
-    const caiWx = {木:'土',火:'金',土:'水',金:'木',水:'火'}[fuWx];
-    const yinWx = {木:'水',火:'木',土:'火',金:'土',水:'金'}[fuWx];
+    const ssS = d.shishenStems;
+    const hasSS=ssS.some(s=>s.shishen==='食神'), hasSG=ssS.some(s=>s.shishen==='伤官');
+    const hasQS=ssS.some(s=>s.shishen==='七杀'), hasZG=ssS.some(s=>s.shishen==='正官');
+    const hasZY=ssS.some(s=>s.shishen==='正印'), hasPY=ssS.some(s=>s.shishen==='偏印');
+    const hasZC=ssS.some(s=>s.shishen==='正财'), hasPC=ssS.some(s=>s.shishen==='偏财');
 
-    // 找父星
-    let fatherStar = null;
-    for (let i = 0; i < stems.length; i++) {
-        if (wxOf(stems[i]) === caiWx) { fatherStar = {stem:stems[i],pos:['年','月','日','时'][i]}; break; }
+    // 吃皇粮检查
+    const hlg = [];
+    if ((hasSS||hasSG) && (hasQS||hasZG) && (hasZY||hasPY)) hlg.push(`食伤制官杀+印`);
+    if (hasZG && hasZY) hlg.push(`化官生印`);
+    if (hasQS && hasZY) hlg.push(`杀印同宫`);
+    if (hasPY && hasZG) hlg.push(`印禄相随`);
+
+    h += `<div class="hl"><b>第一步-吃皇粮判断：</b>`;
+    if (hlg.length) h += `<span class="tag tag-good">${hlg.join(' + ')}</span>→体制内/稳定工作`;
+    else h += `<span class="tag tag-info">非典型皇粮格局</span>→自由职业/私企/创业`;
+    h += `</div>`;
+
+    // 格局成立检查
+    h += `<div class="hl"><b>第二步-格局成立检查：</b>`;
+    const patternChecks = [];
+    if (hasPY && hasZG) patternChecks.push(`枭+官虚透→<span class="tag tag-info">自己做生意</span>(偏印=非传统)`);
+    if (hasZY && hasZG) patternChecks.push(`正印+正官→<span class="tag tag-good">体制内稳定</span>`);
+    if (hasSS && hasQS && ws.level==='身弱') patternChecks.push(`身弱杀旺+食神→<span class="tag tag-warn">须有印化杀</span>(无印=破财)`);
+    if (hasSS && hasZC && ws.level==='身旺') patternChecks.push(`食神生财+身旺→<span class="tag tag-good">可大富</span>`);
+    if (!patternChecks.length) patternChecks.push(`<span class="tag tag-neutral">格局配置需结合大运</span>`);
+    h += patternChecks.join(' | ') + `</div>`;
+
+    // 五行取象
+    h += `<div class="hl"><b>第三步-五行职业取象：</b>`;
+    const wuxingPairs = [];
+    const allStems = [...sz,...bz.flatMap(b=>CANGAN[b]||[])];
+    const allWxSet = new Set(allStems.map(wxOf));
+    const jobMap = {'木-土':'土木工程/建筑/装修','火-金':'金融/网络/IT/驾驶','土-水':'工程/养殖/水利','金-木':'机械/制造/法律/手术','水-火':'消防/制冷/餐饮/能源'};
+    for (const [pair,job] of Object.entries(jobMap)) {
+        const [a,b]=pair.split('-');
+        if (allWxSet.has(a)&&allWxSet.has(b)) wuxingPairs.push(`<span class="tag tag-info">${pair}→${job}</span>`);
     }
-    if (!fatherStar) {
-        for (const b of branches) {
-            for (const c of (CANGAN[b] || [])) {
-                if (wxOf(c) === caiWx) { fatherStar = {stem:c,pos:'藏干'}; break; }
-            }
-            if (fatherStar) break;
+    // 特殊
+    if (allWxSet.has('金') && allWxSet.has('木') && bz.some(b=>b==='酉'))
+        wuxingPairs.push(`<span class="tag tag-info">酉金→公安/白虎/机械</span>`);
+
+    h += wuxingPairs.length ? wuxingPairs.join(' | ') : `<span class="tag tag-neutral">取象待大运流年明确</span>`;
+    h += `</div>`;
+
+    // 下岗/换工作判断
+    if (d.currentDayun) {
+        const dyGan = d.currentDayun.pillar[0];
+        const dyGanSS = getShishen(riGan, dyGan);
+        h += `<div class="hl"><b>换工作信号：</b>当前大运天干${dyGan}=${dyGanSS}→`;
+        if (dyGanSS.includes('印') || dyGanSS.includes('官') || dyGanSS.includes('财'))
+            h += `<span class="tag tag-info">有职业稳定性信号</span>`;
+        else if (dyGanSS.includes('食') || dyGanSS.includes('伤'))
+            h += `<span class="tag tag-info">适合技术/创意类工作</span>`;
+        else h += `<span class="tag tag-neutral">事业变动期</span>`;
+        h += `</div>`;
+    }
+
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// 5. 财运 (六模型 + 财内外)
+// ================================================================
+function analyzeWealth(riGan, riZhi, sz, bz, d) {
+    let h = `<div class="card"><h3>💰 财运 [比劫见财六模型 + 财内外]</h3>`;
+
+    const homeCai = (CANGAN[bz[2]]||[]).concat(CANGAN[bz[3]]||[]).filter(c=>{const s=getShishen(riGan,c);return s==='正财'||s==='偏财'});
+    const outerCai = (CANGAN[bz[0]]||[]).concat(CANGAN[bz[1]]||[]).filter(c=>{const s=getShishen(riGan,c);return s==='正财'||s==='偏财'});
+    const ganCai = sz.filter(s=>{const ss=getShishen(riGan,s);return ss==='正财'||ss==='偏财'});
+    const hasBiJie = d.shishenStems.some(s=>s.shishen==='比肩'||s.shishen==='劫财');
+    const hasYin = d.shishenStems.some(s=>s.shishen==='正印'||s.shishen==='偏印');
+
+    // 财内外
+    h += `<div class="hl"><b>财星分布：</b>`;
+    if (homeCai.length) h += `家里(日时): ${homeCai.map(c=>`<span class="tag tag-good">${c}(${getShishen(riGan,c)})</span>`).join('、')} → 自己能掌控 `;
+    if (outerCai.length) h += `外面(年月): ${outerCai.map(c=>`<span class="tag tag-info">${c}(${getShishen(riGan,c)})</span>`).join('、')} → 需合作 `;
+    if (ganCai.length) h += `天干: ${ganCai.map(c=>`<span class="tag">${c}(${getShishen(riGan,c)})</span>`).join('、')} `;
+    if (!homeCai.length&&!outerCai.length&&!ganCai.length) h += `<span class="tag tag-warn">原局无财</span>—等大运来`;
+    h += `</div>`;
+
+    // 比劫见财模型
+    if (hasBiJie && (homeCai.length || outerCai.length || ganCai.length)) {
+        h += `<div class="hl"><b>比劫见财分析：</b>`;
+        const biJieInside = homeCai.length > 0 || (CANGAN[bz[2]]||[]).concat(CANGAN[bz[3]]||[]).some(c=>{const s=getShishen(riGan,c);return s==='比肩'||s==='劫财'});
+
+        if (outerCai.length && !homeCai.length) {
+            h += `<span class="tag tag-warn">财在外+比劫在内</span>→制住发财，制不住官司`;
+        } else if (outerCai.length && biJieInside) {
+            h += `<span class="tag tag-info">财在外+比劫也在外</span>→管不住手，易破财`;
+        } else if (homeCai.length && !outerCai.length) {
+            h += `<span class="tag tag-info">财在家里</span>→制住发财，制不住不破财(只累)`;
         }
+
+        if (hasYin) h += ` | <span class="tag tag-good">有印通关</span>→护财有力`;
+        h += `</div>`;
     }
 
-    // 找母星
-    let motherStar = null;
-    for (let i = 0; i < stems.length; i++) {
-        if (wxOf(stems[i]) === yinWx) { motherStar = {stem:stems[i],pos:['年','月','日','时'][i]}; break; }
-    }
-    if (!motherStar) {
-        for (const b of branches) {
-            for (const c of (CANGAN[b] || [])) {
-                if (wxOf(c) === yinWx) { motherStar = {stem:c,pos:'藏干'}; break; }
-            }
-            if (motherStar) break;
-        }
+    // 财气通门户
+    if (homeCai.length || ganCai.length) {
+        h += `<div class="hl"><b>财气通门户：</b>财星对日主<span class="tag tag-good">有情</span>→财主动来找命主。不论旺衰，有情即吉。</div>`;
     }
 
-    const nianBranch = branches[0];
-    const yueBranch = branches[1];
-
-    // 检查父母宫(年月)是否被冲穿
-    const nianGongIssue = (branchRels.冲||[]).some(c => c.includes(nianBranch)) || (branchRels.穿||[]).some(c => c.includes(nianBranch));
-    const yueGongIssue = (branchRels.冲||[]).some(c => c.includes(yueBranch)) || (branchRels.穿||[]).some(c => c.includes(yueBranch));
-
-    html += `<div class="hl"><b>父星(偏财)：</b>${fatherStar ? `${fatherStar.stem}在${fatherStar.pos}` : '<span class="tag tag-warn">不显</span>'}`;
-    if (fatherStar) {
-        const fs = getChangsheng(fatherStar.stem, branches[0]);
-        html += ` | 年支${branches[0]}处<span class="tag tag-info">${fs}</span>`;
+    // 官当财看
+    if (d.shishenStems.some(s=>s.shishen==='正官') && !hasZC && !hasPC) {
+        h += `<div class="hl"><span class="tag tag-info">官当财看</span>——不做官但能赚钱，财的级别更高</div>`;
     }
-    html += `</div>`;
 
-    html += `<div class="hl"><b>母星(正印)：</b>${motherStar ? `${motherStar.stem}在${motherStar.pos}` : '<span class="tag tag-warn">不显</span>'}`;
-    if (motherStar) {
-        const ms = getChangsheng(motherStar.stem, branches[1]);
-        html += ` | 月支${branches[1]}处<span class="tag tag-info">${ms}</span>`;
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// 6. 父母
+// ================================================================
+function analyzeParents(riGan, riZhi, sz, bz, d) {
+    let h = `<div class="card"><h3>👨‍👩‍👧 父母关 [星宫同参 + 六种死法验证]</h3>`;
+
+    const caiWx = {木:'土',火:'金',土:'水',金:'木',水:'火'}[wxOf(riGan)];
+    const yinWx = {木:'水',火:'木',土:'火',金:'土',水:'金'}[wxOf(riGan)];
+
+    // 找父星母星
+    let fatherStar = null, motherStar = null;
+    for (let i=0; i<4; i++) {
+        if (wxOf(sz[i])===caiWx && !fatherStar) fatherStar = {stem:sz[i],pos:['年','月','日','时'][i]};
+        if (wxOf(sz[i])===yinWx && !motherStar) motherStar = {stem:sz[i],pos:['年','月','日','时'][i]};
     }
-    html += `</div>`;
+    if (!fatherStar) for (const b of bz) for (const c of (CANGAN[b]||[])) {
+        if (wxOf(c)===caiWx) { fatherStar = {stem:c,pos:'藏干'}; break; }
+    }
+    if (!motherStar) for (const b of bz) for (const c of (CANGAN[b]||[])) {
+        if (wxOf(c)===yinWx) { motherStar = {stem:c,pos:'藏干'}; break; }
+    }
 
-    html += `<div class="hl"><b>父母宫位：</b>`;
-    html += `年柱${pillars[0]}(${nianBranch}) `;
-    if (nianGongIssue) html += `<span class="tag tag-warn">宫位被冲/穿→父母关系不利</span>`;
-    else html += `<span class="tag tag-neutral">宫位安静</span>`;
-    html += ` | 月柱${pillars[1]}(${yueBranch}) `;
-    if (yueGongIssue) html += `<span class="tag tag-warn">宫位被冲/穿</span>`;
-    else html += `<span class="tag tag-neutral">宫位安静</span>`;
-    html += `</div>`;
+    h += `<div class="hl"><b>父星(偏财)：</b>${fatherStar?`${fatherStar.stem}在${fatherStar.pos} <span class="tag tag-info">${getChangsheng(fatherStar.stem,bz[0])}</span>`:'<span class="tag tag-warn">不显</span>——借盘/等大运'}</div>`;
+    h += `<div class="hl"><b>母星(正印)：</b>${motherStar?`${motherStar.stem}在${motherStar.pos} <span class="tag tag-info">${getChangsheng(motherStar.stem,bz[1])}</span>`:'<span class="tag tag-warn">不显</span>——借盘/等大运'}</div>`;
 
     // 星宫同坏检查
-    if (fatherStar && nianGongIssue) {
-        html += `<div class="hl"><span class="tag tag-warn">⚠️ 父星星宫同病</span>——父亲健康/运势需关注</div>`;
-    }
-    if (motherStar && yueGongIssue) {
-        html += `<div class="hl"><span class="tag tag-warn">⚠️ 母星星宫同病</span>——母亲健康/运势需关注</div>`;
-    }
+    const rels = d.branchRelations;
+    const nianIssue = (rels.冲||[]).some(c=>c.includes(bz[0]))||(rels.穿||[]).some(c=>c.includes(bz[0]));
+    const yueIssue = (rels.冲||[]).some(c=>c.includes(bz[1]))||(rels.穿||[]).some(c=>c.includes(bz[1]));
 
-    html += `</div>`;
-    return html;
+    h += `<div class="hl"><b>父母宫位：</b>`;
+    h += `年柱${ps[0]}(${bz[0]}) ` + (nianIssue?`<span class="tag tag-warn">宫位被冲/穿</span>`:`<span class="tag tag-neutral">安</span>`);
+    h += ` | 月柱${ps[1]}(${bz[1]}) ` + (yueIssue?`<span class="tag tag-warn">宫位被冲/穿</span>`:`<span class="tag tag-neutral">安</span>`);
+    h += `</div>`;
+
+    // 星宫同坏
+    if (fatherStar && nianIssue)
+        h += `<div class="hl"><span class="tag tag-warn">⚠️ 父星星宫同坏</span>→父缘薄/父健康受损 | 星坏+宫坏=两条件满足→需关注</div>`;
+    if (motherStar && yueIssue)
+        h += `<div class="hl"><span class="tag tag-warn">⚠️ 母星星宫同坏</span>→母缘薄/母健康受损</div>`;
+
+    // 六种死法检查要点
+    h += `<div class="hl"><b>六种验证信号（至少2条才能断死亡）：</b>`;
+    const deathSignals = [];
+    if (fatherStar) {
+        const fsStage = getChangsheng(fatherStar.stem, bz[0]);
+        if (fsStage==='墓') deathSignals.push(`父星临墓`);
+        if (nianIssue) deathSignals.push(`宫位被坏`);
+        const fsYuan = {木:'水',火:'木',土:'火',金:'土',水:'金'}[wxOf(fatherStar.stem)];
+        if (!sz.some(s=>wxOf(s)===fsYuan)) deathSignals.push(`念头可能被断(缺源头${fsYuan})`);
+    }
+    if (!deathSignals.length) deathSignals.push(`<span class="tag tag-neutral">无明显危险信号</span>`);
+    h += deathSignals.map(s=>`<span class="tag tag-info">${s}</span>`).join(' | ') + `</div>`;
+
+    h += `</div>`;
+    return h;
 }
 
-// ========== 当前运势 ==========
-function analyzeCurrent(riGan, currentDy, currentAge, dayunData, changshengData) {
-    if (!currentDy) return '';
+// ================================================================
+// 7. 兄弟姐妹
+// ================================================================
+function analyzeSiblings(riGan, sz, bz, d) {
+    let h = `<div class="card"><h3>👫 兄弟姐妹 [铁律5·比劫+印根]</h3>`;
 
-    let html = `<div class="card"><h3>⏳ 当前运势分析</h3>`;
+    const biJieCount = d.shishenStems.filter(s=>s.shishen==='比肩'||s.shishen==='劫财').length;
+    const yinCount = d.shishenStems.filter(s=>s.shishen==='正印'||s.shishen==='偏印').length;
 
-    html += `<div class="hl"><b>当前虚岁：</b>${currentAge + 1}岁 | <b>大运：</b><span class="tag tag-good">${currentDy.pillar} (${currentDy.startAge}-${currentDy.endAge}岁)</span></div>`;
+    h += `<div class="hl"><b>基本原则：</b>`;
+    h += `比肩=${['兄弟','姐妹'][0]} | 劫财=${['姐妹','兄弟'][0]} | 印星的根=${['姐妹','兄弟'][0]}`;
+    h += `</div>`;
 
-    // 大运对日主的影响
-    const dyGan = currentDy.pillar[0];
-    const dyZhi = currentDy.pillar[1];
-    const dyGanSS = getShishen(riGan, dyGan);
-    html += `<div class="hl">大运天干${dyGan}=<span class="tag tag-info">${dyGanSS}</span> | 地支${dyZhi}为<span class="tag tag-info">${getChangsheng(riGan, dyZhi)}</span></div>`;
+    // 三合印局检查
+    const sanheString = (d.branchRelations.三合||[]).join('');
+    if (sanheString.includes('木') && yinCount>=3)
+        h += `<div class="hl"><span class="tag tag-info">印局三合</span>→将比肩收成日主自己的不同方面，合并算1个</div>`;
 
-    // 当前流年
-    const now = new Date();
-    const thisYear = now.getFullYear();
-    const ref = new Date(1900, 0, 1);
-    const daysThisYear = Math.floor((new Date(thisYear, 0, 1) - ref) / 86400000);
-    const yearGanIdx = ((10 + daysThisYear) % 10 + 10) % 10;
-    const yearZhiIdx = ((10 + daysThisYear) % 12 + 12) % 12;
-    const yearGan = STEMS[yearGanIdx % 10];
-    const yearZhi = BRANCHES[yearZhiIdx % 12];
-    const yearSS = getShishen(riGan, yearGan);
+    // 简单判断
+    const totalSib = biJieCount + yinCount;
+    h += `<div class="hl"><b>参考数：</b>比劫${biJieCount}+印${yinCount}=${totalSib}→兄弟姐妹约${Math.max(0,totalSib-1)}-${totalSib+1}人（结合计划生育政策调整）</div>`;
 
-    html += `<div class="hl"><b>${thisYear}流年：</b>${yearGan}${yearZhi} <span class="tag tag-info">${yearSS}</span></div>`;
-
-    // 简单断语
-    const goodSS = ['正印','偏印','比肩','劫财'];
-    const dangerSS = ['七杀'];
-    if (goodSS.includes(yearSS)) {
-        html += `<div class="hl">✅ 流年${yearSS}到位——<span class="tag tag-good">今年利于发展</span></div>`;
-    } else if (dangerSS.includes(yearSS)) {
-        html += `<div class="hl">⚠️ 流年七杀——<span class="tag tag-warn">今年压力大，注意健康/纠纷</span></div>`;
-    }
-
-    html += `</div>`;
-    return html;
+    h += `</div>`;
+    return h;
 }
 
-// ========== 健康与五行交战 ==========
-function analyzeHealth(branches, stems, branchRels, riGan, riWx) {
-    let html = `<div class="card"><h3>⚕️ 健康与五行交战</h3>`;
+// ================================================================
+// 8. 健康与五行交战
+// ================================================================
+function analyzeHealth(riGan, riWx, bz, sz, d) {
+    let h = `<div class="card"><h3>⚕️ 健康与五行交战 [五行反目 + 穿害疾病]</h3>`;
 
-    const allIssues = [];
+    const rels = d.branchRelations;
+    const issues = [];
 
-    // 刑冲穿检查
-    if ((branchRels.冲 || []).length) {
-        allIssues.push(`<span class="tag tag-warn">冲: ${branchRels.冲.join('、')}</span> → 变动/冲突/意外`);
-    }
-    if ((branchRels.穿 || []).length) {
-        allIssues.push(`<span class="tag tag-warn">穿: ${branchRels.穿.join('、')}</span> → 暗中破坏/疾病隐患`);
-    }
-    if ((branchRels.刑 || []).length) {
-        allIssues.push(`<span class="tag tag-warn">刑: ${branchRels.刑.join('、')}</span> → 纠纷/官非/手术`);
+    // 刑冲穿
+    if ((rels.冲||[]).length) issues.push(`冲: ${rels.冲.join('、')} → 变动/冲突/意外伤`);
+    if ((rels.穿||[]).length) {
+        issues.push(`穿: ${rels.穿.join('、')}——穿的力量>刑>三合>克`);
+
+        // 疾病取象
+        const chuanDisease = {
+            '子未穿':'囊肿/血液病/心脏病/子宫肌瘤',
+            '丑午穿':'牙病/糖尿病/甲状腺/乳腺',
+            '卯辰穿':'水灾/女命克夫',
+            '酉戌穿':'爆炸伤/火灾/肠道病/咽炎',
+            '申亥穿':'咽炎/颈椎/腰椎/肠道病',
+            '寅巳穿':'口腔溃疡/痔疮/眼睛伤',
+        };
+        for (const [key, disease] of Object.entries(chuanDisease)) {
+            if ((rels.穿||[]).some(c=>c.includes(key[0])&&c.includes(key[1]))) {
+                issues.push(`→ ${key}: <span class="tag tag-warn">${disease}</span>`);
+            }
+        }
     }
 
     // 五行交战检查
-    const harmMap = {木:'金',火:'水',土:'木',金:'火',水:'土'};
-    const harmWx = harmMap[riWx];
+    const allWxSet = new Set([...sz.map(wxOf), ...bz.flatMap(b=>(CANGAN[b]||[]).map(wxOf))]);
     const dangerPairs = [
-        ['金','木','金木交战→注意骨折/肝胆'],
-        ['木','土','木土交战→注意脾胃/消化'],
-        ['水','火','水火交战→注意心脑血管'],
-        ['火','金','火金交战→注意肺部/呼吸道'],
-        ['土','水','土水交战→注意肾脏/泌尿'],
+        ['金','木','金木交战→车祸/骨折/肝胆手术'],
+        ['木','土','木土交战→脾胃/消化/坍塌'],
+        ['水','火','水火交战→心梗/脑溢血/眼疾'],
+        ['火','金','火金交战→肺部/呼吸道/皮肤烧伤'],
+        ['土','水','土水交战→肾衰/尿毒症/溺水'],
     ];
-
-    const allWxInChart = new Set();
-    for (const s of stems) allWxInChart.add(wxOf(s));
-    for (const b of branches) for (const c of (CANGAN[b] || [])) allWxInChart.add(wxOf(c));
-
-    for (const [a, b, desc] of dangerPairs) {
-        if (allWxInChart.has(a) && allWxInChart.has(b)) {
-            allIssues.push(`<span class="tag tag-info">${desc}</span>——原局有苗头，需注意相关流年`);
+    for (const [a,b,desc] of dangerPairs) {
+        if (allWxSet.has(a) && allWxSet.has(b)) {
+            const aCount = [...sz,...bz.flatMap(b=>(CANGAN[b]||[]))].filter(s=>wxOf(s)===a).length;
+            const bCount = [...sz,...bz.flatMap(b=>(CANGAN[b]||[]))].filter(s=>wxOf(s)===b).length;
+            if (aCount>=2 && bCount>=2) {
+                issues.push(`<span class="tag tag-warn">${desc}</span>——双方同时有力=交战爆发风险`);
+            }
         }
     }
 
-    if (allIssues.length === 0) {
-        html += `<div class="hl"><span class="tag tag-good">原局较为平和</span>，无明显刑冲穿害</div>`;
+    // 五行对应身体
+    const wxBody = {木:'肝胆',火:'心/小肠/眼',土:'脾胃/皮肤',金:'肺/大肠/骨骼',水:'肾/膀胱/泌尿'};
+    const bodyPart = wxBody[riWx]||'?';
+    h += `<div class="hl"><b>日主${riGan}(${riWx})对应：</b>${bodyPart}——${riWx}被克时首当其冲</div>`;
+
+    if (issues.length) {
+        h += `<div class="hl">${issues.join('<br>')}</div>`;
     } else {
-        html += `<div class="hl">${allIssues.join('<br>')}</div>`;
+        h += `<div class="hl"><span class="tag tag-good">原局五行较为平和</span></div>`;
     }
 
-    // 空亡对健康的影响
-    const kongBranches = getXunKong(d.dayPillar);
-    const kongHealth = branches.filter(b => kongBranches.includes(b));
-    if (kongHealth.length) {
-        html += `<div class="hl"><b>空亡提醒：</b>${kongHealth.join('、')}落空亡，对应宫位/六亲需关注</div>`;
+    // 禄倒马斜检查
+    const riLu = {甲:'寅',乙:'卯',丙:'巳',丁:'午',戊:'巳',己:'午',庚:'申',辛:'酉',壬:'亥',癸:'子'}[riGan];
+    if (riLu && (rels.冲||[]).some(c=>c.includes(riLu)))
+        h += `<div class="hl"><span class="tag tag-warn">日主之禄${riLu}被冲</span>——禄倒马斜信号，大运流年叠加需警惕</div>`;
+
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// 9. 当前运势
+// ================================================================
+function analyzeCurrent(riGan, d) {
+    if (!d.currentDayun) return '';
+    let h = `<div class="card"><h3>⏳ 当前运势 [大运+流年]</h3>`;
+    const dy = d.currentDayun;
+
+    h += `<div class="hl"><b>当前：</b>${d.currentAgeXusui}虚岁 | <b>大运${dy.pillar}(${dy.startAge}-${dy.endAge}岁)</b>`;
+    const dyGanSS = getShishen(riGan, dy.pillar[0]);
+    const dyZhiStage = getChangsheng(riGan, dy.pillar[1]);
+    h += ` | 天干=${dyGanSS} | 地支${dy.pillar[1]}=${dyZhiStage}`;
+    h += `</div>`;
+
+    // 盖头截脚
+    const dyGanWx = wxOf(dy.pillar[0]), dyZhiWx = wxOf(dy.pillar[1]);
+    const harmMap = {木:'金',火:'水',土:'木',金:'火',水:'土'};
+    if (dyGanWx && dyZhiWx && harmMap[dyGanWx]===dyZhiWx)
+        h += `<div class="hl"><span class="tag tag-warn">盖头运</span>——天干好运被地支坏→福禄减半</div>`;
+
+    // 大运力量
+    h += `<div class="hl"><b>大运 vs 天干：</b><span class="tag tag-info">大运的力量 > 天干的力量</span>——大运地支是十年主旋律，天干是表象。</div>`;
+
+    // 当前流年
+    const now = new Date();
+    const ref = new Date(1900,0,1);
+    const days = Math.floor((new Date(now.getFullYear(),0,1) - ref)/86400000);
+    const yearGan = STEMS[((10+days)%10+10)%10], yearZhi = BRANCHES[((10+days)%12+12)%12];
+    const yearSS = getShishen(riGan, yearGan);
+    h += `<div class="hl"><b>${now.getFullYear()}流年${yearGan}${yearZhi}：</b><span class="tag tag-info">${yearSS}</span>`;
+
+    if (['正印','偏印','比肩','劫财'].includes(yearSS))
+        h += ` <span class="tag tag-good">帮身年——利于发展</span>`;
+    else if (['七杀'].includes(yearSS))
+        h += ` <span class="tag tag-warn">压力年——注意健康/纠纷</span>`;
+    else if (['正官'].includes(yearSS))
+        h += ` <span class="tag tag-info">机遇年——有提升/成家机会</span>`;
+    h += `</div>`;
+
+    // 五行反目流年检查
+    h += `<div class="hl"><b>五行反目警惕：</b>当年加强的五行若与原局对立五行同时有力→<span class="tag tag-warn">需查流月+流日</span>判断具体应期</div>`;
+
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// 10. 性格
+// ================================================================
+function analyzePersonality(riGan, riWx, sz, bz) {
+    let h = `<div class="card"><h3>🧠 五行性格速断</h3>`;
+
+    const allStems = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
+    const wxCount = {};
+    for (const s of allStems) { const w=wxOf(s); wxCount[w]=(wxCount[w]||0)+1; }
+    const sorted = Object.entries(wxCount).sort((a,b)=>b[1]-a[1]);
+    const dominantWx = sorted[0]?.[0] || riWx;
+
+    const personalities = {
+        木:{pos:'仁慈、恻隐、直爽、柔和',neg:'胆怯、嫉妒、狭隘、固执'},
+        火:{pos:'热情、礼貌、豪迈、坦诚',neg:'急躁、冲动、谎言、歹毒'},
+        土:{pos:'忠孝、诚信、厚重、容忍',neg:'倔强、固执、愚蠢、封闭'},
+        金:{pos:'刚强、果敢、豪侠、仗义',neg:'鲁莽、贪婪、刻薄、狠毒'},
+        水:{pos:'聪明、机智、灵活、善变',neg:'多疑、偏激、阴谋、放纵'},
+    };
+
+    for (const [wx,count] of sorted) {
+        const p = personalities[wx];
+        if (!p) continue;
+        const pct = Math.round(count/allStems.length*100);
+        h += `<div class="hl"><b>${wx}(${pct}%)：</b>正面: ${p.pos} | 负面: ${p.neg}</div>`;
     }
 
-    html += `</div>`;
-    return html;
+    h += `<div class="hl" style="color:var(--dim);font-size:.8em">以最旺五行切入，正负面兼看。日主${riGan}=${riWx}为自我核心。</div>`;
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// 11. 格局深度分析 (30+格局)
+// ================================================================
+function analyzeDeepPattern(riGan, riZhi, sz, bz, ws, d) {
+    let h = `<div class="card"><h3>📐 格局深度分析 [30+格局速查]</h3>`;
+
+    const ssS = d.shishenStems;
+    const countSS = {食神:0,伤官:0,正财:0,偏财:0,正官:0,七杀:0,正印:0,偏印:0,比肩:0,劫财:0};
+    const allStems = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
+    for (const s of allStems) { const ss=getShishen(riGan,s); if (countSS[ss]!==undefined) countSS[ss]++; }
+
+    const patterns = [];
+
+    // 检查各格局
+    if (countSS['七杀']>=2 && countSS['正印']>=2) patterns.push({name:'杀印相生',level:'高',desc:'杀生印→印生身，权印双收'});
+    if (countSS['食神']>=2 && countSS['七杀']>=2 && ws.level==='身旺') patterns.push({name:'食神制杀',level:'高',desc:'以技艺得权'});
+    if (countSS['伤官']>=2 && countSS['正官']>=1) patterns.push({name:'伤官去官',level:'高',desc:'去忌得官，不论身强弱'});
+    if (countSS['食神']>=3 && countSS['偏财']>=1 && d.shishenStems[1].shishen==='食神')
+        patterns.push({name:'从儿格候选',level:'最高',desc:'需四条件:食神多+月令食神+不论强弱+食生财'});
+    if (countSS['偏印']>=3 && countSS['正官']>=1)
+        patterns.push({name:'枭旺+官虚透',level:'中',desc:'自己做生意(非体制)'});
+    if (countSS['食神']>=2 && countSS['正财']>=2 && ws.level==='身旺')
+        patterns.push({name:'食神生财',level:'高',desc:'身旺食泄生财→可大富'});
+    if (countSS['比肩']+countSS['劫财']>=4 && countSS['正官']+countSS['七杀']===0)
+        patterns.push({name:'旺极/专旺',level:'高',desc:'顺其旺势，忌官杀来犯'});
+
+    // 内食神格
+    const homeSS = (CANGAN[bz[2]]||[]).concat(CANGAN[bz[3]]||[]);
+    if (homeSS.filter(c=>getShishen(riGan,c)==='食神').length>=2 && sz.filter(s=>getShishen(riGan,s)==='食神').length===0)
+        patterns.push({name:'内食神格',level:'高',desc:'藏在支不露→被人吃(企业家)'});
+
+    // 外食神格
+    if (sz.filter(s=>getShishen(riGan,s)==='食神').length>=2)
+        patterns.push({name:'外食神格',level:'中',desc:'透干→吃别人(技术专长)'});
+
+    // 以禄当财
+    if (countSS['正财']+countSS['偏财']===0 && countSS['正官']+countSS['七杀']===0 && countSS['食神']+countSS['伤官']<=1)
+        patterns.push({name:'以禄当财',level:'中',desc:'财官食伤都无法用→禄当财'});
+
+    if (patterns.length) {
+        h += patterns.map(p => `<div class="hl"><b>${p.name}</b> <span class="tag ${p.level==='最高'?'tag-good':(p.level==='高'?'tag-info':'tag-neutral')}">${p.level}</span>——${p.desc}</div>`).join('');
+    } else {
+        h += `<div class="hl"><span class="tag tag-neutral">无特殊格局</span>——以平衡为第一法则，跟着大运走</div>`;
+    }
+
+    // 从格检查
+    const hasGen = (CANGAN[bz[2]]||[]).some(c=>c===riGan||wxOf(c)===wxOf(riGan)||wxOf(c)==={木:'水',火:'木',土:'火',金:'土',水:'金'}[wxOf(riGan)]);
+    if (!hasGen && (countSS['正财']+countSS['偏财']>=4 || countSS['七杀']+countSS['正官']>=4))
+        patterns.push({name:'从格信号',level:'最高',desc:'日主无根→可能从财/从杀'});
+
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// 12. 干支取象速查
+// ================================================================
+function analyzeGanzhiImage(riGan, riZhi, sz, bz, ps) {
+    let h = `<div class="card"><h3>🔍 干支取象速查</h3>`;
+
+    const ganzhiImages = {
+        甲子:{物:'大树旁水',身:'头+膀胱'},
+        乙丑:{物:'花草旁坟墓',身:'肝+脾'},
+        丙寅:{物:'太阳照林',身:'眼+胆'},
+        丁卯:{物:'灯火映花',身:'心+肝'},
+        戊辰:{物:'山包',身:'胃+腹'},
+        己巳:{物:'田边砖厂',身:'脾+心'},
+        庚午:{物:'大路通厅',身:'肠+心'},
+        辛未:{物:'金饰近田',身:'肺+脊'},
+        壬申:{物:'江河绕铁',身:'膀胱+骨'},
+        癸酉:{物:'泉边停车',身:'肾+肺'},
+        甲戌:{物:'大树旁窑',身:'头+腿'},
+        乙亥:{物:'花草临水',身:'肝+肾'},
+    };
+
+    for (let i=0; i<4; i++) {
+        const gz = ps[i];
+        const img = ganzhiImages[gz];
+        const names = ['年柱(祖辈)','月柱(父母)','日柱(自身/配偶)','时柱(子女)'];
+        if (img) {
+            h += `<div class="hl"><b>${names[i]}${gz}：</b>物象: ${img.物} | 身象: ${img.身}</div>`;
+        }
+    }
+
+    // 地支场所
+    const bzPlaces = {子:'江河/池塘',丑:'坟墓/桥梁',寅:'山林/花园',卯:'道路/花草',
+                      辰:'山包/寺观',巳:'砖厂/化工厂',午:'大厅/影院',未:'田地/厨房',
+                      申:'钢厂/铁路',酉:'停车场/跑道',戌:'窑灶/寺庙',亥:'江河/歌舞厅'};
+    h += `<div class="hl" style="font-size:.8em;color:var(--dim)"><b>地支场所：</b>${bz.map(b=>`${b}=${bzPlaces[b]||'?'}`).join(' | ')}</div>`;
+
+    h += `</div>`;
+    return h;
+}
+
+// ================================================================
+// Utility: wuxing of stem
+// ================================================================
+function wxOf(stem) {
+    return {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[stem]||'';
 }
