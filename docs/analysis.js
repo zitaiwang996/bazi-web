@@ -51,7 +51,7 @@ function generateAnalysis(d) {
     sections.push(analyzeDeepPattern(riGan, riZhi, sz, bz, ws, d));
 
     // === SECTION 12: 干支取象 ===
-    sections.push(analyzeGanzhiImage(riGan, riZhi, sz, bz, ps));
+    sections.push(analyzeGanzhiImage(riGan, riZhi, sz, bz, d));
 
     return sections.filter(s => s).join('\n');
 }
@@ -501,8 +501,8 @@ function analyzeParents(riGan, riZhi, sz, bz, d) {
     const yueIssue = (rels.冲||[]).some(c=>c.includes(bz[1]))||(rels.穿||[]).some(c=>c.includes(bz[1]));
 
     h += `<div class="hl"><b>父母宫位：</b>`;
-    h += `年柱${ps[0]}(${bz[0]}) ` + (nianIssue?`<span class="tag tag-warn">宫位被冲/穿</span>`:`<span class="tag tag-neutral">安</span>`);
-    h += ` | 月柱${ps[1]}(${bz[1]}) ` + (yueIssue?`<span class="tag tag-warn">宫位被冲/穿</span>`:`<span class="tag tag-neutral">安</span>`);
+    h += `年柱${d.yearPillar}(${bz[0]}) ` + (nianIssue?`<span class="tag tag-warn">宫位被冲/穿</span>`:`<span class="tag tag-neutral">安</span>`);
+    h += ` | 月柱${d.monthPillar}(${bz[1]}) ` + (yueIssue?`<span class="tag tag-warn">宫位被冲/穿</span>`:`<span class="tag tag-neutral">安</span>`);
     h += `</div>`;
 
     // 星宫同坏
@@ -758,7 +758,7 @@ function analyzeDeepPattern(riGan, riZhi, sz, bz, ws, d) {
 // ================================================================
 // 12. 干支取象速查
 // ================================================================
-function analyzeGanzhiImage(riGan, riZhi, sz, bz, ps) {
+function analyzeGanzhiImage(riGan, riZhi, sz, bz, d) {
     let h = `<div class="card"><h3>🔍 干支取象速查</h3>`;
 
     const ganzhiImages = {
@@ -777,7 +777,7 @@ function analyzeGanzhiImage(riGan, riZhi, sz, bz, ps) {
     };
 
     for (let i=0; i<4; i++) {
-        const gz = ps[i];
+        const gz = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar][i];
         const img = ganzhiImages[gz];
         const names = ['年柱(祖辈)','月柱(父母)','日柱(自身/配偶)','时柱(子女)'];
         if (img) {
