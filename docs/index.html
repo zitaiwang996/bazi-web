@@ -167,23 +167,34 @@ tr:last-child td{border-bottom:none}
 /* 流日 grid */
 .ld-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:2px; }
 .ld-cell { display:flex; flex-direction:column; align-items:center; padding:3px 2px; background:rgba(0,0,0,.15); border-radius:2px; font-size:.7em; }
-/* ====== Dayun Tree ====== */
-.dy-row { border:1px solid var(--border); border-radius:var(--r-md); margin-bottom:6px; overflow:hidden; }
-.dy-row.cur { border-color:var(--gold); }
-.dy-row-hd { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; background:var(--card); transition:background .15s; }
-.dy-row-hd:hover { background:rgba(200,164,92,.06); }
-.dy-row.cur .dy-row-hd { background:rgba(200,164,92,.08); }
-.st-arr { font-size:.7em; color:var(--dim); min-width:14px; display:inline-block; }
-.dy-row-bd { background:var(--input); border-top:1px solid var(--border); }
-.dy-row-bd table { font-size:.82em; }
-.dy-row-bd td { padding:6px 10px; }
-.ln-click { cursor:pointer; }
-.ln-click:hover { background:rgba(200,164,92,.05); }
-.lm-row { display:flex; flex-wrap:wrap; gap:4px; }
-.lm-chip { display:inline-flex; flex-direction:column; align-items:center; padding:4px 6px; background:var(--card); border:1px solid var(--border); border-radius:4px; cursor:pointer; min-width:52px; text-align:center; }
-.lm-chip:hover { background:rgba(200,164,92,.08); border-color:var(--gold); }
-.ld-chip { display:inline-flex; flex-direction:column; align-items:center; padding:2px 3px; background:rgba(0,0,0,.15); border-radius:2px; font-size:.7em; min-width:38px; text-align:center; }
-@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}.lm-chip{min-width:44px;font-size:.75em}}
+/* ====== 大运流年流月流日 (问真八字风格) ====== */
+.wz-dy { border:1px solid var(--border); border-radius:var(--r-md); margin-bottom:8px; overflow:hidden; }
+.wz-dy.cur { border-color:var(--gold); }
+.wz-dy-head { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; background:var(--card); }
+.wz-dy-head:hover { background:rgba(200,164,92,.06); }
+.wz-dy.cur .wz-dy-head { background:rgba(200,164,92,.08); }
+.wz-dy-pillar { font-family:'Noto Serif SC','SimSun',serif; font-size:1.15em; }
+.cur .wz-dy-pillar { color:var(--goldL); }
+.wz-dy-age { color:var(--dim); font-size:.9em; }
+.wz-dy-year { color:var(--dim); font-size:.8em; }
+.wz-dy-body { background:var(--input); border-top:1px solid var(--border); }
+.wz-tbl { width:100%; border-collapse:collapse; font-size:.85em; }
+.wz-tbl th { padding:8px 12px; text-align:left; color:var(--dim); font-weight:500; font-size:.8em; border-bottom:1px solid var(--border); }
+.wz-tbl td { padding:8px 12px; border-bottom:1px solid rgba(58,48,36,.3); }
+.wz-ln-row { cursor:pointer; }
+.wz-ln-row:hover { background:rgba(200,164,92,.05); }
+.wz-lm-td { background:rgba(0,0,0,.06); padding:0 !important; }
+.wz-lm-grid { display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; }
+.wz-lm-chip { display:flex; flex-direction:column; align-items:center; padding:5px 7px; background:var(--card); border:1px solid var(--border); border-radius:5px; cursor:pointer; min-width:52px; text-align:center; transition:border-color .15s; }
+.wz-lm-chip:hover { border-color:var(--gold); background:rgba(200,164,92,.08); }
+.wz-lm-name { font-size:.65em; color:var(--dim); }
+.wz-lm-pillar { font-family:'Noto Serif SC',serif; font-size:.85em; font-weight:700; margin:1px 0; }
+.wz-ld-grid { display:flex; flex-wrap:wrap; gap:2px; margin-top:4px; padding-top:4px; border-top:1px solid var(--border); }
+.wz-ld-chip { display:inline-flex; flex-direction:column; align-items:center; padding:2px 3px; background:rgba(0,0,0,.12); border-radius:2px; min-width:34px; text-align:center; }
+.st-arr { font-size:.7em; color:var(--dim); min-width:14px; display:inline-block; transition:color .2s; }
+.wz-ln-row:hover .st-arr, .wz-lm-chip:hover .st-arr { color:var(--gold); }
+@media(max-width:640px){.wz-lm-chip{min-width:44px}.wz-lm-pillar{font-size:.75em}.wz-dy-head{gap:6px;font-size:.9em}}
+@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}}
 </style>
 </head>
 <body>
@@ -277,13 +288,13 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
 </div>
 
-<script src="terms_data.js?v=48ce3f5"></script>
-<script src="bazi.js?v=48ce3f5"></script>
-<script src="ziwei.js?v=48ce3f5"></script>
-<script src="liuren.js?v=48ce3f5"></script>
-<script src="liuyao.js?v=48ce3f5"></script>
-<script src="analysis.js?v=48ce3f5"></script>
-<script src="slider.js?v=48ce3f5"></script>
+<script src="terms_data.js?v=8658960"></script>
+<script src="bazi.js?v=8658960"></script>
+<script src="ziwei.js?v=8658960"></script>
+<script src="liuren.js?v=8658960"></script>
+<script src="liuyao.js?v=8658960"></script>
+<script src="analysis.js?v=8658960"></script>
+<script src="slider.js?v=8658960"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
