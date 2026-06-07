@@ -183,6 +183,7 @@ tr:last-child td{border-bottom:none}
 <script src="ziwei.js"></script>
 <script src="liuren.js"></script>
 <script src="liuyao.js"></script>
+<script src="analysis.js"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -280,6 +281,10 @@ function renderBazi(d) {
       <div style="margin-top:8px">${Object.entries(d.shishenCounts).sort((a,b)=>b[1]-a[1]).map(([ss,c]) => `<span class="tag tag-neutral">${ss}:${c}</span>`).join(' ')}</div></div>`;
 
     html += `</div>`; // end grid
+
+    // Add SKILL-based analysis
+    try { html += generateAnalysis(d); } catch(e) { console.error('Analysis error:', e); }
+
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
 }
@@ -334,6 +339,9 @@ function renderZiwei(d) {
     html += `<div class="card"><h3>📈 大运</h3><div class="dy-list">${d.decadals.map(dc => `<div class="dy-item${dc.range===d.currentDecadal.range?' cur':''}"><div class="dyp">${dc.stem}${dc.branch}</div><div class="dya">${dc.range}岁</div></div>`).join('')}</div>
       <div style="margin-top:8px;color:var(--dim);font-size:.85em">当前: ${d.currentAge}岁 | 大运在${d.currentDecadal.stem}${d.currentDecadal.branch}</div></div>`;
 
+    // Ziwei Analysis (from SKILL)
+    html += zwAnalysis(d);
+
     document.getElementById('zw-results').innerHTML = html;
     document.getElementById('zw-results').scrollIntoView({behavior:'smooth'});
 }
@@ -385,6 +393,9 @@ function renderLiuren(d) {
       <div>课体判断: ${d.keTi.length ? d.keTi.map(t=>'<span class="tag tag-info">'+t+'</span>').join(' ') : '<span class="tag tag-neutral">普通课</span>'}</div>
       <div style="margin-top:8px">旬空: <span class="tag tag-warn">${d.xunKong.join(' ')}</span></div></div>`;
 
+    // Liuren analysis
+    html += lrAnalysis(d);
+
     document.getElementById('lr-results').innerHTML = html;
     document.getElementById('lr-results').scrollIntoView({behavior:'smooth'});
 }
@@ -429,12 +440,187 @@ function renderLiuyao(d) {
 
     html += `<div class="card"><h3>📝 初步解读</h3><pre style="white-space:pre-wrap;color:var(--text)">${d.interpretation}</pre></div>`;
 
+    // Liuyao analysis
+    html += lyAnalysis(d);
+
     document.getElementById('ly-results').innerHTML = html;
     document.getElementById('ly-results').scrollIntoView({behavior:'smooth'});
 }
 
 // Init: set today's date for all date inputs
 document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.valueAsDate = new Date(); });
+
+// ========== ZIWEI ANALYSIS (from SKILL) ==========
+function zwAnalysis(d) {
+    let h = `<div class="card"><h3>🔍 紫微斗数分析 [蓝天辰+许铨仁]</h3>`;
+
+    // 命宫分析
+    const soulPalace = d.palaces.find(p => p.isSoul);
+    const bodyPalace = d.palaces.find(p => p.isBody);
+    if (soulPalace && soulPalace.majors.length) {
+        h += `<div class="hl"><b>命宫${soulPalace.branch}：</b>${soulPalace.majors.map(s => `<span class="tag tag-good">${s.star}${s.brightness}${s.sihua?'['+s.sihua+']':''}</span>`).join(' ')}`;
+        // Simple interpretation
+        if (soulPalace.majors.some(s => s.star==='紫微')) h += ` <span class="tag tag-info">紫微坐命——天生领导气质</span>`;
+        if (soulPalace.majors.some(s => s.star==='天府')) h += ` <span class="tag tag-info">天府坐命——稳重守成</span>`;
+        if (soulPalace.majors.some(s => s.star==='天机')) h += ` <span class="tag tag-info">天机坐命——聪明善谋</span>`;
+        if (soulPalace.majors.some(s => s.star==='太阳')) h += ` <span class="tag tag-info">太阳坐命——热情慷慨</span>`;
+        if (soulPalace.majors.some(s => s.star==='武曲')) h += ` <span class="tag tag-info">武曲坐命——刚毅果断</span>`;
+        if (soulPalace.majors.some(s => s.star==='天同')) h += ` <span class="tag tag-info">天同坐命——温和享福</span>`;
+        if (soulPalace.majors.some(s => s.star==='廉贞')) h += ` <span class="tag tag-info">廉贞坐命——刚烈重情</span>`;
+        if (soulPalace.majors.some(s => s.star==='破军')) h += ` <span class="tag tag-info">破军坐命——破旧立新</span>`;
+        h += `</div>`;
+    } else {
+        h += `<div class="hl"><b>命宫：</b><span class="tag tag-warn">空宫</span>——借对宫迁移宫为用</div>`;
+    }
+
+    // 身宫
+    if (bodyPalace) {
+        h += `<div class="hl"><b>身宫在${bodyPalace.name}：</b>后半生重心在${bodyPalace.name}领域发展</div>`;
+    }
+
+    // 四化分析
+    h += `<div class="hl"><b>四化分布：</b>`;
+    const sihuaStars = [d.sihua.lu, d.sihua.quan, d.sihua.ke, d.sihua.ji];
+    const sihuaNames = ['禄','权','科','忌'];
+    for (let i = 0; i < 4; i++) {
+        if (!sihuaStars[i]) continue;
+        // Find which palace
+        let palaceName = '?';
+        for (const p of d.palaces) {
+            if (p.majors.some(s => s.star === sihuaStars[i])) {
+                palaceName = p.name;
+                break;
+            }
+        }
+        const tag = i === 3 ? 'tag-warn' : 'tag-good';
+        h += ` <span class="tag ${tag}">${sihuaStars[i]}${sihuaNames[i]}在${palaceName}</span>`;
+    }
+    h += `</div>`;
+
+    // 来因宫
+    const laiyin = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+    h += `<div class="hl"><b>来因宫年干${d.bazi[0]}：</b>四化源出此干，一生重点由此展开</div>`;
+
+    // 当前大运分析
+    h += `<div class="hl"><b>当前大运${d.currentDecadal.stem}${d.currentDecadal.branch}：</b>`;
+    const dcSihua = ZW_SIHUA[d.currentDecadal.stem];
+    if (dcSihua) {
+        h += `大运四化: ${dcSihua[0]}禄 ${dcSihua[1]}权 ${dcSihua[2]}科 ${dcSihua[3]}忌`;
+    }
+    h += `</div>`;
+
+    h += `</div>`;
+    return h;
+}
+
+// ========== LIUREN ANALYSIS (from SKILL) ==========
+function lrAnalysis(d) {
+    let h = `<div class="card"><h3>🔍 大六壬课分析</h3>`;
+
+    // 课体总结
+    h += `<div class="hl"><b>课体总断：</b>`;
+    const keTiStr = d.keTi.length ? d.keTi.join('、') : '普通课';
+    if (keTiStr.includes('贼克')) h += `<span class="tag tag-warn">贼克课——事有阻碍，需防小人</span> `;
+    if (keTiStr.includes('克贼')) h += `<span class="tag tag-info">克贼课——我克他，主动有利</span> `;
+    if (keTiStr.includes('伏吟')) h += `<span class="tag tag-warn">伏吟课——事多反复，进展缓慢</span> `;
+    if (keTiStr.includes('逢空')) h += `<span class="tag tag-warn">逢空——所谋之事落实较难</span> `;
+    if (!keTiStr.includes('贼克') && !keTiStr.includes('伏吟') && !keTiStr.includes('逢空')) {
+        h += `<span class="tag tag-neutral">${keTiStr}——需结合具体事项详断</span>`;
+    }
+    h += `</div>`;
+
+    // 三传走势
+    h += `<div class="hl"><b>三传走势：</b>初${d.sanChuan.chu}→中${d.sanChuan.zhong}→末${d.sanChuan.mo}`;
+    const chuanArr = [d.sanChuan.chu, d.sanChuan.zhong, d.sanChuan.mo];
+    const allSame = chuanArr.every((v, i, a) => v === a[0]);
+    if (allSame) h += ` | <span class="tag tag-warn">三传归一——事态集中，结果明确</span>`;
+    h += `</div>`;
+
+    // 贵人
+    const hasNoble = d.tianJiang.some(tj => tj.general === '贵人');
+    h += `<div class="hl"><b>天将提示：</b>${d.isDay ? '昼占' : '夜占'} | `;
+    if (hasNoble) h += `<span class="tag tag-good">贵人入课——有贵人相助</span>`;
+    const hasBaihu = d.tianJiang.some(tj => tj.general === '白虎' && (d.siKe.some(k => k.shang === tj.branch)));
+    if (hasBaihu) h += ` <span class="tag tag-warn">白虎在课——注意意外/疾病</span>`;
+    h += `</div>`;
+
+    // 四课人宅
+    h += `<div class="hl"><b>四课关系：</b>`;
+    h += `干上神${d.siKe[0]?.shang || '?'}=外事门(外界环境) | `;
+    h += `支上神${d.siKe[2]?.shang || '?'}=内事门(自身状态)`;
+    h += `</div>`;
+
+    if (d.question) {
+        h += `<div class="hl"><b>占问："${d.question}"</b>——请结合课体、三传、天将综合判断</div>`;
+    }
+
+    h += `</div>`;
+    return h;
+}
+
+// ========== LIUYAO ANALYSIS (from SKILL) ==========
+function lyAnalysis(d) {
+    let h = `<div class="card"><h3>🔍 六爻分析</h3>`;
+
+    // 世应分析
+    const shiLine = d.lines.find(l => l.isShi);
+    const yingLine = d.lines.find(l => l.isYing);
+    if (shiLine) {
+        h += `<div class="hl"><b>世爻(${shiLine.pos}爻 ${shiLine.qin} ${shiLine.zhi})：</b>代表自身 | 状态: `;
+        if (shiLine.moving) h += `<span class="tag tag-warn">动爻——自身主动求变</span>`;
+        else h += `<span class="tag tag-neutral">静爻——自身稳定</span>`;
+        h += `</div>`;
+    }
+    if (yingLine) {
+        h += `<div class="hl"><b>应爻(${yingLine.pos}爻 ${yingLine.qin} ${yingLine.zhi})：</b>代表对方/所问之事`;
+        if (yingLine.moving) h += ` <span class="tag tag-info">动爻——对方/事态有变</span>`;
+        h += `</div>`;
+    }
+
+    // 世应关系
+    if (shiLine && yingLine) {
+        h += `<div class="hl"><b>世应关系：</b>`;
+        const shiWx = {子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'}[shiLine.zhi];
+        const yingWx = {子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'}[yingLine.zhi];
+        if (shiWx === yingWx) h += `五行相同→<span class="tag tag-info">比和——事易成</span>`;
+        else {
+            const sheng = {木:'火',火:'土',土:'金',金:'水',水:'木'};
+            const ke = {木:'土',土:'水',水:'火',火:'金',金:'木'};
+            if (sheng[shiWx] === yingWx) h += `世生应→<span class="tag tag-info">你付出较多</span>`;
+            else if (sheng[yingWx] === shiWx) h += `应生世→<span class="tag tag-good">对方利于你</span>`;
+            else if (ke[shiWx] === yingWx) h += `世克应→<span class="tag tag-info">你能掌控</span>`;
+            else if (ke[yingWx] === shiWx) h += `应克世→<span class="tag tag-warn">对方克制你</span>`;
+        }
+        h += `</div>`;
+    }
+
+    // 用神分析
+    if (d.question) {
+        h += `<div class="hl"><b>用神定位：</b>`;
+        const q = d.question;
+        if (q.includes('财')||q.includes('钱')||q.includes('合作')) h += `占财→<span class="tag tag-info">妻财爻为用神</span>`;
+        else if (q.includes('官')||q.includes('工作')||q.includes('事业')) h += `占事业→<span class="tag tag-info">官鬼爻为用神</span>`;
+        else if (q.includes('婚')||q.includes('感情')||q.includes('对象')) h += `占婚姻→<span class="tag tag-info">妻财爻/官鬼爻为用神</span>`;
+        else if (q.includes('病')||q.includes('健康')||q.includes('身体')) h += `占健康→<span class="tag tag-info">官鬼爻为病，子孙爻为药</span>`;
+        else h += `<span class="tag tag-neutral">需明确占问事项以定用神</span>`;
+        h += `</div>`;
+    }
+
+    // 动爻解读
+    if (d.movingLines.length > 0) {
+        h += `<div class="hl"><b>动爻总断：</b>`;
+        const movingQins = d.movingLines.map(l => l.qin);
+        if (movingQins.includes('妻财')) h += `<span class="tag tag-good">财动→有财运变动</span> `;
+        if (movingQins.includes('官鬼')) h += `<span class="tag tag-warn">官动→工作/官司有变</span> `;
+        if (movingQins.includes('子孙')) h += `<span class="tag tag-good">子孙动→喜事/解厄</span> `;
+        if (movingQins.includes('兄弟')) h += `<span class="tag tag-warn">兄弟动→竞争/破财</span> `;
+        if (movingQins.includes('父母')) h += `<span class="tag tag-info">父母动→文书/长辈事</span> `;
+        h += `</div>`;
+    }
+
+    h += `</div>`;
+    return h;
+}
 </script>
 </body>
 </html>
