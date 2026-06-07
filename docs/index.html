@@ -167,7 +167,26 @@ tr:last-child td{border-bottom:none}
 /* 流日 grid */
 .ld-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:2px; }
 .ld-cell { display:flex; flex-direction:column; align-items:center; padding:3px 2px; background:rgba(0,0,0,.15); border-radius:2px; font-size:.7em; }
-@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}.dy-expand-head{gap:6px;font-size:.85em}.lm-grid{grid-template-columns:repeat(3,1fr)}.ld-grid{grid-template-columns:repeat(7,1fr)}}
+/* ====== SLIDER ====== */
+.sl-crumb { display:flex; gap:4px; align-items:center; padding:8px 0; margin-bottom:8px; font-size:.85em; }
+.sl-crumb-item { padding:4px 12px; border-radius:var(--r-sm); cursor:pointer; color:var(--dim); background:var(--input); transition:all .2s; }
+.sl-crumb-item.active { color:var(--goldL); background:rgba(200,164,92,.15); }
+.sl-crumb-item:hover:not(.active) { color:var(--text); }
+.sl-panel { overflow:hidden; position:relative; }
+.sl-level { animation:slideIn .25s cubic-bezier(.16,1,.3,1); }
+@keyframes slideIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+.sl-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid rgba(58,48,36,.4); cursor:pointer; transition:background .15s; font-size:.9em; }
+.sl-item:hover { background:rgba(200,164,92,.06); }
+.sl-item.cur { background:rgba(200,164,92,.1); }
+.sl-dy { border:1px solid var(--border); border-radius:var(--r-md); margin-bottom:4px; }
+.sl-dy.cur { border-color:var(--gold); }
+.sl-lm-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px; }
+.sl-lm { flex-direction:column; align-items:center; text-align:center; border:1px solid var(--border); border-radius:4px; padding:8px 4px; gap:2px; }
+.sl-ld-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:8px; }
+.sl-ld-cell { display:flex; flex-direction:column; align-items:center; padding:4px 2px; background:rgba(0,0,0,.15); border-radius:3px; font-size:.75em; }
+.sl-back { display:inline-block; padding:6px 14px; margin:4px; cursor:pointer; color:var(--gold); font-size:.85em; border:1px solid var(--border); border-radius:var(--r-sm); transition:all .2s; }
+.sl-back:hover { background:rgba(200,164,92,.1); border-color:var(--gold); }
+@media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}.sl-lm-grid{grid-template-columns:repeat(3,1fr)}.sl-ld-grid{grid-template-columns:repeat(5,1fr)}}
 </style>
 </head>
 <body>
@@ -261,12 +280,13 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
 </div>
 
-<script src="terms_data.js?v=c86c1d2"></script>
-<script src="bazi.js?v=c86c1d2"></script>
-<script src="ziwei.js?v=c86c1d2"></script>
-<script src="liuren.js?v=c86c1d2"></script>
-<script src="liuyao.js?v=c86c1d2"></script>
-<script src="analysis.js?v=c86c1d2"></script>
+<script src="terms_data.js?v=e22ab3c"></script>
+<script src="bazi.js?v=e22ab3c"></script>
+<script src="ziwei.js?v=e22ab3c"></script>
+<script src="liuren.js?v=e22ab3c"></script>
+<script src="liuyao.js?v=e22ab3c"></script>
+<script src="analysis.js?v=e22ab3c"></script>
+<script src="slider.js?v=e22ab3c"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -277,17 +297,51 @@ function switchTab(name) {
     document.getElementById('tab-'+name).classList.add('active');
 }
 
-// ========== ACCORDION + TREE TOGGLE ==========
+// ========== ACCORDION + SLIDER NAVIGATION ==========
 function toggleAcc(el) { el.closest('.acc').classList.toggle('open'); }
-function t(el, id) {
-    const body = document.getElementById(id);
-    const arr = document.getElementById(id+'_arr');
-    if (!body || !arr) return;
-    const isOpen = body.style.display === 'block';
-    body.style.display = isOpen ? 'none' : 'block';
-    arr.textContent = isOpen ? '▶' : '▼';
-    el.classList.toggle('expanded', !isOpen);
+
+var slState = { lv:0, dy:0, ln:0, lm:0 };
+
+function slGo(lv, dy, ln, lm) {
+    slState = { lv, dy, ln, lm };
+    // Hide all levels
+    document.querySelectorAll('.sl-level').forEach(el => el.style.display = 'none');
+    // Show target level
+    const sel = `.sl-level[data-lv="${lv}"][data-dy="${dy}"]` + (ln>=0?`[data-ln="${ln}"]`:'') + (lm>=0?`[data-lm="${lm}"]`:'');
+    const target = document.querySelector(sel);
+    if (target) { target.style.display = 'block'; target.style.animation = 'none'; target.offsetHeight; target.style.animation = 'slideIn .25s cubic-bezier(.16,1,.3,1)'; }
+    // Update breadcrumb
+    const crumb = document.getElementById('sl-crumb');
+    if (!crumb) return;
+    const desc = ['大运','流年','流月','流日'];
+    let html = '';
+    for (let i=0; i<=lv; i++) {
+        const active = i===lv ? ' active' : '';
+        const d = document.querySelector(`.sl-level[data-lv="${i}"][data-dy="${dy}"]`);
+        if (i===0) html += `<span class="sl-crumb-item${active}" onclick="slGo(0,${dy})">大运${dy+1}</span>`;
+        else if (i===1 && ln>=0) html += `<span class="sl-crumb-item${active}">→ 流年</span>`;
+        else if (i===2 && lm>=0) html += `<span class="sl-crumb-item${active}">→ 流月</span>`;
+        else if (i===3) html += `<span class="sl-crumb-item${active}">→ 流日</span>`;
+    }
+    if (lv>0) html += `<span class="sl-back" onclick="slGo(${lv-1},${dy}${lv>1?','+ln:''})">← 返回</span>`;
+    crumb.innerHTML = html;
 }
+
+// Delegate clicks on sl-items
+document.addEventListener('click', function(e) {
+    const item = e.target.closest('.sl-item');
+    if (!item) return;
+    const lvEl = item.closest('.sl-level');
+    if (!lvEl) return;
+    const lv = parseInt(lvEl.dataset.lv);
+    const dy = parseInt(lvEl.dataset.dy);
+    const ln = item.dataset.ln !== undefined ? parseInt(item.dataset.ln) : -1;
+    const lm = item.dataset.lm !== undefined ? parseInt(item.dataset.lm) : -1;
+
+    if (lv === 0) slGo(1, dy);
+    else if (lv === 1 && ln >= 0) slGo(2, dy, ln);
+    else if (lv === 2 && lm >= 0) slGo(3, dy, ln, lm);
+});
 
 // ========== GENDER TOGGLES ==========
 document.querySelectorAll('.gender-tog').forEach(gt => {
@@ -338,57 +392,8 @@ function renderBazi(d) {
       <div class="bazi-row">${pillars.map(p => `<div class="bz-p${p.m?' day':''}"><div class="lbl">${p.n}${p.m?' (日主)':''}</div><div class="ch">${p.v}</div><div class="ny">${getNayin(p.v)}</div></div>`).join('')}</div>
       <div style="color:var(--dim);font-size:.85em">日主 <b style="color:var(--goldL)">${d.riGan}</b> | 时辰: ${d.chineseHour} | 虚岁: ${d.currentAgeXusui}</div></div>`;
 
-    // === 大运 · 流年 · 流月 · 流日 (问真八字风格) ===
-    html += `<div class="card"><h3>📈 大运 · 流年 · 流月 · 流日</h3>
-      <p style="color:var(--dim);font-size:.85em;margin-bottom:12px">${d.dayun.direction} | 起运${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}个月 | 距${d.dayun.targetJie} ${d.dayun.deltaDays}天 | <b>点击▶逐级展开</b></p>`;
-    const birthYear = parseInt(d.solarDate);
-    d.dayun.steps.forEach((s, di) => {
-        const isCur = d.currentDayun && s.pillar === d.currentDayun.pillar;
-        const liunian = getLiunianForDayun(s, birthYear, d.riGan);
-        const dyId = 'dy' + di;
-        // 大运头部
-        html += `<div class="dy-expand ${isCur?'cur':''}">
-          <div class="dy-expand-head" onclick="t(this,'${dyId}')">
-            <span class="dy-arr" id="${dyId}_arr">▶</span>
-            <span class="dy-pillar">${s.pillar}</span>
-            <span class="dy-age">${s.startAge}-${s.endAge}岁</span>
-            <span class="dy-year">${Math.floor(birthYear+s.startAge)}-${Math.floor(birthYear+s.endAge)-1}</span>
-            ${isCur?'<span class="tag tag-good">当前</span>':''}
-          </div>
-          <div class="dy-body" id="${dyId}">`;
-        // 流年列表
-        liunian.forEach((ln, li) => {
-            const lnId = dyId+'_ln'+li;
-            html += `<div class="ln-row" onclick="t(this,'${lnId}')">
-              <span class="dy-arr" id="${lnId}_arr">▶</span>
-              <span class="ln-year">${ln.year}</span>
-              <b>${ln.pillar}</b>
-              <span class="tag ${ln.shishen.includes('杀')||ln.shishen.includes('伤')?'tag-warn':'tag-info'}">${ln.shishen}</span></div>`;
-            // 流月
-            html += `<div class="ln-body" id="${lnId}"><div class="lm-grid">`;
-            ln.liuyue.forEach((m, mi) => {
-                const lmId = lnId+'_lm'+mi;
-                html += `<div class="lm-cell" onclick="t(this,'${lmId}')">
-                  <span class="dy-arr" id="${lmId}_arr" style="font-size:.6em">▶</span>
-                  <div class="lm-name">${m.name}</div>
-                  <div class="lm-pillar">${m.pillar}</div>
-                  <span class="tag ${m.shishen.includes('杀')||m.shishen.includes('伤')?'tag-warn':'tag-info'}" style="font-size:.65em">${m.shishen}</span>`;
-                // 流日
-                html += `<div class="lm-body" id="${lmId}"><div class="ld-grid">`;
-                const liuri = getLiuriForMonth(ln.year, mi, d.riGan);
-                liuri.forEach(ld => {
-                    html += `<span class="ld-cell" title="${ld.pillar} ${ld.shishen}">
-                      <span style="font-size:.6em;color:var(--dim)">${ld.day}</span>
-                      <span style="font-weight:700">${ld.pillar}</span>
-                      <span style="font-size:.55em;color:var(--dim)">${ld.shishen}</span></span>`;
-                });
-                html += `</div></div></div>`;
-            });
-            html += `</div></div>`;
-        });
-        html += `</div></div>`;
-    });
-    html += `</div>`;
+    // === 滑动式 大运→流年→流月→流日 ===
+    html += renderDayunSlider(d);
 
     // All data cards wrapped in accordion
     html += makeAcc('📋 命盘数据', `
