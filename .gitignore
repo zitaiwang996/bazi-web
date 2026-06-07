@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Large docx files
+*.docx
+
+# Extracted docs
+extracted_docs/
+
+# Skills (not needed for bazi web app)
+skills/
+
+# Virtual env / node
+node_modules/
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# PaddleOCR (huge)
+PaddleOCR/
+
+# Temp output files
+*.output
+chart_output.txt
+full_chart_output.txt
+
+# Other system dirs
+liuyao/
+meihua-yishu/
+依晨紫微斗数/
+梅花易数/
+.claude/
+
+# Specific large/irrelevant files
+package.json
+package-lock.json
+ocr_engine.py
+ocr.sh
+batch_ocr.py
+pdf_to_text.py
+doc_converter.py
+extract.bat
+
+# Temp scripts
+temp_chart.py
+temp_chart2.py
+temp_full_chart.py
+temp_full_chart3.py
+bazi_temp.py
+calc_bazi.py
+liuyao_temp.py
+daliuren_*.py
+health_analysis.py
+ziwei_liunian.py
+ziwei_deep.py
+
+# Friend verification images
+*.png
+
+# Claude memory files
+MEMORY.md
+
+# Ziwei engine and data
+ziwei_engine.py
+ziwei_data.json
+ziwei_detail.txt
+ziwei_output.txt
+*_analysis.txt
+
+# Chinese docs
+专业盲派/
+*.doc
