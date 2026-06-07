@@ -283,7 +283,7 @@ function renderBazi(d) {
     html += `</div>`; // end grid
 
     // Add SKILL-based analysis
-    try { html += generateAnalysis(d); } catch(e) { console.error('Analysis error:', e); }
+    try { html += generateAnalysis(d); } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
 
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
