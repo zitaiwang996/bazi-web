@@ -195,12 +195,46 @@ tr:last-child td{border-bottom:none}
 .wz-ln-row:hover .st-arr, .wz-lm-chip:hover .st-arr { color:var(--gold); }
 @media(max-width:640px){.wz-lm-chip{min-width:44px}.wz-lm-pillar{font-size:.75em}.wz-dy-head{gap:6px;font-size:.9em}}
 @media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}}
+/* ====== HORIZONTAL SCROLL LAYOUT (大运→流年→流月→流日) ====== */
+.hscroll{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:thin;scrollbar-color:var(--borderL) transparent}
+.hscroll::-webkit-scrollbar{height:5px}.hscroll::-webkit-scrollbar-thumb{background:var(--borderL);border-radius:3px}
+.hcol{flex-shrink:0;min-width:90px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--card);overflow:hidden;transition:border-color .25s}
+.hcol.cur{border-color:var(--gold);box-shadow:0 0 8px rgba(200,164,92,.12)}
+.hcol-head{padding:10px 12px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;transition:background .2s;user-select:none}
+.hcol-head:hover{background:rgba(200,164,92,.06)}
+.hcol-pillar{font-family:'Noto Serif SC','SimSun',serif;font-size:1.1em;font-weight:700;color:var(--text)}
+.cur .hcol-pillar{color:var(--goldL)}
+.hcol-age{font-size:.8em;color:var(--dim)}
+.hcol-years{font-size:.7em;color:var(--mute)}
+.hcol-arr{font-size:.65em;color:var(--dim);transition:color .2s;margin-top:4px}
+.hcol-head:hover .hcol-arr{color:var(--gold)}
+.hcol-body{border-top:1px solid var(--border);background:var(--input)}
+/* Dayun columns */
+.dy-col{min-width:105px}.dy-scroll{padding:4px 0}
+.dy-head{padding:14px 10px}
+/* Liunian columns */
+.ln-col{min-width:90px}.ln-scroll{padding:4px}
+.ln-year{font-size:.8em;color:var(--dim)}
+/* Liuyue columns */
+.lm-col{min-width:78px}.lm-scroll{padding:2px}
+.lm-name{font-size:.65em;color:var(--dim)}
+/* Solar term tag on liuyue */
+.jie-tag{display:inline-block;font-size:.52em;color:#5a9e5a;background:rgba(90,158,90,.12);padding:1px 4px;border-radius:3px;line-height:1.3;text-align:center;margin-top:2px;border:1px solid rgba(90,158,90,.2)}
+/* Liuri grid */
+.ld-hgrid{display:flex;flex-wrap:wrap;gap:2px;padding:6px;min-width:320px}
+.ld-chip{display:inline-flex;flex-direction:column;align-items:center;padding:3px 4px;background:rgba(0,0,0,.12);border-radius:3px;min-width:42px;text-align:center;transition:background .15s}
+.ld-chip:hover{background:rgba(200,164,92,.1)}
+.ld-day{font-size:.6em;color:var(--mute)}
+.ld-pillar{font-size:.78em;font-weight:700;font-family:'Noto Serif SC',serif}
+.ld-ss{font-size:.55em;color:var(--dim)}.ld-ss-warn{color:var(--redL)}
+/* Mobile tweaks for horizontal layout */
+@media(max-width:640px){.dy-col{min-width:90px}.ln-col{min-width:78px}.lm-col{min-width:68px}.ld-chip{min-width:36px}.ld-pillar{font-size:.7em}.hcol-head{padding:7px 8px}.dy-head{padding:10px 8px}}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
-  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v9</span></h1>
+  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v10</span></h1>
   <div class="div"></div>
   <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
 </div>
@@ -285,16 +319,16 @@ tr:last-child td{border-bottom:none}
 <div id="ly-results"></div>
 </div>
 
-<div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.0</div>
+<div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.1</div>
 </div>
 
-<script src="terms_data.js?v=8658960"></script>
-<script src="bazi.js?v=8658960"></script>
-<script src="ziwei.js?v=8658960"></script>
-<script src="liuren.js?v=8658960"></script>
-<script src="liuyao.js?v=8658960"></script>
-<script src="analysis.js?v=8658960"></script>
-<script src="slider.js?v=8658960"></script>
+<script src="terms_data.js?v=8658961"></script>
+<script src="bazi.js?v=8658961"></script>
+<script src="ziwei.js?v=8658961"></script>
+<script src="liuren.js?v=8658961"></script>
+<script src="liuyao.js?v=8658961"></script>
+<script src="analysis.js?v=8658961"></script>
+<script src="slider.js?v=8658961"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -823,3 +857,4 @@ async function doDeepSeek() {
 </script>
 </body>
 </html>
+
