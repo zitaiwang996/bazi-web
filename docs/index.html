@@ -510,10 +510,10 @@ function renderBaziGrid(d) {
 
     // 天干 row
     grid += gLabel('天干');
-    grid += gCell('<span class="bz-pillar ' + wuxingClass(lnGan) + '">' + lnPillar + '</span>');
-    grid += gCell('<span class="bz-pillar ' + wuxingClass(dyGan) + '">' + dyPillar + '</span>');
+    grid += gCell('<span class="bz-pillar ' + wuxingClass(lnGan) + '">' + lnGan + '</span>');
+    grid += gCell('<span class="bz-pillar ' + wuxingClass(dyGan) + '">' + dyGan + '</span>');
     for (let i = 0; i < 4; i++) {
-        grid += gCell('<span class="bz-pillar ' + wuxingClass(stems[i]) + '">' + pillars[i] + '</span>', i === 2 ? 'day-col' : '');
+        grid += gCell('<span class="bz-pillar ' + wuxingClass(stems[i]) + '">' + stems[i] + '</span>', i === 2 ? 'day-col' : '');
     }
 
     // 地支 row

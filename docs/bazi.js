@@ -1,23 +1,24 @@
-﻿// bazi.js — 金镖门盲派八字排盘引擎 (JavaScript)
+// bazi.js — 金镖门盲派八字排盘引擎 (JavaScript)
 // Ported from bazi_engine.py for GitHub Pages deployment
 
-const STEMS = '甲乙丙丁戊己庚辛壬癸';
-const BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
-const YANG_STEMS = new Set('甲丙戊庚壬'.split(''));
+var STEMS = '甲乙丙丁戊己庚辛壬癸';
+var BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
+var YANG_STEMS = {甲:1,丙:1,戊:1,庚:1,壬:1};
 
 // Generate 60 Jiazi
-const JIAZI = [];
+var JIAZI2 = [];
 for (let i = 0; i < 60; i++) {
-    JIAZI.push(STEMS[i % 10] + BRANCHES[i % 12]);
+    JIAZI2.push(STEMS[i % 10] + BRANCHES[i % 12]);
 }
+var JIAZI = JIAZI2;
 
 // 五虎遁
-const TIGER_RULE = {甲:'丙',乙:'戊',丙:'庚',丁:'壬',戊:'甲',己:'丙',庚:'戊',辛:'庚',壬:'壬',癸:'甲'};
+var TIGER_RULE = {甲:'丙',乙:'戊',丙:'庚',丁:'壬',戊:'甲',己:'丙',庚:'戊',辛:'庚',壬:'壬',癸:'甲'};
 // 五鼠遁
-const RAT_RULE = {甲:'甲',乙:'丙',丙:'戊',丁:'庚',戊:'壬',己:'甲',庚:'丙',辛:'戊',壬:'庚',癸:'壬'};
+var RAT_RULE = {甲:'甲',乙:'丙',丙:'戊',丁:'庚',戊:'壬',己:'甲',庚:'丙',辛:'戊',壬:'庚',癸:'壬'};
 
 // 纳音
-const NAYIN_TABLE = {
+var NAYIN_TABLE = {
 甲子:'海中金',乙丑:'海中金',丙寅:'炉中火',丁卯:'炉中火',戊辰:'大林木',己巳:'大林木',
 庚午:'路旁土',辛未:'路旁土',壬申:'剑锋金',癸酉:'剑锋金',甲戌:'山头火',乙亥:'山头火',
 丙子:'涧下水',丁丑:'涧下水',戊寅:'城头土',己卯:'城头土',庚辰:'白蜡金',辛巳:'白蜡金',
@@ -31,15 +32,15 @@ const NAYIN_TABLE = {
 };
 
 // 纳音五行
-const NAYIN_WUXING = {};
+var NAYIN_WUXING = {};
 for (const [k, v] of Object.entries(NAYIN_TABLE)) {
     const w = v.slice(-1);
     NAYIN_WUXING[k] = w;
 }
 
 // 十二长生
-const TWELVE_STAGES = ['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
-const CHANGSHENG_MAP = {
+var TWELVE_STAGES = ['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'];
+var CHANGSHENG_MAP = {
 甲:['亥','子','丑','寅','卯','辰','巳','午','未','申','酉','戌'],
 乙:['午','巳','辰','卯','寅','丑','子','亥','戌','酉','申','未'],
 丙:['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'],
@@ -53,22 +54,22 @@ const CHANGSHENG_MAP = {
 };
 
 // 藏干
-const CANGAN = {
+var CANGAN = {
 子:['癸'],丑:['己','癸','辛'],寅:['甲','丙','戊'],卯:['乙'],
 辰:['戊','乙','癸'],巳:['丙','戊','庚'],午:['丁','己'],未:['己','丁','乙'],
 申:['庚','壬','戊'],酉:['辛'],戌:['戊','辛','丁'],亥:['壬','甲'],
 };
 
 // 旬空
-const XUN_KONG = {
+var XUN_KONG = {
 甲子:['戌','亥'],甲戌:['申','酉'],甲申:['午','未'],
 甲午:['辰','巳'],甲辰:['寅','卯'],甲寅:['子','丑'],
 };
 
 // 地支关系
-const CHONG = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
-const HE = [['子','丑'],['寅','亥'],['卯','戌'],['辰','酉'],['巳','申'],['午','未']];
-const CHUAN = [['子','未'],['丑','午'],['寅','巳'],['卯','辰'],['申','亥'],['酉','戌']];
+var CHONG = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
+var HE = [['子','丑'],['寅','亥'],['卯','戌'],['辰','酉'],['巳','申'],['午','未']];
+var CHUAN = [['子','未'],['丑','午'],['寅','巳'],['卯','辰'],['申','亥'],['酉','戌']];
 
 // =========== UTILS ===========
 function fixJS(n, m = 12) {
@@ -213,8 +214,8 @@ function getShishen(dayStem, otherStem) {
     }
     if (sameWuxing(dayStem, otherStem) && dayStem !== otherStem) return '劫财';
 
-    const dsYang = YANG_STEMS.has(dayStem);
-    const osYang = YANG_STEMS.has(otherStem);
+    const dsYang = YANG_STEMS[dayStem];
+    const osYang = YANG_STEMS[otherStem];
     const sameYY = dsYang === osYang;
 
     function check(map, catSame, catDiff) {
@@ -347,7 +348,7 @@ function calcDayun(dateStr, timeStr, nianGan, yueGan, yueZhi, gender) {
     const [h, m] = timeStr.split(':').map(Number);
     const birthDT = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m);
 
-    const isYang = YANG_STEMS.has(nianGan);
+    const isYang = YANG_STEMS[nianGan];
     const shunpai = (isYang && gender === 'male') || (!isYang && gender === 'female');
     const direction = shunpai ? '顺排' : '逆排';
 
@@ -811,3 +812,4 @@ function wuxingClass(stem) {
         '壬':'c-water','癸':'c-water',
     }[stem] || '';
 }
+

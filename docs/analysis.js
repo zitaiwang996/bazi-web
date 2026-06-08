@@ -512,6 +512,7 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
 
     // ===== STEP 2: 适合行业建议 =====
     // 日主适合的工作方向
+    const riWx2 = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[riGan];
     const riWxJobs = {
         木:'教育/文化/园林/中医/出版/纺织',
         火:'能源/餐饮/传媒/演艺/互联网/美容',
@@ -519,7 +520,7 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
         金:'金融/法律/机械/公安/五金/医疗',
         水:'物流/贸易/旅游/渔业/饮料/交通',
     };
-    h += `<div class="hl"><b>🏭 日主${riGan}(${riWx})适合方向：</b>${riWxJobs[riWx]||''}</div>`;
+    h += `<div class="hl"><b>🏭 日主${riGan}(${riWx2})适合方向：</b>${riWxJobs[riWx2]||''}</div>`;
 
     // ===== STEP 3: 公职考试时机 (仅18-38岁且适合公职) =====
     const curAge2 = d.currentAgePrecise || d.currentAgeXusui;
