@@ -101,6 +101,9 @@ function renderDayunSlider(d) {
         html += '<div class="hcol dy-col' + (isCurDy ? ' cur' : '') + '">';
         html += '<div class="hcol-head dy-head" onclick="toggleHS(\'' + baseId + '\')">';
         html += '<div class="hcol-pillar">' + dy.pillar + '</div>';
+        // 大运十神
+        var dySS = getShishen(riGan, dy.pillar[0]);
+        html += '<span class="tag ' + (dySS.indexOf('杀') >= 0 || dySS.indexOf('伤') >= 0 ? 'tag-warn' : 'tag-info') + '" style="font-size:.6em;margin-top:1px">' + dySS + '</span>';
         html += '<div class="hcol-age">' + dy.startAge + '-' + dy.endAge + '岁</div>';
         html += '<div class="hcol-years">' + (Math.floor(birthYear + dy.startAge)) + '-' + (Math.floor(birthYear + dy.endAge) - 1) + '</div>';
         if (isCurDy) html += '<span class="tag tag-good" style="font-size:.6em;margin-top:2px">当前</span>';
@@ -109,6 +112,8 @@ function renderDayunSlider(d) {
 
         // Dayun body → liunian
         html += '<div class="hcol-body" id="' + baseId + '" style="display:' + (isCurDy ? 'block' : 'none') + '">';
+        // Breadcrumb: current dayun context
+        html += '<div class="ctx-bar">📌 大运：<b>' + dy.pillar + '</b>（' + dySS + '）| ' + dy.startAge + '-' + dy.endAge + '岁</div>';
         html += '<div class="hscroll ln-scroll" style="padding:6px">';
 
         for (var li = 0; li < liunian.length; li++) {
@@ -127,6 +132,8 @@ function renderDayunSlider(d) {
 
             // Liunian body → liuyue
             html += '<div class="hcol-body" id="' + lnId + '" style="display:' + (isCurYear ? 'block' : 'none') + '">';
+            // Breadcrumb: dayun → liunian context
+            html += '<div class="ctx-bar">📌 ' + dy.pillar + '（' + dySS + '）→ <b>' + ln.year + '年 ' + ln.pillar + '</b>（' + ln.shishen + '）</div>';
             html += '<div class="hscroll lm-scroll" style="padding:4px">';
 
             // 获取该年节气
@@ -153,6 +160,8 @@ function renderDayunSlider(d) {
 
                 // Liuyue body → liuri
                 html += '<div class="hcol-body" id="' + lmId + '" style="display:none">';
+                // Breadcrumb: dayun → liunian → liuyue context
+                html += '<div class="ctx-bar" style="font-size:.65em">📌 ' + dy.pillar + ' → ' + ln.year + '年' + ln.pillar + ' → <b>' + m.name + ' ' + m.pillar + '</b></div>';
                 html += '<div class="ld-hgrid">';
 
                 var liuri = getLiuriForSolarMonth(ln.year, mi, riGan);

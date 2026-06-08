@@ -1,4 +1,4 @@
-// bazi.js — 金镖门盲派八字排盘引擎 (JavaScript)
+﻿// bazi.js — 金镖门盲派八字排盘引擎 (JavaScript)
 // Ported from bazi_engine.py for GitHub Pages deployment
 
 const STEMS = '甲乙丙丁戊己庚辛壬癸';
@@ -650,3 +650,45 @@ function getLiuriForMonth(year, monthIdx, riGan) {
     }
     return days;
 }
+
+// =========== CALCULATE DISTANCE TO NEAREST SOLAR TERM (JIE) ===========
+function calcSolarTermDistance(solarDateStr) {
+    const d = parseDate(solarDateStr);
+    const birthDT = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0);
+
+    const jieKeys = [
+        'beginning_of_spring','waking_of_insects','pure_brightness',
+        'beginning_of_summer','grain_in_beard','lesser_heat',
+        'beginning_of_autumn','white_dew','cold_dew',
+        'beginning_of_winter','greater_snow','lesser_cold'
+    ];
+    const jieNames = ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'];
+
+    // Collect all jie within +/- 2 years
+    const allJie = [];
+    for (let yr = d.getFullYear() - 1; yr <= d.getFullYear() + 1; yr++) {
+        const yrKey = String(yr);
+        if (!SOLAR_TERMS[yrKey]) continue;
+        for (let i = 0; i < jieKeys.length; i++) {
+            const dt = parseSolarTerm(yrKey, jieKeys[i]);
+            if (dt) allJie.push({ dt, name: jieNames[i] });
+        }
+    }
+    allJie.sort((a, b) => a.dt - b.dt);
+
+    // Find nearest
+    let nearest = null, minDiff = Infinity;
+    for (const jie of allJie) {
+        const diff = Math.abs(jie.dt - birthDT);
+        if (diff < minDiff) { minDiff = diff; nearest = jie; }
+    }
+
+    if (!nearest) return { name: '?', days: 0, direction: '' };
+
+    const diffMs = nearest.dt - birthDT;
+    const days = Math.abs(Math.round(diffMs / 86400000));
+    const direction = diffMs >= 0 ? '后' : '前';
+
+    return { name: nearest.name, days, direction };
+}
+

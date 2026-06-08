@@ -7,6 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
+<script src="https://cdn.jsdelivr.net/npm/lunar-calendar-zh@0.1.4/dist/lunar-calendar.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
 
@@ -196,6 +197,25 @@ tr:last-child td{border-bottom:none}
 @media(max-width:640px){.wz-lm-chip{min-width:44px}.wz-lm-pillar{font-size:.75em}.wz-dy-head{gap:6px;font-size:.9em}}
 @media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}}
 /* ====== HORIZONTAL SCROLL LAYOUT (大运→流年→流月→流日) ====== */
+.ctx-bar{background:rgba(200,164,92,.08);border-bottom:1px solid var(--border);padding:4px 10px;font-size:.7em;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctx-bar b{color:var(--goldL)}
+/* ====== VERTICAL PILLAR DISPLAY ====== */
+.bz-vrow{display:flex;gap:var(--s-md);justify-content:center;flex-wrap:wrap;margin:var(--s-md) 0}
+.bz-vcol{display:flex;flex-direction:column;align-items:center;min-width:80px;padding:8px 6px;border-radius:var(--r-md);background:rgba(26,20,16,.3);border:1px solid transparent;transition:border-color .3s}
+.bz-vcol.day{border-color:var(--gold);background:rgba(200,164,92,.06);box-shadow:0 0 12px rgba(200,164,92,.08)}
+.bz-vlbl{font-size:.7em;color:var(--dim);margin-bottom:4px;letter-spacing:.08em}
+.bz-vstem{font-family:'Noto Serif SC','SimSun',serif;font-size:2em;font-weight:900;color:var(--text);line-height:1.2}
+.bz-vcol.day .bz-vstem{color:var(--goldL)}
+.bz-vss{font-size:.65em;color:var(--dim);margin-bottom:4px;line-height:1.1;min-height:1.1em}
+.bz-vss.warn{color:var(--redL)}
+.bz-vbranch{font-family:'Noto Serif SC','SimSun',serif;font-size:1.8em;font-weight:700;color:var(--text);line-height:1.2}
+.bz-vcang{font-size:.6em;color:var(--mute);margin-top:2px;line-height:1.2;text-align:center}
+.bz-vnayin{font-size:.55em;color:var(--dim);margin-top:3px;line-height:1.1}
+/* Time info bar */
+.time-info{background:rgba(200,164,92,.06);border:1px solid var(--border);border-radius:var(--r-md);padding:8px 14px;margin-top:12px;font-size:.8em;color:var(--dim);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.time-info span{white-space:nowrap}
+.time-info b{color:var(--goldL)}
+@media(max-width:640px){.bz-vstem{font-size:1.5em}.bz-vbranch{font-size:1.3em}.bz-vcol{min-width:65px;padding:6px 4px}}
 .hscroll{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:thin;scrollbar-color:var(--borderL) transparent}
 .hscroll::-webkit-scrollbar{height:5px}.hscroll::-webkit-scrollbar-thumb{background:var(--borderL);border-radius:3px}
 .hcol{flex-shrink:0;min-width:90px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--card);overflow:hidden;transition:border-color .25s}
@@ -234,7 +254,7 @@ tr:last-child td{border-bottom:none}
 <body>
 <div class="container">
 <div class="header">
-  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v10</span></h1>
+  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v11</span></h1>
   <div class="div"></div>
   <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
 </div>
@@ -265,6 +285,7 @@ tr:last-child td{border-bottom:none}
     <input type="password" id="ds-key" placeholder="DeepSeek API Key（可选，用于AI深度解读）" style="flex:1;background:var(--input);border:1px solid #4a4034;border-radius:8px;padding:10px;color:var(--text);font-size:.85em;outline:none">
     <span style="font-size:.75em;color:var(--dim);white-space:nowrap">Key仅存本地浏览器</span>
   </div>
+  <div class="time-info" id="bz-time-info" style="display:none"></div>
 </div>
 <div id="bz-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">推算中...</div>
 <div id="bz-error" style="display:none;background:rgba(192,57,43,.15);border-radius:8px;padding:16px;color:var(--redL)"></div>
@@ -285,6 +306,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doZiwei()">开始排盘</button></div>
   </div>
+  <div class="time-info" id="zw-time-info" style="display:none"></div>
 </div>
 <div id="zw-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">推算中...</div>
 <div id="zw-results"></div>
@@ -353,11 +375,49 @@ document.querySelectorAll('.gender-tog').forEach(gt => {
 });
 function getGender(id) { return document.querySelector(`#${id} .gender-tog button.active`)?.dataset.g || 'male'; }
 
+// ========== TIME INFO HELPERS ==========
+function getLunarInfo(solarDateStr) {
+    try {
+        if (typeof LunarCalendar === 'undefined') return '农历库加载中...';
+        const [y, m, d] = solarDateStr.split('-').map(Number);
+        const lunar = LunarCalendar.solarToLunar(y, m, d);
+        return lunar.GanZhiYear + '年 ' + lunar.lunarMonthName + lunar.lunarDayName + ' 生肖' + lunar.zodiac;
+    } catch(e) { return '农历转换失败'; }
+}
+
+function updateBaziTimeInfo() {
+    const date = document.getElementById('bz-date').value;
+    const time = document.getElementById('bz-time').value;
+    const el = document.getElementById('bz-time-info');
+    if (!date) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    const stDist = calcSolarTermDistance(date);
+    const chineseHr = time ? getChineseHour(time) : '?';
+    el.innerHTML = '<span>📅 <b>阳历：</b>' + date + (time ? ' ' + time : '') + '</span>' +
+        '<span>🌙 <b>阴历：</b>' + getLunarInfo(date) + '</span>' +
+        (time ? '<span>🕐 <b>时辰：</b>' + chineseHr + '</span>' : '') +
+        '<span>📐 <b>距' + stDist.name + '：</b>' + stDist.days + '天' + (stDist.direction==='前'?'前':'后') + '</span>';
+}
+
+function updateZiweiTimeInfo() {
+    const date = document.getElementById('zw-date').value;
+    const time = document.getElementById('zw-time').value;
+    const el = document.getElementById('zw-time-info');
+    if (!date) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    const stDist = calcSolarTermDistance(date);
+    el.innerHTML = '<span>📅 <b>阳历：</b>' + date + (time ? ' ' + time : '') + '</span>' +
+        '<span>🌙 <b>阴历：</b>' + getLunarInfo(date) + '</span>' +
+        '<span>📐 <b>距' + stDist.name + '：</b>' + stDist.days + '天' + (stDist.direction==='前'?'后':'前') + '</span>';
+}
+
 // ========== BAZI ==========
 document.getElementById('bz-date').valueAsDate = new Date();
+document.getElementById('bz-date').addEventListener('change', updateBaziTimeInfo);
 document.getElementById('bz-time').addEventListener('change', () => {
     const t = document.getElementById('bz-time').value;
     if (t) document.getElementById('bz-shichen').textContent = '对应时辰: ' + getChineseHour(t);
+    updateBaziTimeInfo();
 });
 
 function doBazi() {
@@ -386,9 +446,33 @@ function makeAcc(title, body) {
 }
 
 function renderBazi(d) {
-    const pillars = [{n:'年柱',v:d.yearPillar},{n:'月柱',v:d.monthPillar},{n:'日柱',v:d.dayPillar,m:true},{n:'时柱',v:d.timePillar}];
+    // Build vertical pillar display
+    const pNames = ['年柱','月柱','日柱','时柱'];
+    const pillars = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
+    const stems = [pillars[0][0], pillars[1][0], pillars[2][0], pillars[3][0]];
+    const branches = [pillars[0][1], pillars[1][1], pillars[2][1], pillars[3][1]];
+    const shishenData = d.shishenStems;
+    const canganData = d.shishenCangan;
+
+    let pillarHTML = '<div class="bz-vrow">';
+    for (let i = 0; i < 4; i++) {
+        const isDay = i === 2;
+        const ss = shishenData[i].shishen;
+        const ssClass = (ss.includes('杀') || ss.includes('伤')) ? ' warn' : '';
+        const cgStems = canganData[i].hiddens.map(h => h.stem).join('');
+        pillarHTML += '<div class="bz-vcol' + (isDay ? ' day' : '') + '">';
+        pillarHTML += '<div class="bz-vlbl">' + pNames[i] + (isDay ? ' (日主)' : '') + '</div>';
+        pillarHTML += '<div class="bz-vstem">' + stems[i] + '</div>';
+        pillarHTML += '<div class="bz-vss' + ssClass + '">' + ss + '</div>';
+        pillarHTML += '<div class="bz-vbranch">' + branches[i] + '</div>';
+        pillarHTML += '<div class="bz-vcang">' + cgStems + '</div>';
+        pillarHTML += '<div class="bz-vnayin">' + getNayin(pillars[i]) + '</div>';
+        pillarHTML += '</div>';
+    }
+    pillarHTML += '</div>';
+
     let html = `<div class="card" style="text-align:center"><h3>🏮 八字命盘</h3>
-      <div class="bazi-row">${pillars.map(p => `<div class="bz-p${p.m?' day':''}"><div class="lbl">${p.n}${p.m?' (日主)':''}</div><div class="ch">${p.v}</div><div class="ny">${getNayin(p.v)}</div></div>`).join('')}</div>
+      ${pillarHTML}
       <div style="color:var(--dim);font-size:.85em">日主 <b style="color:var(--goldL)">${d.riGan}</b> | 时辰: ${d.chineseHour} | 虚岁: ${d.currentAgeXusui}</div></div>`;
 
     // === 滑动式 大运→流年→流月→流日 ===
@@ -398,13 +482,7 @@ function renderBazi(d) {
     html += makeAcc('📋 命盘数据', `
       <div class="grid2">
 
-      <div class="card"><h3>🔮 纳音</h3><table><tr><th>柱</th><th>干支</th><th>纳音</th><th>五行</th></tr>${d.nayin.map(n => `<tr><td>${n.name}</td><td>${n.pillar}</td><td>${n.nayin}</td><td>${n.wuxing}</td></tr>`).join('')}</table></div>
-
       <div class="card"><h3>🌿 十二长生(日主)</h3><table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.changsheng.map(c => `<tr><td>${c.name}</td><td>${c.branch}</td><td>${c.stage}</td></tr>`).join('')}</table></div>
-
-      <div class="card"><h3>🔗 十神(天干)</h3><table><tr><th>柱</th><th>干</th><th>十神</th></tr>${d.shishenStems.map(s => `<tr><td>${s.name}</td><td><b>${s.stem}</b></td><td><span class="tag ${s.shishen.includes('杀')||s.shishen.includes('伤')?'tag-warn':'tag-info'}">${s.shishen}</span></td></tr>`).join('')}</table></div>
-
-      <div class="card"><h3>📦 藏干十神</h3><table><tr><th>柱</th><th>支</th><th>藏干(十神)</th></tr>${d.shishenCangan.map(sc => `<tr><td>${sc.name}</td><td>${sc.branch}</td><td>${sc.hiddens.map(h => `${h.stem}(${h.shishen})`).join('、')}</td></tr>`).join('')}</table></div>
 
       <div class="card"><h3>⛔ 空亡</h3><div class="hl">日柱 ${d.dayPillar} → 空亡: <span class="tag tag-warn">${d.kongBranches.join(' ')}</span></div>
         <table><tr><th>柱</th><th>支</th><th>状态</th></tr>${d.kongWang.map(k => `<tr><td>${k.name}</td><td>${k.branch}</td><td>${k.isKong?'<span class="tag tag-warn">坐空!</span>':'<span class="tag tag-neutral">—</span>'}</td></tr>`).join('')}</table></div>
@@ -462,6 +540,8 @@ function renderBazi(d) {
 
 // ========== ZIWEI ==========
 document.getElementById('zw-date').valueAsDate = new Date();
+document.getElementById('zw-date').addEventListener('change', updateZiweiTimeInfo);
+document.getElementById('zw-time').addEventListener('change', updateZiweiTimeInfo);
 function doZiwei() {
     const date = document.getElementById('zw-date').value;
     const time = document.getElementById('zw-time').value;
@@ -620,6 +700,10 @@ function renderLiuyao(d) {
 
 // Init: set today's date for all date inputs
 document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.valueAsDate = new Date(); });
+// Trigger initial time info display
+setTimeout(function(){ updateBaziTimeInfo(); updateZiweiTimeInfo(); }, 300);
+// Re-trigger after lunar library loads
+window.addEventListener('load', function(){ updateBaziTimeInfo(); updateZiweiTimeInfo(); });
 
 // ========== ZIWEI ANALYSIS (from SKILL) ==========
 function zwAnalysis(d) {

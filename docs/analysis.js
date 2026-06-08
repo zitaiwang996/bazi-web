@@ -1,4 +1,4 @@
-// ================================================================
+﻿// ================================================================
 // analysis.js — 盲派八字完整断命分析引擎 v2.0
 // 金镖门老人参 + 段建业 + 郝金阳 + 京南道人
 // Rules extracted from 盲派八字大师-SKILL.md (3599 lines)
@@ -649,16 +649,17 @@ function analyzeWealth(riGan, riZhi, sz, bz, d) {
 // 6. 父母
 // ================================================================
 function analyzeParents(riGan, riZhi, sz, bz, d) {
-    let h = `<div class="card"><h3>👨‍👩‍👧 父母关 [星宫同参 + 六种死法验证]</h3>`;
+    let h = `<div class="card"><h3>👨‍👩‍👧 父母关 [星宫同参 + 流年应期]</h3>`;
 
     const caiWx = {木:'土',火:'金',土:'水',金:'木',水:'火'}[wxOf(riGan)];
     const yinWx = {木:'水',火:'木',土:'火',金:'土',水:'金'}[wxOf(riGan)];
+    const riWx = wxOf(riGan);
 
     // 找父星母星
     let fatherStar = null, motherStar = null;
     for (let i=0; i<4; i++) {
-        if (wxOf(sz[i])===caiWx && !fatherStar) fatherStar = {stem:sz[i],pos:['年','月','日','时'][i]};
-        if (wxOf(sz[i])===yinWx && !motherStar) motherStar = {stem:sz[i],pos:['年','月','日','时'][i]};
+        if (wxOf(sz[i])===caiWx && !fatherStar) fatherStar = {stem:sz[i],pos:['年','月','日','时'][i],pillarIdx:i};
+        if (wxOf(sz[i])===yinWx && !motherStar) motherStar = {stem:sz[i],pos:['年','月','日','时'][i],pillarIdx:i};
     }
     if (!fatherStar) for (const b of bz) for (const c of (CANGAN[b]||[])) {
         if (wxOf(c)===caiWx) { fatherStar = {stem:c,pos:'藏干'}; break; }
@@ -682,22 +683,100 @@ function analyzeParents(riGan, riZhi, sz, bz, d) {
 
     // 星宫同坏
     if (fatherStar && nianIssue)
-        h += `<div class="hl"><span class="tag tag-warn">⚠️ 父星星宫同坏</span>→父缘薄/父健康受损 | 星坏+宫坏=两条件满足→需关注</div>`;
+        h += `<div class="hl"><span class="tag tag-warn">⚠️ 父星星宫同坏</span>→父缘薄，年柱(父宫)与父星同时受制——需关注父亲运势</div>`;
     if (motherStar && yueIssue)
-        h += `<div class="hl"><span class="tag tag-warn">⚠️ 母星星宫同坏</span>→母缘薄/母健康受损</div>`;
+        h += `<div class="hl"><span class="tag tag-warn">⚠️ 母星星宫同坏</span>→母缘薄，月柱(母宫)与母星同时受制——需关注母亲运势</div>`;
 
-    // 六种死法检查要点
-    h += `<div class="hl"><b>六种验证信号（至少2条才能断死亡）：</b>`;
-    const deathSignals = [];
-    if (fatherStar) {
-        const fsStage = getChangsheng(fatherStar.stem, bz[0]);
-        if (fsStage==='墓') deathSignals.push(`父星临墓`);
-        if (nianIssue) deathSignals.push(`宫位被坏`);
-        const fsYuan = {木:'水',火:'木',土:'火',金:'土',水:'金'}[wxOf(fatherStar.stem)];
-        if (!sz.some(s=>wxOf(s)===fsYuan)) deathSignals.push(`念头可能被断(缺源头${fsYuan})`);
+    // ===== 流年对父母星/宫的冲克分析 =====
+    h += `<div class="hl"><b>📅 流年对父母星/宫的影响（当前大运十年）：</b></div>`;
+
+    if (d.currentDayun && d.dayun) {
+        const birthYear = parseInt(d.solarDate, 10);
+        const curDy = d.currentDayun;
+        const liunian = getLiunianForDayun(curDy, birthYear, riGan);
+        const now = new Date().getFullYear();
+
+        const riskYears = [];
+        const nianZhi = bz[0], yueZhi = bz[1];
+
+        // 冲/穿 查找表
+        const CHONG_PAIRS = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
+        const CHUAN_PAIRS = [['子','未'],['丑','午'],['寅','巳'],['卯','辰'],['申','亥'],['酉','戌']];
+        const HE_PAIRS = [['子','丑'],['寅','亥'],['卯','戌'],['辰','酉'],['巳','申'],['午','未']];
+
+        function isChong(a,b) { return CHONG_PAIRS.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+        function isChuan(a,b) { return CHUAN_PAIRS.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+        function isHe(a,b) { return HE_PAIRS.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+
+        for (const ln of liunian) {
+            const lnGan = ln.pillar[0], lnZhi = ln.pillar[1];
+            const risks = [];
+
+            // 检查流年干是否克父星/母星
+            if (fatherStar) {
+                const lnToFather = getShishen(fatherStar.stem, lnGan);
+                if (lnToFather.includes('杀') || lnToFather.includes('官')) risks.push(`克父星(${fatherStar.stem})`);
+            }
+            if (motherStar) {
+                const lnToMother = getShishen(motherStar.stem, lnGan);
+                if (lnToMother.includes('杀') || lnToMother.includes('官')) risks.push(`克母星(${motherStar.stem})`);
+            }
+
+            // 检查流年支是否冲/穿年支(父宫)或月支(母宫)
+            if (isChong(lnZhi, nianZhi)) risks.push('冲年柱(父宫)');
+            if (isChuan(lnZhi, nianZhi)) risks.push('穿年柱(父宫)');
+            if (isChong(lnZhi, yueZhi)) risks.push('冲月柱(母宫)');
+            if (isChuan(lnZhi, yueZhi)) risks.push('穿月柱(母宫)');
+
+            // 合动宫位也需注意
+            if (isHe(lnZhi, nianZhi)) risks.push('合动年柱(父宫)');
+            if (isHe(lnZhi, yueZhi)) risks.push('合动月柱(母宫)');
+
+            if (risks.length) {
+                const isCurYear = ln.year === now;
+                riskYears.push({
+                    year: ln.year,
+                    pillar: ln.pillar,
+                    risks,
+                    isCur: isCurYear,
+                });
+            }
+        }
+
+        if (riskYears.length) {
+            h += `<div class="hl" style="max-height:200px;overflow-y:auto">`;
+            for (const ry of riskYears) {
+                h += `<div style="margin:2px 0">`;
+                if (ry.isCur) h += `<span class="tag tag-good">当前</span> `;
+                h += `<b>${ry.year}年 ${ry.pillar}：</b>`;
+                h += ry.risks.map(r => `<span class="tag tag-warn">${r}</span>`).join(' ');
+                h += `</div>`;
+            }
+            h += `</div>`;
+        } else {
+            h += `<div class="hl"><span class="tag tag-neutral">当前大运十年内流年对父母星/宫无明显冲克</span></div>`;
+        }
+
+        // 大运对父母星/宫的影响
+        const dyGan = curDy.pillar[0], dyZhi = curDy.pillar[1];
+        const dyRisks = [];
+        if (fatherStar) {
+            const dyToFather = getShishen(fatherStar.stem, dyGan);
+            if (dyToFather.includes('杀') || dyToFather.includes('官')) dyRisks.push(`大运干${dyGan}克父星`);
+        }
+        if (motherStar) {
+            const dyToMother = getShishen(motherStar.stem, dyGan);
+            if (dyToMother.includes('杀') || dyToMother.includes('官')) dyRisks.push(`大运干${dyGan}克母星`);
+        }
+        if (isChong(dyZhi, nianZhi)) dyRisks.push('大运支冲年柱(父宫)');
+        if (isChuan(dyZhi, nianZhi)) dyRisks.push('大运支穿年柱(父宫)');
+        if (isChong(dyZhi, yueZhi)) dyRisks.push('大运支冲月柱(母宫)');
+        if (isChuan(dyZhi, yueZhi)) dyRisks.push('大运支穿月柱(母宫)');
+
+        if (dyRisks.length) {
+            h += `<div class="hl"><b>当前大运${curDy.pillar}：</b>${dyRisks.map(r=>`<span class="tag tag-warn">${r}</span>`).join(' ')}——此十年需多加关注</div>`;
+        }
     }
-    if (!deathSignals.length) deathSignals.push(`<span class="tag tag-neutral">无明显危险信号</span>`);
-    h += deathSignals.map(s=>`<span class="tag tag-info">${s}</span>`).join(' | ') + `</div>`;
 
     h += `</div>`;
     return h;
@@ -790,10 +869,10 @@ function analyzeHealth(riGan, riWx, bz, sz, d) {
         h += `<div class="hl"><span class="tag tag-good">原局五行较为平和</span></div>`;
     }
 
-    // 禄倒马斜检查
+    // 日主之禄检查（健康层面）
     const riLu = {甲:'寅',乙:'卯',丙:'巳',丁:'午',戊:'巳',己:'午',庚:'申',辛:'酉',壬:'亥',癸:'子'}[riGan];
     if (riLu && (rels.冲||[]).some(c=>c.includes(riLu)))
-        h += `<div class="hl"><span class="tag tag-warn">日主之禄${riLu}被冲</span>——禄倒马斜信号，大运流年叠加需警惕</div>`;
+        h += `<div class="hl"><span class="tag tag-warn">日主之禄${riLu}被冲</span>——禄为身体根基，被冲则健康易受损，该大运流年需注意劳逸结合</div>`;
 
     h += `</div>`;
     return h;
@@ -978,3 +1057,4 @@ function analyzeGanzhiImage(riGan, riZhi, sz, bz, d) {
 function wxOf(stem) {
     return {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[stem]||'';
 }
+
