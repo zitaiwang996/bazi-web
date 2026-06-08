@@ -623,7 +623,9 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
 
     h += `</div>`;
     return h;
-} (六模型 + 财内外)
+}
+// ================================================================
+// 六模型 + 财内外
 // ================================================================
 function analyzeWealth(riGan, riZhi, sz, bz, d) {
     let h = `<div class="card"><h3>💰 财运 [比劫见财六模型 + 财内外]</h3>`;
