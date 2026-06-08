@@ -254,7 +254,7 @@ tr:last-child td{border-bottom:none}
 <body>
 <div class="container">
 <div class="header">
-  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v11</span></h1>
+  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v12</span></h1>
   <div class="div"></div>
   <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
 </div>
@@ -709,59 +709,133 @@ window.addEventListener('load', function(){ updateBaziTimeInfo(); updateZiweiTim
 function zwAnalysis(d) {
     let h = `<div class="card"><h3>🔍 紫微斗数分析 [蓝天辰+许铨仁]</h3>`;
 
-    // 命宫分析
     const soulPalace = d.palaces.find(p => p.isSoul);
     const bodyPalace = d.palaces.find(p => p.isBody);
+
+    // ---- 命宫详解 ----
+    const starMeanings = {
+        '紫微':'帝王之星，天生领导气质，自尊心强，喜得左辅右弼来助。庙旺则贵气十足，陷地则孤傲。适合作管理者、企业家、政府官员。',
+        '天府':'财库之星，稳重守成，善于理财和管理资源。为人温和包容，但缺乏开创性。适合金融、地产、仓储、公务员。',
+        '天机':'智慧之星，聪明善谋，思维敏捷，好奇心强。但容易思虑过多、犹豫不决。适合策划、咨询、IT、教育、写作。',
+        '太阳':'光明之星，热情慷慨，乐于助人，适合公众人物、公益事业。日生人庙旺则贵，夜生人则精力不足。适合传媒、教育、外交。',
+        '武曲':'财星兼武星，刚毅果断，执行力强，重实际。性格刚直，不善变通。适合金融、军事、机械制造、工程师。',
+        '天同':'福星，温和享福，知足常乐，人缘好。但容易安于现状缺乏进取。适合服务行业、艺术、幼儿教育、医疗护理。',
+        '廉贞':'刚烈之星，重情重义，才华横溢，但也容易感情用事。庙旺为官清廉，陷地易惹是非。适合法律、纪检、创意设计。',
+        '太阴':'月亮之星，温柔细腻，直觉敏锐，重家庭。庙旺为贵妇之星，陷地则多愁善感。适合护理、美容、文学、艺术。',
+        '贪狼':'桃花之星兼才艺星，多才多艺，交际能力强。但也容易贪多不精。适合演艺、公关、贸易、销售。',
+        '巨门':'暗曜，口才好，思辨能力强，擅长分析研究。但容易口舌是非，需注意言辞。适合律师、记者、研究员、医生。',
+        '天相':'印星，公正廉明，善于协调，行事稳重。适合做秘书、助理、行政、法官、调解员。',
+        '天梁':'寿星，正直刚强，喜欢管闲事，有长者风范。早年多波折，中晚年福气好。适合医疗、宗教、教育、慈善、司法。',
+        '七杀':'将星，敢冲敢闯，独立自主，执行力极强。但容易急躁冲动。适合创业、军事、竞技体育、外科医生。',
+        '破军':'破旧立新之星，喜欢变化和挑战，不安于现状。前半生波折多，后半生可成大业。适合创新行业、改革派、冒险家。',
+    };
+    const starAdvice = {
+        '紫微':'谨慎选择合作伙伴，避免独断专行。宜借助左辅右弼的力量，团队合作更能成事。',
+        '天机':'减少思虑过度，学会做减法。安定心神是成功的关键——比智慧更重要的是专注。',
+        '太阳':'注意劳逸结合，不要过度付出。夜生人尤其要注意保养精力，避免透支。',
+        '武曲':'刚则易折，学会柔性沟通。理财能力虽强但也要注意分散风险。',
+        '廉贞':'控制情绪波动，避免因感情用事而误判。才华需要稳定发挥才能变现。',
+        '破军':'前半生多尝试，三十五岁后要定方向。变化太多等于没有方向，需要寻找能长期深耕的领域。',
+    };
+
     if (soulPalace && soulPalace.majors.length) {
-        h += `<div class="hl"><b>命宫${soulPalace.branch}：</b>${soulPalace.majors.map(s => `<span class="tag tag-good">${s.star}${s.brightness}${s.sihua?'['+s.sihua+']':''}</span>`).join(' ')}`;
-        // Simple interpretation
-        if (soulPalace.majors.some(s => s.star==='紫微')) h += ` <span class="tag tag-info">紫微坐命——天生领导气质</span>`;
-        if (soulPalace.majors.some(s => s.star==='天府')) h += ` <span class="tag tag-info">天府坐命——稳重守成</span>`;
-        if (soulPalace.majors.some(s => s.star==='天机')) h += ` <span class="tag tag-info">天机坐命——聪明善谋</span>`;
-        if (soulPalace.majors.some(s => s.star==='太阳')) h += ` <span class="tag tag-info">太阳坐命——热情慷慨</span>`;
-        if (soulPalace.majors.some(s => s.star==='武曲')) h += ` <span class="tag tag-info">武曲坐命——刚毅果断</span>`;
-        if (soulPalace.majors.some(s => s.star==='天同')) h += ` <span class="tag tag-info">天同坐命——温和享福</span>`;
-        if (soulPalace.majors.some(s => s.star==='廉贞')) h += ` <span class="tag tag-info">廉贞坐命——刚烈重情</span>`;
-        if (soulPalace.majors.some(s => s.star==='破军')) h += ` <span class="tag tag-info">破军坐命——破旧立新</span>`;
+        h += `<div class="hl"><b>命宫${soulPalace.branch}：</b>${soulPalace.majors.map(s => `<span class="tag tag-good">${s.star}${s.brightness||''}${s.sihua?'['+s.sihua+']':''}</span>`).join(' ')}`;
         h += `</div>`;
+        // Detailed star interpretations
+        for (const s of soulPalace.majors) {
+            const meaning = starMeanings[s.star];
+            if (meaning) {
+                h += `<div class="hl" style="font-size:.8em;margin-top:2px">⭐ <b>${s.star}解读：</b>${meaning}</div>`;
+            }
+            const advice = starAdvice[s.star];
+            if (advice) {
+                h += `<div class="hl" style="font-size:.8em;color:var(--goldL)">💡 <b>建议：</b>${advice}</div>`;
+            }
+        }
     } else {
-        h += `<div class="hl"><b>命宫：</b><span class="tag tag-warn">空宫</span>——借对宫迁移宫为用</div>`;
+        h += `<div class="hl"><b>命宫：</b><span class="tag tag-warn">空宫</span>——借对宫(迁移宫)为用。命宫空宫的人适应力强，容易受环境影响，一生因应外界变化而调整自我。</div>`;
     }
 
-    // 身宫
+    // ---- 身宫 ----
     if (bodyPalace) {
-        h += `<div class="hl"><b>身宫在${bodyPalace.name}：</b>后半生重心在${bodyPalace.name}领域发展</div>`;
+        h += `<div class="hl"><b>身宫在${bodyPalace.name}：</b>35岁后人生重心转移到${bodyPalace.name}领域。身宫代表后天努力的方向和你真正在意的事情——身宫所在的宫位，往往是你后半生最花心思的地方。</div>`;
     }
 
-    // 四化分析
-    h += `<div class="hl"><b>四化分布：</b>`;
+    // ---- 命宫三方四正 ----
+    const sanfang = ['官禄','财帛','迁移'];
+    const sfPalaces = d.palaces.filter(p => sanfang.includes(p.name));
+    if (sfPalaces.length) {
+        h += `<div class="hl"><b>命宫三方四正（影响命运最重要的四个宫位）：</b></div>`;
+        for (const p of sfPalaces) {
+            const stars = p.majors.length ? p.majors.map(s=>s.star+s.brightness).join('、') : '空宫';
+            h += `<div class="hl" style="font-size:.8em">· <b>${p.name}宫(${p.branch})：</b>${stars}${p.majors.length?'':'——借对宫为用'}</div>`;
+        }
+    }
+
+    // ---- 四化详解 ----
+    h += `<div class="hl"><b>生年四化（天命所定的人生重点）：</b></div>`;
     const sihuaStars = [d.sihua.lu, d.sihua.quan, d.sihua.ke, d.sihua.ji];
     const sihuaNames = ['禄','权','科','忌'];
+    const sihuaMeaning = {
+        '禄':'代表福气、财富、机会、人缘——是天生的"好运点"，此星所在的宫位是人生最容易有收获的领域。',
+        '权':'代表权力、掌控、竞争、领导——是天生的"掌控欲"，此星所在的宫位是你最想自主主导的领域。',
+        '科':'代表才华、文采、名声、贵人——是天生的"才艺线"，此星所在的宫位是你最容易出名的领域。',
+        '忌':'代表执念、压力、负担、业力——是天生的"功课"，此星所在的宫位是人生最需要修行的领域。忌不是纯凶，能化为动力则大成。',
+    };
     for (let i = 0; i < 4; i++) {
         if (!sihuaStars[i]) continue;
-        // Find which palace
         let palaceName = '?';
         for (const p of d.palaces) {
             if (p.majors.some(s => s.star === sihuaStars[i])) {
-                palaceName = p.name;
-                break;
+                palaceName = p.name; break;
             }
         }
         const tag = i === 3 ? 'tag-warn' : 'tag-good';
-        h += ` <span class="tag ${tag}">${sihuaStars[i]}${sihuaNames[i]}在${palaceName}</span>`;
+        h += `<div class="hl" style="font-size:.8em"><span class="tag ${tag}">${sihuaStars[i]}${sihuaNames[i]}在${palaceName}宫</span> —— ${sihuaMeaning[sihuaNames[i]]||''}</div>`;
+    }
+
+    // ---- 来因宫 ----
+    h += `<div class="hl"><b>来因宫（年干${d.bazi[0]}）：</b>四化的源头——代表你此生的"来因"和人生剧本的核心。所有的禄权科忌都从此宫干流出，<b>这个宫位的事情是你一生绕不开的主题</b>。</div>`;
+
+    // ---- 当前大运 ----
+    h += `<div class="hl"><b>当前大运${d.currentDecadal.stem}${d.currentDecadal.branch}（${d.currentDecadal.range}岁）：</b>`;
+    const dcSihua = ZW_SIHUA[d.currentDecadal.stem];
+    if (dcSihua) {
+        h += `大运四化——${dcSihua[0]}禄、${dcSihua[1]}权、${dcSihua[2]}科、${dcSihua[3]}忌。`;
+        h += `<br><span style="font-size:.8em">大运管十年，大运的四化叠加生年四化，可以看出这十年的主要变化方向。禄在的宫位=这十年的收获所在；忌在的宫位=这十年的压力所在。</span>`;
     }
     h += `</div>`;
 
-    // 来因宫
-    const laiyin = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-    h += `<div class="hl"><b>来因宫年干${d.bazi[0]}：</b>四化源出此干，一生重点由此展开</div>`;
-
-    // 当前大运分析
-    h += `<div class="hl"><b>当前大运${d.currentDecadal.stem}${d.currentDecadal.branch}：</b>`;
-    const dcSihua = ZW_SIHUA[d.currentDecadal.stem];
-    if (dcSihua) {
-        h += `大运四化: ${dcSihua[0]}禄 ${dcSihua[1]}权 ${dcSihua[2]}科 ${dcSihua[3]}忌`;
+    // ---- 各宫速览 ----
+    h += `<div class="hl"><b>十二宫速览（以白话解读各领域）：</b></div>`;
+    const palaceGuide = {
+        '命宫':'你的性格、气质、人生基调——"你是谁"',
+        '兄弟':'兄弟姐妹、同辈关系、母亲——"手足之缘"',
+        '夫妻':'配偶、婚姻、合作关系——"另一半的样子"',
+        '子女':'孩子、桃花、享乐、创意——"生命的延续"',
+        '财帛':'赚钱方式、理财观念、现金流——"怎么挣钱"',
+        '疾厄':'健康、疾病、灾厄——"身体的底子"',
+        '迁移':'外出、远行、社会形象——"外面的世界"',
+        '仆役':'朋友、下属、人际关系——"交友的质量"',
+        '官禄':'事业、工作、学业——"干什么工作"',
+        '田宅':'房产、家庭、祖业——"家的根基"',
+        '福德':'精神世界、福气、享受——"内心快乐吗"',
+        '父母':'父母、长辈、上司——"长辈的缘分"',
+    };
+    h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:.7em;margin-top:4px">`;
+    for (const p of d.palaces) {
+        const guide = palaceGuide[p.name] || '';
+        const stars = p.majors.map(s=>s.star+(s.sihua?'['+s.sihua+']':'')).join(' ') || '空宫';
+        h += `<div style="padding:3px 6px;background:var(--input);border-radius:3px"><b>${p.name}</b>(${p.branch}): ${stars}<br><span style="color:var(--dim)">${guide}</span></div>`;
     }
+    h += `</div>`;
+
+    // ---- 白话总结 ----
+    h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
+    h += `<b>💬 白话解读：</b><br>`;
+    h += `紫微斗数看命，<b>命宫</b>定性格格局，<b>身宫</b>定后天重心，<b>四化</b>定人生剧本。命宫是"出厂设置"，身宫是"升级方向"。<br>`;
+    h += `看事业=官禄宫为主+财帛宫为辅；看婚姻=夫妻宫为主+迁移宫(对宫)为辅；看财运=财帛宫为主+田宅宫(库位)为辅；看健康=疾厄宫为主+命宫为辅。<br>`;
+    h += `<b>四化的秘钥：</b>禄=得到，权=掌控，科=出名，忌=修行。忌不是坏事——在哪个宫位，那个领域的"执念"反而能成为你最大的动力。`;
     h += `</div>`;
 
     h += `</div>`;
@@ -772,42 +846,65 @@ function zwAnalysis(d) {
 function lrAnalysis(d) {
     let h = `<div class="card"><h3>🔍 大六壬课分析</h3>`;
 
-    // 课体总结
-    h += `<div class="hl"><b>课体总断：</b>`;
+    // 课体详解
     const keTiStr = d.keTi.length ? d.keTi.join('、') : '普通课';
-    if (keTiStr.includes('贼克')) h += `<span class="tag tag-warn">贼克课——事有阻碍，需防小人</span> `;
-    if (keTiStr.includes('克贼')) h += `<span class="tag tag-info">克贼课——我克他，主动有利</span> `;
-    if (keTiStr.includes('伏吟')) h += `<span class="tag tag-warn">伏吟课——事多反复，进展缓慢</span> `;
-    if (keTiStr.includes('逢空')) h += `<span class="tag tag-warn">逢空——所谋之事落实较难</span> `;
-    if (!keTiStr.includes('贼克') && !keTiStr.includes('伏吟') && !keTiStr.includes('逢空')) {
-        h += `<span class="tag tag-neutral">${keTiStr}——需结合具体事项详断</span>`;
-    }
-    h += `</div>`;
+    h += `<div class="hl"><b>课体：</b>${keTiStr}</div>`;
+    if (keTiStr.includes('贼克')) h += `<div class="hl" style="font-size:.8em"><b>贼克课：</b>下贼上=有暗中阻碍，事情不会一帆风顺。需防小人、防暗中使绊。但若能预见困难提前准备，反而能化阻力为动力。</div>`;
+    if (keTiStr.includes('克贼')) h += `<div class="hl" style="font-size:.8em"><b>克贼课：</b>上克下=我方能主动掌控局面。此事利于主动出击，不需要等别人先动。</div>`;
+    if (keTiStr.includes('伏吟')) h += `<div class="hl" style="font-size:.8em"><b>伏吟课：</b>天地盘相同=事物处于静止、反复状态。此时不宜强行推进——越急越慢。适合内部调整、反思复盘，不适合开拓新方向。</div>`;
+    if (keTiStr.includes('逢空')) h += `<div class="hl" style="font-size:.8em"><b>逢空：</b>课上神在旬空=所想之事落不到实处。需等出空（填实）之日才能落地。近期不宜做重大决策。</div>`;
 
-    // 三传走势
-    h += `<div class="hl"><b>三传走势：</b>初${d.sanChuan.chu}→中${d.sanChuan.zhong}→末${d.sanChuan.mo}`;
+    // 三传详解
     const chuanArr = [d.sanChuan.chu, d.sanChuan.zhong, d.sanChuan.mo];
-    const allSame = chuanArr.every((v, i, a) => v === a[0]);
-    if (allSame) h += ` | <span class="tag tag-warn">三传归一——事态集中，结果明确</span>`;
-    h += `</div>`;
+    h += `<div class="hl"><b>三传走势：</b>初传(<b style="color:var(--goldL)">${d.sanChuan.chu}</b>)→中传(${d.sanChuan.zhong})→末传(${d.sanChuan.mo})</div>`;
+    h += `<div class="hl" style="font-size:.8em"><b>三传解读：</b>初传代表<b>事情的开始</b>——当前状态和起因；中传代表<b>事情的经过</b>——发展过程中的变化；末传代表<b>事情的结果</b>——最终的走向。从初到末，看吉神是在前还是在后——<b>吉神在初=开头顺，吉神在末=结局好</b>。</div>`;
 
-    // 贵人
-    const hasNoble = d.tianJiang.some(tj => tj.general === '贵人');
-    h += `<div class="hl"><b>天将提示：</b>${d.isDay ? '昼占' : '夜占'} | `;
-    if (hasNoble) h += `<span class="tag tag-good">贵人入课——有贵人相助</span>`;
-    const hasBaihu = d.tianJiang.some(tj => tj.general === '白虎' && (d.siKe.some(k => k.shang === tj.branch)));
-    if (hasBaihu) h += ` <span class="tag tag-warn">白虎在课——注意意外/疾病</span>`;
-    h += `</div>`;
+    // 天将详解
+    const tianJiangMeanings = {
+        '贵人':'贵人相助，有权威人士帮衬。求事易得领导赏识或长辈提携。',
+        '螣蛇':'虚惊怪异，事情可能有虚假成分或意外变化。需防被骗、防空欢喜。',
+        '朱雀':'口舌文书，与信息、沟通、合同有关。注意言辞，文书需仔细审核。',
+        '六合':'和合喜事，利于合作、婚姻、谈判。事情能和解、能协商解决。',
+        '勾陈':'争斗拖延，事情有阻力、有纠缠。诉讼不利，需防拖拉和勾心斗角。',
+        '青龙':'喜事吉庆，财运或喜讯将至。利于求财、升迁、婚嫁。',
+        '天空':'虚诈不实，计划可能落空。不宜做重大决定，信息可能不准确。',
+        '白虎':'凶险血光，主意外、疾病、官非。需加倍小心，是十二天将中最凶者。',
+        '太常':'宴乐衣冠，与宴会、礼仪、服饰有关。吉主喜庆聚会，凶主食禄有亏。',
+        '玄武':'盗贼暗昧，主偷盗、隐私、不可告人之事。防信息泄露、防被骗财。',
+        '太阴':'阴私密谋，主暗中运作、女性贵人。利于低调行事，不宜声张。',
+        '天后':'恩泽庇佑，主女性贵人、婚姻喜事。利于求人办事，有暗中帮助。',
+    };
+
+    const activeGenerals = new Set();
+    for (const tj of d.tianJiang) {
+        for (const k of d.siKe) {
+            if (k.shang === tj.branch || k.xia === tj.branch) activeGenerals.add(tj.general);
+        }
+    }
+    if (activeGenerals.size) {
+        h += `<div class="hl"><b>入课天将（出现的重要人物/能量）：</b></div>`;
+        for (const g of activeGenerals) {
+            const meaning = tianJiangMeanings[g] || '';
+            const isBad = ['白虎','玄武','螣蛇','勾陈','天空'].includes(g);
+            h += `<div class="hl" style="font-size:.8em"><span class="tag ${isBad?'tag-warn':'tag-info'}">${g}</span> —— ${meaning}</div>`;
+        }
+    }
 
     // 四课人宅
-    h += `<div class="hl"><b>四课关系：</b>`;
-    h += `干上神${d.siKe[0]?.shang || '?'}=外事门(外界环境) | `;
-    h += `支上神${d.siKe[2]?.shang || '?'}=内事门(自身状态)`;
-    h += `</div>`;
+    h += `<div class="hl"><b>四课关系（外界 vs 自身）：</b>`;
+    h += `干上神=${d.siKe[0]?.shang||'?'}=外界环境对你的影响 | 支上神=${d.siKe[2]?.shang||'?'}=你自身的状态和处境</div>`;
 
-    if (d.question) {
-        h += `<div class="hl"><b>占问："${d.question}"</b>——请结合课体、三传、天将综合判断</div>`;
-    }
+    // 旬空
+    h += `<div class="hl"><b>旬空：</b><span class="tag tag-warn">${d.xunKong.join('、')}</span>——这两个地支所在的课和宫位，事情暂时落不到实处，需等填实（到该地支的日/月）才能落实。</div>`;
+
+    // 白话总结
+    h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
+    h += `<b>💬 白话解读：</b><br>`;
+    if (d.question) h += `占问"${d.question}"：`;
+    h += `看六壬课，重点看三件事——<b>课体</b>（大势吉凶）、<b>三传</b>（事态发展过程）、<b>天将</b>（出现的人物和能量）。<br>`;
+    h += `课体="天气"，三传="剧情"，天将="角色"。如果课体吉+三传向吉+贵人在课=事情大概率顺利。如果课体凶+白虎入课+初传空亡=需要格外谨慎。<br>`;
+    h += `📌 <b>实用提示：</b>日干为占者自身，日支为所问之事。干上神吉=自身状态好利于成事；支上神吉=事情本身条件有利。`;
+    h += `</div>`;
 
     h += `</div>`;
     return h;
@@ -815,63 +912,120 @@ function lrAnalysis(d) {
 
 // ========== LIUYAO ANALYSIS (from SKILL) ==========
 function lyAnalysis(d) {
-    let h = `<div class="card"><h3>🔍 六爻分析</h3>`;
+    let h = `<div class="card"><h3>🔍 六爻分析 [王虎应体系]</h3>`;
 
-    // 世应分析
     const shiLine = d.lines.find(l => l.isShi);
     const yingLine = d.lines.find(l => l.isYing);
+
+    // ---- 世应分析 ----
     if (shiLine) {
-        h += `<div class="hl"><b>世爻(${shiLine.pos}爻 ${shiLine.qin} ${shiLine.zhi})：</b>代表自身 | 状态: `;
-        if (shiLine.moving) h += `<span class="tag tag-warn">动爻——自身主动求变</span>`;
-        else h += `<span class="tag tag-neutral">静爻——自身稳定</span>`;
-        h += `</div>`;
+        h += `<div class="hl"><b>世爻（代表你自身）：</b>${shiLine.pos}爻·${shiLine.qin}·${shiLine.zhi}·${shiLine.beast}`;
+        h += shiLine.moving ? ` <span class="tag tag-warn">动爻——你自身正在主动求变</span>` : ` <span class="tag tag-neutral">静爻——你目前状态稳定</span>`;
+        const shiStrength = shiLine.moving ? '动爻力量强，你的主动行动会对事情产生关键影响。' : '世爻安静说明你在等待或观望。如果需要推动事情，你需要主动"动"起来。';
+        h += `<br><span style="font-size:.8em;color:var(--dim)">${shiStrength}</span></div>`;
     }
+
     if (yingLine) {
-        h += `<div class="hl"><b>应爻(${yingLine.pos}爻 ${yingLine.qin} ${yingLine.zhi})：</b>代表对方/所问之事`;
-        if (yingLine.moving) h += ` <span class="tag tag-info">动爻——对方/事态有变</span>`;
+        h += `<div class="hl"><b>应爻（代表对方/所问之事）：</b>${yingLine.pos}爻·${yingLine.qin}·${yingLine.zhi}·${yingLine.beast}`;
+        h += yingLine.moving ? ` <span class="tag tag-info">动爻——对方/事态正在变化中</span>` : '';
         h += `</div>`;
     }
 
-    // 世应关系
+    // ---- 世应关系详解 ----
     if (shiLine && yingLine) {
-        h += `<div class="hl"><b>世应关系：</b>`;
         const shiWx = {子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'}[shiLine.zhi];
         const yingWx = {子:'水',丑:'土',寅:'木',卯:'木',辰:'土',巳:'火',午:'火',未:'土',申:'金',酉:'金',戌:'土',亥:'水'}[yingLine.zhi];
-        if (shiWx === yingWx) h += `五行相同→<span class="tag tag-info">比和——事易成</span>`;
+        h += `<div class="hl"><b>世应关系（你与事情的关系）：</b>`;
+        if (shiWx === yingWx) h += `<span class="tag tag-good">比和——事易成</span>。你和事情/对方同气相求，合作顺利，阻力小。`;
         else {
             const sheng = {木:'火',火:'土',土:'金',金:'水',水:'木'};
             const ke = {木:'土',土:'水',水:'火',火:'金',金:'木'};
-            if (sheng[shiWx] === yingWx) h += `世生应→<span class="tag tag-info">你付出较多</span>`;
-            else if (sheng[yingWx] === shiWx) h += `应生世→<span class="tag tag-good">对方利于你</span>`;
-            else if (ke[shiWx] === yingWx) h += `世克应→<span class="tag tag-info">你能掌控</span>`;
-            else if (ke[yingWx] === shiWx) h += `应克世→<span class="tag tag-warn">对方克制你</span>`;
+            if (sheng[shiWx] === yingWx) h += `<span class="tag tag-info">世生应——你付出多</span>。你主动投入精力/金钱/感情，对方得体但你需要衡量付出是否值得。`;
+            else if (sheng[yingWx] === shiWx) h += `<span class="tag tag-good">应生世——对方利于你</span>。事情/对方主动对你好，这是最有利的关系格局。`;
+            else if (ke[shiWx] === yingWx) h += `<span class="tag tag-info">世克应——你能掌控</span>。你有主动权，能主导事情的走向。`;
+            else if (ke[yingWx] === shiWx) h += `<span class="tag tag-warn">应克世——对方克制你</span>。事情对你不利，或者对方压你一头。需要格外谨慎。`;
         }
         h += `</div>`;
     }
 
-    // 用神分析
+    // ---- 用神详解 ----
+    const yongShenGuide = {
+        '求财':'妻财爻——找卦中妻财爻的位置和旺衰。财爻旺+持世=财运在握；财爻伏藏/空亡=财运未到。',
+        '工作':'官鬼爻——找卦中官鬼爻。官旺+来生世=升职加薪；官克世=工作压力大。',
+        '婚姻':'男看妻财、女看官鬼——旺相+持世=姻缘美满；空亡/月破=时机未到。',
+        '健康':'官鬼=疾病所在、子孙=医药解救——子孙旺则病可愈；官鬼旺而无制=病情严重。',
+        '考试':'父母爻=成绩、官鬼爻=名次——父母旺+生世=考试顺利；父母空亡=成绩不理想。',
+        '出行':'世爻=自身安危、应爻=目的地——世旺则出行平安；世被克则不宜远行。',
+    };
+
     if (d.question) {
-        h += `<div class="hl"><b>用神定位：</b>`;
         const q = d.question;
-        if (q.includes('财')||q.includes('钱')||q.includes('合作')) h += `占财→<span class="tag tag-info">妻财爻为用神</span>`;
-        else if (q.includes('官')||q.includes('工作')||q.includes('事业')) h += `占事业→<span class="tag tag-info">官鬼爻为用神</span>`;
-        else if (q.includes('婚')||q.includes('感情')||q.includes('对象')) h += `占婚姻→<span class="tag tag-info">妻财爻/官鬼爻为用神</span>`;
-        else if (q.includes('病')||q.includes('健康')||q.includes('身体')) h += `占健康→<span class="tag tag-info">官鬼爻为病，子孙爻为药</span>`;
-        else h += `<span class="tag tag-neutral">需明确占问事项以定用神</span>`;
-        h += `</div>`;
+        let yongShenType = '', yongShenDesc = '';
+        if (q.includes('财')||q.includes('钱')||q.includes('合作')) { yongShenType='求财'; yongShenDesc=yongShenGuide['求财']; }
+        else if (q.includes('官')||q.includes('工作')||q.includes('事业')) { yongShenType='工作'; yongShenDesc=yongShenGuide['工作']; }
+        else if (q.includes('婚')||q.includes('感情')||q.includes('对象')) { yongShenType='婚姻'; yongShenDesc=yongShenGuide['婚姻']; }
+        else if (q.includes('病')||q.includes('健康')||q.includes('身体')) { yongShenType='健康'; yongShenDesc=yongShenGuide['健康']; }
+        else if (q.includes('考试')||q.includes('学')) { yongShenType='考试'; yongShenDesc=yongShenGuide['考试']; }
+        else if (q.includes('出行')||q.includes('旅')||q.includes('出远')) { yongShenType='出行'; yongShenDesc=yongShenGuide['出行']; }
+        if (yongShenType) {
+            h += `<div class="hl"><b>用神定位（占${yongShenType}）：</b><br><span style="font-size:.8em">${yongShenDesc}</span></div>`;
+        }
     }
 
-    // 动爻解读
+    // ---- 动爻详解 ----
     if (d.movingLines.length > 0) {
-        h += `<div class="hl"><b>动爻总断：</b>`;
+        h += `<div class="hl"><b>动爻分析（卦中发动之爻，最关键的信息）：</b></div>`;
         const movingQins = d.movingLines.map(l => l.qin);
-        if (movingQins.includes('妻财')) h += `<span class="tag tag-good">财动→有财运变动</span> `;
-        if (movingQins.includes('官鬼')) h += `<span class="tag tag-warn">官动→工作/官司有变</span> `;
-        if (movingQins.includes('子孙')) h += `<span class="tag tag-good">子孙动→喜事/解厄</span> `;
-        if (movingQins.includes('兄弟')) h += `<span class="tag tag-warn">兄弟动→竞争/破财</span> `;
-        if (movingQins.includes('父母')) h += `<span class="tag tag-info">父母动→文书/长辈事</span> `;
-        h += `</div>`;
+        const movingSummary = [];
+        if (movingQins.includes('妻财')) movingSummary.push(`<span class="tag tag-good">财动→财运/感情有变动</span>——财爻发动，钱财或感情方面会有变化。财动生世=进财；财动克世=因财/情生灾。`);
+        if (movingQins.includes('官鬼')) movingSummary.push(`<span class="tag tag-warn">官动→工作/官司有变</span>——官爻发动主事业变动或官非。官动生世=升职；官动克世=工作压力或纠纷。`);
+        if (movingQins.includes('子孙')) movingSummary.push(`<span class="tag tag-good">子孙动→喜事/解厄</span>——子孙是福神，发动则忧愁可解、疾病可愈。克制官鬼=事业上可能放弃权力换自由。`);
+        if (movingQins.includes('兄弟')) movingSummary.push(`<span class="tag tag-warn">兄弟动→竞争/破财</span>——兄弟发动主竞争、分财、口舌。兄弟旺动克财=近期易破财或被争夺。`);
+        if (movingQins.includes('父母')) movingSummary.push(`<span class="tag tag-info">父母动→文书/长辈事</span>——父母发动主文书合同、考试、房子、长辈之事。父母克子孙=不利子女或创意项目。`);
+
+        for (const s of movingSummary) h += `<div class="hl" style="font-size:.8em">${s}</div>`;
+
+        // Per-line details
+        for (const l of d.movingLines) {
+            h += `<div class="hl" style="font-size:.8em">⚡ <b>${l.pos}爻 ${l.type}：</b>${l.qin}·${l.zhi}·${l.beast}→发动为变爻。此爻所在是事情的"关键变量"——动爻所在的六亲和地支，决定了事情变化的具体方向。</div>`;
+        }
+    } else {
+        h += `<div class="hl"><b>静卦：</b><span class="tag tag-info">六爻皆静——事态稳定</span>。以本卦卦辞为主，等待时机而动。静卦不代表无事，而是事情正在酝酿中，需要外部力量（时间/大环境）来推动。</div>`;
     }
+
+    // ---- 六兽提示 ----
+    if (shiLine) {
+        const beastTips = {
+            '青龙':'青龙临世=喜事将近，利于考试、升迁、婚嫁。',
+            '朱雀':'朱雀临世=口舌信息多，注意言辞沟通，文书需仔细。',
+            '勾陈':'勾陈临世=事情进展慢，有拖延反复，需耐心等待。',
+            '螣蛇':'螣蛇临世=事情可能有虚假或变化，需多方确认信息。',
+            '白虎':'白虎临世=注意健康和安全，做事需谨慎，防意外冲突。',
+            '玄武':'玄武临世=注意隐私和财务安全，防被骗或被算计。',
+        };
+        const tip = beastTips[shiLine.beast];
+        if (tip) h += `<div class="hl" style="font-size:.8em">🐉 <b>世爻临${shiLine.beast}：</b>${tip}</div>`;
+    }
+
+    // ---- 应期参考 ----
+    h += `<div class="hl"><b>应期参考（事情何时有结果）：</b><br><span style="font-size:.8em">`;
+    h += `· 用神安静→等到用神所临地支的年月日（如用神在寅，则寅年/寅月/寅日）<br>`;
+    h += `· 用神发动→用神所临地支或合用神的地支<br>`;
+    h += `· 用神旬空→填空（所临地支）或冲空之时<br>`;
+    h += `· 用神入墓→冲墓或冲用神之时<br>`;
+    h += `· 用神月破→出月不破（下个月）或临值之时<br>`;
+    h += `<b>核心口诀：静而逢值逢冲，动而逢值逢合，空则填空冲空，墓则冲墓冲用。</b>`;
+    h += `</span></div>`;
+
+    // ---- 白话总结 ----
+    h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
+    h += `<b>💬 白话解读：</b><br>`;
+    h += `六爻卦象中，<b>世爻=你自身</b>，<b>应爻=所问之事/对方</b>，<b>动爻=事情变化的关键</b>。判断吉凶最重要的三条：<br>`;
+    h += `<b>①用神是否旺相？</b>——用神旺=事情本身条件好；用神衰败=事情先天不足。<br>`;
+    h += `<b>②用神与世爻什么关系？</b>——用神生世最吉（事情主动有利于你）；用神克世最凶（事情对你不利）。<br>`;
+    h += `<b>③忌神是否发动？</b>——忌神发动来克用神=事情有阻碍；元神发动来生用神=事情有转机。<br>`;
+    h += `📌 <b>记住：</b>六爻讲究"卦不妄成，爻不虚发"——每一个动爻都在告诉你具体的变化方向。`;
+    h += `</div>`;
 
     h += `</div>`;
     return h;

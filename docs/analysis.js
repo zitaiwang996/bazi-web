@@ -271,6 +271,22 @@ function analyzeMarriage(riGan, riZhi, sz, bz, ps, d) {
     h += `<div class="hl"><b>⑤阴阳配婚：</b>日主${riGan}=${riYY} →
       ${riYY==='阳'?'宜配阴旺之人→金水旺者':'宜配阳旺之人→木火旺者'} | 阴阳互补=自然吸引</div>`;
 
+    // ===== 白话总结 =====
+    h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
+    h += `<b>💬 白话解读：</b><br>`;
+    if (canStand && fuqiStar && fuqiLoc.includes('家里')) {
+        h += `命主自身根基稳固，配偶星也在自己家里（日柱或时柱），说明正缘可靠，婚姻质量较好。`;
+    } else if (!canStand) {
+        h += `命主自身力量偏弱，需要在好运来时（印比大运）才能稳定婚姻。`;
+    }
+    if (risks.length > 1) {
+        h += `<br>⚠️ 但原局存在${risks.length}个婚姻风险信号，建议：①选择与自己五行互补的对象 ②在吉运流年（夫妻星/宫逢合的年份）结婚 ③避免在伤官/比劫旺的年份做重大婚姻决定。`;
+    }
+    if (fuqiStar && !homeCang.includes(fuqiStar.stem) && fuqiLoc !== '家里(日时)') {
+        h += `<br>📌 配偶星不在家里而在外面，说明缘分需要主动争取，或者通过大运带来。配偶可能是外地人、工作中认识的、或是通过他人介绍。`;
+    }
+    h += `</div>`;
+
     h += `</div>`;
     return h;
 }
@@ -589,12 +605,25 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
         }
     }
 
+    // ===== 白话总结 =====
+    h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
+    h += `<b>💬 白话解读：</b><br>`;
+    h += `职业方向由三个因素决定：<b>月令格局</b>（先天禀赋）+ <b>做功方式</b>（如何发挥才能）+ <b>五行取象</b>（具体行业）。<br>`;
+    if (careerType === '公职') {
+        h += `命盘显示适合走<b>公职/体制路线</b>。正官配正印=化官生印，是正宗"吃皇粮"的格局。建议：①把握印/官大运流年的考试机会 ②选择稳定的单位，不宜频繁跳槽 ③适合的行业：政府机关、事业单位、国企、教育机构。`;
+    } else if (careerType === '生意') {
+        h += `命盘显示适合<b>做生意/创业</b>。偏印(枭)旺、食神生财等信号指向经商之命。建议：①选择${dominantWx||'与命中五行匹配'}的行业 ②食伤运时积累技术和人脉 ③财运到的流年再大举投资 ④注意合规经营，避免官非。`;
+    } else if (careerType === '技术') {
+        h += `命盘显示适合<b>走技术路线</b>。食伤旺而无官杀=靠手艺/技术吃饭。建议：①深耕专业技能，技术过硬就是铁饭碗 ②考虑考取专业资质证书 ③技术成熟后可转型技术管理。`;
+    } else {
+        h += `命盘信号较为分散，适合<b>自由灵活</b>的职业路线。建议：①跟着大运走——什么运来了做什么事 ②培养多项技能增加选择 ③保持灵活性和适应能力。`;
+    }
+    h += `<br>📌 <b>五行行业参考：</b>木=教育/文化/园林/中医 | 火=网络/餐饮/能源/传媒 | 土=房地产/建筑/农业/矿产 | 金=金融/法律/机械/公安 | 水=物流/贸易/旅游/饮料`;
+    h += `</div>`;
+
     h += `</div>`;
     return h;
-}
-
-// ================================================================
-// 5. 财运 (六模型 + 财内外)
+} (六模型 + 财内外)
 // ================================================================
 function analyzeWealth(riGan, riZhi, sz, bz, d) {
     let h = `<div class="card"><h3>💰 财运 [比劫见财六模型 + 财内外]</h3>`;
@@ -640,6 +669,19 @@ function analyzeWealth(riGan, riZhi, sz, bz, d) {
     if (d.shishenStems.some(s=>s.shishen==='正官') && !hasZC && !hasPC) {
         h += `<div class="hl"><span class="tag tag-info">官当财看</span>——不做官但能赚钱，财的级别更高</div>`;
     }
+
+    // ===== 白话总结 =====
+    h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
+    h += `<b>💬 白话解读：</b><br>`;
+    if (homeCai.length || ganCai.length) {
+        h += `财星在"家里"（日柱或时柱）或天干明现，说明<b>财运主动来找你</b>，属于"财气通门户"的好信号。`;
+    } else if (outerCai.length) {
+        h += `财星在"外面"（年柱或月柱），财富需要<b>主动争取</b>，靠合作、创业或等大运带来。`;
+    } else {
+        h += `原局无财星，财运依赖大运。若见正官可"以官当财"——不做官但能赚钱，级别更高。`;
+    }
+    h += `<br>📌 <b>财运铁律：</b>财在家能制住=发财，制不住=只累不富。比劫见财需印护财才能守住。比劫见财六模型中，财在家有比劫在外面=最好（制住发财），财和比劫都在外面=最差（管不住手破财）。`;
+    h += `</div>`;
 
     h += `</div>`;
     return h;
