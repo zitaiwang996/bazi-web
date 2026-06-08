@@ -1,4 +1,4 @@
-// ziwei.js — 紫微斗数排盘引擎 (JavaScript)
+﻿// ziwei.js — 紫微斗数排盘引擎 (JavaScript)
 // Ported from ziwei_engine.py for GitHub Pages deployment
 // 文墨天机/iztro 兼容算法
 
@@ -282,3 +282,4 @@ function calculateZiwei(solarDateStr, timeStr, gender) {
         ],
     };
 }
+

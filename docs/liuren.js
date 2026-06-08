@@ -1,4 +1,4 @@
-// liuren.js — 大六壬排盘引擎 (JavaScript)
+﻿// liuren.js — 大六壬排盘引擎 (JavaScript)
 // Core computation: 天盘/四课/三传/天将/六亲
 
 const LR_BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
@@ -239,3 +239,4 @@ function calculateLiuren(solarDateStr, timeStr, question) {
         isDay,
     };
 }
+

@@ -1,4 +1,4 @@
-// liuyao.js — 六爻卜筮引擎 (JavaScript)
+﻿// liuyao.js — 六爻卜筮引擎 (JavaScript)
 // 火珠林法+增删卜易, coins toss simulation
 
 const LY_BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
@@ -214,3 +214,4 @@ function calculateLiuyao(question) {
     const interpretation = ly_interpret(result, question);
     return {...result, interpretation, question};
 }
+
