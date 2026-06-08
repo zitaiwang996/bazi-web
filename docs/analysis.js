@@ -137,47 +137,44 @@ function analyzeXiyong(riGan, riWx, ws, sz, bz, d) {
     const helpWx = helpMap[riWx], harmWx = harmMap[riWx];
     let xiYong = ws.level==='身弱'?[helpWx,riWx]:ws.level==='身旺'?[harmWx]:[helpWx];
 
-    let h = `<div class="card"><h3>💎 喜用神分析 [铁律12·五步框架]</h3>`;
+    let h = `<div class="card"><h3>💎 喜用神分析</h3>`;
 
-    h += `<div class="hl"><b>第一步-日主${riGan}(${riWx})-${ws.level}：</b>${ws.level==='身弱'?`喜<span class="tag tag-good">${xiYong.join('、')}</span>帮身 忌<span class="tag tag-warn">${harmWx}</span>`:ws.level==='身旺'?`喜<span class="tag tag-good">${xiYong.join('、')}</span>克泄耗 忌<span class="tag tag-warn">${helpWx}、${riWx}</span>再来`:'较均衡，大运左右'}</div>`;
+    h += `<div class="hl"><b>日主${riGan}(${riWx})-${ws.level}：</b>喜<span class="tag tag-good">${xiYong.join('、')}</span>`;
+    if (ws.level === '身弱') h += `帮身`;
+    else if (ws.level === '身旺') h += `克泄耗`;
+    h += `</div>`;
 
-    // 第二步：查喜用神位置
+    // 查喜用神在原局的位置
     const posNames = ['年柱','月柱','日柱','时柱'];
-    const posMsgs = ['祖上有助/少年运好','父母有助','自己有能/配偶助力','晚年好/子女有助'];
+    const posMsgs = ['祖上有助、少年运好','父母有助','自己有能、配偶助力','晚年好、子女有助'];
+    let foundAny = false;
     for (let i=0; i<4; i++) {
         const pillarWx = new Set([wxOf(sz[i]), ...(CANGAN[bz[i]]||[]).map(wxOf)]);
         const found = xiYong.filter(xy=>pillarWx.has(xy));
-        if (found.length) h += `<div class="hl">✅ <b>${posNames[i]}：</b>喜用神${found.join('、')}在此——${posMsgs[i]}</div>`;
-        else h += `<div class="hl">❌ <b>${posNames[i]}：</b>无喜用神</div>`;
+        if (found.length) {
+            h += `<div class="hl">✅ <b>${posNames[i]}：</b>用神${found.join('、')}在此——${posMsgs[i]}</div>`;
+            foundAny = true;
+        }
     }
+    if (!foundAny) h += `<div class="hl"><span class="tag tag-info">原局用神不显——等大运带来</span></div>`;
 
-    // 第三步：喜用神何时来
-    if (d.currentDayun) {
-        const dyPillar = d.currentDayun.pillar;
-        const dyWx = new Set([wxOf(dyPillar[0]), ...(CANGAN[dyPillar[1]]||[]).map(wxOf)]);
+    // 用神在哪些大运到来
+    h += `<div class="hl"><b>用神到来的大运：</b></div>`;
+    let dyMatches = [];
+    for (const step of d.dayun.steps) {
+        const dyWx = new Set([wxOf(step.pillar[0]), ...(CANGAN[step.pillar[1]]||[]).map(wxOf)]);
         const dyFound = xiYong.filter(xy=>dyWx.has(xy));
-        h += `<div class="hl"><b>第三步-当前大运${dyPillar}：</b>`;
-        if (dyFound.length) h += `<span class="tag tag-good">好运！喜用神${dyFound.join('、')}到位</span>`;
-        else h += `<span class="tag tag-info">喜用神未到，等后续大运</span>`;
-        h += `</div>`;
+        if (dyFound.length) {
+            dyMatches.push({ pillar: step.pillar, age: step.startAge + '-' + step.endAge + '岁', found: dyFound });
+        }
     }
-
-    // 第五步：各六亲单独找喜用神
-    h += `<div class="hl"><b>第五步-六亲喜用神(单独定位)：</b></div>`;
-    const qinStars = [];
-    // Father: 偏财
-    for (const s of [...sz,...bz.flatMap(b=>CANGAN[b]||[])]) {
-        if (wxOf(s)==={木:'土',火:'金',土:'水',金:'木',水:'火'}[riWx]) { qinStars.push({label:'父星(偏财)',stem:s}); break; }
-    }
-    // Mother: 正印
-    const yinWx2 = {木:'水',火:'木',土:'火',金:'土',水:'金'}[riWx];
-    for (const s of [...sz,...bz.flatMap(b=>CANGAN[b]||[])]) {
-        if (wxOf(s)===yinWx2) { qinStars.push({label:'母星(正印)',stem:s}); break; }
-    }
-    for (const q of qinStars) {
-        const qWx = wxOf(q.stem);
-        const qHelp = helpMap[qWx], qHarm = harmMap[qWx];
-        h += `<div class="hl" style="margin-left:16px">• ${q.label}(${q.stem}${qWx})：喜${qHelp}、忌${qHarm}——${q.label}的运势独立判断</div>`;
+    if (dyMatches.length) {
+        for (const m of dyMatches) {
+            const isCur = d.currentDayun && m.pillar === d.currentDayun.pillar;
+            h += `<div class="hl" style="font-size:.8em">${isCur ? '👉 <b>当前</b>' : '·'} <b>${m.pillar}运(${m.age})：</b>用神<span class="tag tag-good">${m.found.join('、')}</span>到位${isCur ? ' —— <span class="tag tag-good">正在好运中！</span>' : ''}</div>`;
+        }
+    } else {
+        h += `<div class="hl" style="font-size:.8em"><span class="tag tag-neutral">大运中未见到用神，需靠流年来补</span></div>`;
     }
 
     h += `</div>`;
@@ -286,6 +283,76 @@ function analyzeMarriage(riGan, riZhi, sz, bz, ps, d) {
         h += `<br>📌 配偶星不在家里而在外面，说明缘分需要主动争取，或者通过大运带来。配偶可能是外地人、工作中认识的、或是通过他人介绍。`;
     }
     h += `</div>`;
+
+    // ===== 婚期预测：盲派应期法则 =====
+    h += `<div class="hl"><b>💍 可能成婚的流年（盲派应期法则）：</b></div>`;
+    const birthYear = parseInt(d.solarDate, 10);
+    const nowYear = new Date().getFullYear();
+    const marriageYears = [];
+    const HE_PAIRS2 = [['子','丑'],['寅','亥'],['卯','戌'],['辰','酉'],['巳','申'],['午','未']];
+    function isHe2(a,b) { if(!a||!b) return false; return HE_PAIRS2.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+
+    // 扫描所有大运的流年，找婚期信号
+    for (const step of d.dayun.steps) {
+        const startAge = Math.floor(step.startAge);
+        if (startAge < 16) continue; // 跳过未成年
+        const liunian = getLiunianForDayun(step, birthYear, riGan);
+        for (const ln of liunian) {
+            if (ln.year < nowYear - 15) continue; // 跳过太早的
+            if (ln.year > nowYear + 20) continue; // 跳过太远的
+            let score = 0;
+            const reasons = [];
+
+            // 盲派婚期应期法则：
+            // 1. 夫妻星/宫逢合 = 婚期
+            const lnZhi = ln.pillar[1];
+            if (isHe2(lnZhi, riZhi)) { score += 3; reasons.push('流年合日支(夫妻宫)'); }
+            if (fuqiStar && (isHe2(lnZhi, riZhi) || isHe2(lnZhi, bz[2]))) { score += 2; reasons.push('流年合夫妻星/宫'); }
+
+            // 2. 大运干支合夫妻宫或夫妻星
+            const dyZhi = step.pillar[1];
+            if (isHe2(dyZhi, riZhi)) { score += 2; reasons.push('大运合夫妻宫'); }
+
+            // 3. 拱局填实（寅戌拱午，流年见午）
+            const archPairs = [['寅','戌','午'],['巳','丑','酉'],['申','辰','子'],['亥','未','卯']];
+            for (const [a, b, res] of archPairs) {
+                if ((bz.includes(a) && bz.includes(b) && lnZhi === res) || (dyZhi === a && bz.includes(b) && lnZhi === res) || (dyZhi === b && bz.includes(a) && lnZhi === res)) {
+                    score += 2; reasons.push('拱局填实' + res);
+                }
+            }
+
+            // 4. 桃花年（日干沐浴位）
+            const riGanTH = {甲:'卯',乙:'午',丙:'酉',丁:'子',戊:'卯',己:'午',庚:'午',辛:'子',壬:'酉',癸:'子'}[riGan];
+            if (lnZhi === riGanTH) { score += 1; reasons.push('桃花年'); }
+
+            // 5. 大运变化（第一步大运的前后年份）
+            const stepStartYear = birthYear + Math.floor(step.startAge);
+            if (Math.abs(ln.year - stepStartYear) <= 1) { score += 1; reasons.push('大运交接年份'); }
+
+            if (score >= 2) {
+                marriageYears.push({ year: ln.year, pillar: ln.pillar, score, reasons });
+            }
+        }
+    }
+
+    // 排序取前三
+    marriageYears.sort((a, b) => b.score - a.score);
+    const topMarriage = marriageYears.slice(0, 5);
+
+    if (topMarriage.length) {
+        for (const my of topMarriage) {
+            const isPast = my.year < nowYear;
+            const isNear = Math.abs(my.year - nowYear) <= 2;
+            h += `<div class="hl" style="font-size:.8em">`;
+            if (isPast) h += `<span class="tag tag-neutral">已过</span> `;
+            if (isNear) h += `<span class="tag tag-good">👉 </span>`;
+            h += `<b>${my.year}年 ${my.pillar}</b>：${my.reasons.join('、')} (匹配度${my.score}分)`;
+            h += `</div>`;
+        }
+        h += `<div class="hl" style="font-size:.7em;color:var(--dim)">📌 盲派原则：夫妻星/宫逢合=婚期，拱局填实=隐性缘分变现，桃花+合=稳定婚缘，大运交接=人生转折。以上年份需结合实际情况判断。</div>`;
+    } else {
+        h += `<div class="hl" style="font-size:.8em"><span class="tag tag-neutral">近期未检测到明显婚期信号，可能需等待后续大运流年</span></div>`;
+    }
 
     h += `</div>`;
     return h;
@@ -444,59 +511,31 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
     }
 
     // ===== STEP 2: 适合行业建议 =====
-    h += `<div class="hl"><b>🏭 五行取象—适合行业：</b></div>`;
-    h += `<div class="hl">`;
-
-    const detailedJobs = {
-        '木-土': {jobs:['土木工程','建筑设计','房地产','园林绿化','装修装饰','农业种植'],bestFor:'公职/生意均可'},
-        '火-金': {jobs:['互联网/IT','金融/证券','电商运营','电子制造','汽车驾驶','冶炼加工'],bestFor:'生意/技术'},
-        '土-水': {jobs:['水利工程','养殖业','房地产','环保工程','仓储物流','食品加工'],bestFor:'生意/公职'},
-        '金-木': {jobs:['机械制造','法律/律师','外科医生','精密加工','伐木/林业','五金行业'],bestFor:'技术/公职'},
-        '水-火': {jobs:['餐饮业','消防工程','能源电力','影视传媒','冷链物流','饮料酒水'],bestFor:'生意'},
+    // 日主适合的工作方向
+    const riWxJobs = {
+        木:'教育/文化/园林/中医/出版/纺织',
+        火:'能源/餐饮/传媒/演艺/互联网/美容',
+        土:'房地产/建筑/农业/矿产/仓储/食品',
+        金:'金融/法律/机械/公安/五金/医疗',
+        水:'物流/贸易/旅游/渔业/饮料/交通',
     };
+    h += `<div class="hl"><b>🏭 日主${riGan}(${riWx})适合方向：</b>${riWxJobs[riWx]||''}</div>`;
 
-    let matchedJobs = [];
-    for (const [pair, info] of Object.entries(detailedJobs)) {
-        const [a,b] = pair.split('-');
-        if (allWxSet.has(a) && allWxSet.has(b)) {
-            matchedJobs.push({pair, ...info});
-        }
-    }
+    // ===== STEP 3: 公职考试时机 (仅18-38岁且适合公职) =====
+    const curAge2 = d.currentAgePrecise || d.currentAgeXusui;
+    if (careerType === '公职' && curAge2 >= 18 && curAge2 <= 38) {
+        h += `<div class="hl" style="background:rgba(90,143,90,0.12);"><b>📅 公职/考试有利时机（18-38岁）：</b></div>`;
 
-    if (matchedJobs.length) {
-        h += `<b>原局五行组合行业：</b><br>`;
-        for (const mj of matchedJobs) {
-            h += `<span class="tag tag-info">${mj.pair}</span> → ${mj.jobs.join(' / ')} (适合${mj.bestFor})<br>`;
-        }
-    }
-
-    // 主旺五行单独建议
-    if (dominantWx) {
-        const wxSoloJobs = {
-            木:'教育、出版、园林、中医、纺织',
-            火:'能源、餐饮、传媒、演艺、互联网',
-            土:'房地产、建筑、农业、矿产、仓储',
-            金:'金融、法律、机械、公安、五金',
-            水:'物流、贸易、旅游、渔业、饮料',
-        };
-        h += `<br><b>主旺五行${dominantWx}：</b>${wxSoloJobs[dominantWx]||''}`;
-    }
-    h += `</div>`;
-
-    // ===== STEP 3: 公职考试时机 =====
-    if (careerType === '公职' || signals.公职.length >= 1) {
-        h += `<div class="hl" style="background:rgba(90,143,90,0.12);"><b>📅 公职/考试有利时机：</b></div>`;
-
-        // 找出所有大运中的印/官运
         const favorableYears = [];
         const now = new Date().getFullYear();
         for (const step of d.dayun.steps) {
-            const dyGan = step.pillar[0], dyZhi = step.pillar[1];
+            const startAge = Math.floor(step.startAge);
+            if (startAge < 16 || startAge > 38) continue;
+            const dyGan = step.pillar[0];
             const dyGanSS = getShishen(riGan, dyGan);
             const startYear = parseInt(d.solarDate) + Math.floor(step.startAge);
             const endYear = parseInt(d.solarDate) + Math.floor(step.endAge);
 
-            // 印或官的大运 → 适合考试
             if (dyGanSS.includes('印') || dyGanSS.includes('官')) {
                 favorableYears.push({
                     period: `${startYear}-${endYear}`,
@@ -608,17 +647,15 @@ function analyzeCareer(riGan, riZhi, sz, bz, ws, d) {
     // ===== 白话总结 =====
     h += `<div class="hl" style="background:rgba(200,164,92,.06);border-left:3px solid var(--goldL);margin-top:8px">`;
     h += `<b>💬 白话解读：</b><br>`;
-    h += `职业方向由三个因素决定：<b>月令格局</b>（先天禀赋）+ <b>做功方式</b>（如何发挥才能）+ <b>五行取象</b>（具体行业）。<br>`;
     if (careerType === '公职') {
-        h += `命盘显示适合走<b>公职/体制路线</b>。正官配正印=化官生印，是正宗"吃皇粮"的格局。建议：①把握印/官大运流年的考试机会 ②选择稳定的单位，不宜频繁跳槽 ③适合的行业：政府机关、事业单位、国企、教育机构。`;
+        h += `命盘显示适合走<b>公职/体制路线</b>。正官配正印=吃皇粮的格局。建议把握印/官大运流年的考试机会，选择稳定的单位。`;
     } else if (careerType === '生意') {
-        h += `命盘显示适合<b>做生意/创业</b>。偏印(枭)旺、食神生财等信号指向经商之命。建议：①选择${dominantWx||'与命中五行匹配'}的行业 ②食伤运时积累技术和人脉 ③财运到的流年再大举投资 ④注意合规经营，避免官非。`;
+        h += `命盘显示适合<b>做生意/创业</b>。偏印旺、食神生财指向经商之命。食伤运积累技术和人脉，财运年到再大举投资。`;
     } else if (careerType === '技术') {
-        h += `命盘显示适合<b>走技术路线</b>。食伤旺而无官杀=靠手艺/技术吃饭。建议：①深耕专业技能，技术过硬就是铁饭碗 ②考虑考取专业资质证书 ③技术成熟后可转型技术管理。`;
+        h += `命盘显示适合<b>走技术路线</b>。食伤旺而无官杀=靠手艺/技术吃饭。深耕专业技能，技术过硬就是铁饭碗。`;
     } else {
-        h += `命盘信号较为分散，适合<b>自由灵活</b>的职业路线。建议：①跟着大运走——什么运来了做什么事 ②培养多项技能增加选择 ③保持灵活性和适应能力。`;
+        h += `命盘信号较为分散，适合<b>自由灵活</b>的职业路线。跟着大运走——什么运来了做什么事。`;
     }
-    h += `<br>📌 <b>五行行业参考：</b>木=教育/文化/园林/中医 | 火=网络/餐饮/能源/传媒 | 土=房地产/建筑/农业/矿产 | 金=金融/法律/机械/公安 | 水=物流/贸易/旅游/饮料`;
     h += `</div>`;
 
     h += `</div>`;
@@ -972,14 +1009,7 @@ function analyzeCurrent(riGan, d) {
 // 10. 性格
 // ================================================================
 function analyzePersonality(riGan, riWx, sz, bz) {
-    let h = `<div class="card"><h3>🧠 五行性格速断</h3>`;
-    const allStems3 = [...sz, ...bz.flatMap(b=>CANGAN[b]||[])];
-    const wxCount = {};
-    for (const s of allStems3) { const w=wxOf(s); wxCount[w]=(wxCount[w]||0)+1; }
-    const sorted = Object.entries(wxCount).sort((a,b)=>b[1]-a[1]);
-    const dominantWx = sorted[0]?.[0] || riWx;
-    // Update references
-    const allStems = allStems3;
+    let h = `<div class="card"><h3>🧠 命主性格</h3>`;
 
     const personalities = {
         木:{pos:'仁慈、恻隐、直爽、柔和',neg:'胆怯、嫉妒、狭隘、固执'},
@@ -989,14 +1019,12 @@ function analyzePersonality(riGan, riWx, sz, bz) {
         水:{pos:'聪明、机智、灵活、善变',neg:'多疑、偏激、阴谋、放纵'},
     };
 
-    for (const [wx,count] of sorted) {
-        const p = personalities[wx];
-        if (!p) continue;
-        const pct = Math.round(count/allStems.length*100);
-        h += `<div class="hl"><b>${wx}(${pct}%)：</b>正面: ${p.pos} | 负面: ${p.neg}</div>`;
+    const p = personalities[riWx];
+    if (p) {
+        h += `<div class="hl"><b>日主${riGan}(${riWx})性格：</b>正面——${p.pos}；需注意——${p.neg}</div>`;
+        h += `<div class="hl" style="color:var(--dim);font-size:.8em">日主是命主的自我核心，性格偏正面则容易成功，偏负面则需要自我调整。大运会影响性格的显隐——好运来时正面放大，逆运时负面浮现。</div>`;
     }
 
-    h += `<div class="hl" style="color:var(--dim);font-size:.8em">以最旺五行切入，正负面兼看。日主${riGan}=${riWx}为自我核心。</div>`;
     h += `</div>`;
     return h;
 }

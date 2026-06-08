@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
-<script src="lunar.min.js?v=8658964"></script>
+<script src="lunar.min.js?v=8658965"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
 
@@ -292,10 +292,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doBazi()">开始排盘</button></div>
   </div>
-  <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
-    <input type="password" id="ds-key" placeholder="DeepSeek API Key（可选，用于AI深度解读）" style="flex:1;background:var(--input);border:1px solid #4a4034;border-radius:8px;padding:10px;color:var(--text);font-size:.85em;outline:none">
-    <span style="font-size:.75em;color:var(--dim);white-space:nowrap">Key仅存本地浏览器</span>
-  </div>
+  <div style="margin-top:8px;font-size:.75em;color:var(--dim)">💡 排盘后点击下方"AI深度解读"按钮，基于盲派规则自动生成详细命理报告</div>
   <div class="time-info" id="bz-time-info" style="display:none"></div>
 </div>
 <div id="bz-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">推算中...</div>
@@ -355,13 +352,13 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.1</div>
 </div>
 
-<script src="terms_data.js?v=8658964"></script>
-<script src="bazi.js?v=8658964"></script>
-<script src="ziwei.js?v=8658964"></script>
-<script src="liuren.js?v=8658964"></script>
-<script src="liuyao.js?v=8658964"></script>
-<script src="analysis.js?v=8658964"></script>
-<script src="slider.js?v=8658964"></script>
+<script src="terms_data.js?v=8658965"></script>
+<script src="bazi.js?v=8658965"></script>
+<script src="ziwei.js?v=8658965"></script>
+<script src="liuren.js?v=8658965"></script>
+<script src="liuyao.js?v=8658965"></script>
+<script src="analysis.js?v=8658965"></script>
+<script src="slider.js?v=8658965"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -640,9 +637,9 @@ function renderBaziGrid(d) {
 
     // AI Deep Analysis button
     html += `<div class="card" style="text-align:center">
-      <h3>🤖 AI深度解读 (DeepSeek)</h3>
-      <p style="color:var(--dim);font-size:.85em;margin-bottom:12px">点击下方按钮，将八字数据+盲派规则发送给DeepSeek进行AI断命解读</p>
-      <button class="btn-go" onclick="doDeepSeek()" id="ds-btn" style="background:linear-gradient(135deg,#4a6fa5,#6b8fc5);color:#fff">🔮 AI深度解读</button>
+      <h3>📜 盲派八字深度解读</h3>
+      <p style="color:var(--dim);font-size:.85em;margin-bottom:12px">基于金镖门老人参盲派体系，自动生成大白话详细命理报告（本地生成，无需联网）</p>
+      <button class="btn-go" onclick="doDeepSeek()" id="ds-btn" style="background:linear-gradient(135deg,#4a6fa5,#6b8fc5);color:#fff">📜 生成深度解读报告</button>
       <span id="ds-status" style="margin-left:12px;color:var(--dim);font-size:.85em"></span>
       <div id="ds-response" style="margin-top:16px;text-align:left;display:none"></div>
     </div>`;
@@ -1190,66 +1187,137 @@ function lyAnalysis(d) {
     return h;
 }
 
-// ========== DEEPSEEK AI INTEGRATION ==========
+// ========== AI INTERPRETATION (LOCAL SKILL-BASED) ==========
 let lastBaziResult = null;
 const origRenderBazi2 = renderBazi;
 renderBazi = function(d) { lastBaziResult = d; origRenderBazi2(d); };
 
-(function(){
-  const sk = localStorage.getItem('ds_api_key');
-  if (sk) { const el = document.getElementById('ds-key'); if (el) el.value = sk; }
-  const keyEl = document.getElementById('ds-key');
-  if (keyEl) keyEl.addEventListener('input', function(){ localStorage.setItem('ds_api_key', this.value); });
-})();
-
-async function doDeepSeek() {
-    const apiKey = document.getElementById('ds-key').value.trim();
-    if (!apiKey) { alert('请先输入 DeepSeek API Key'); return; }
+function doDeepSeek() {
     if (!lastBaziResult) { alert('请先排盘'); return; }
-
+    const d = lastBaziResult;
     const btn = document.getElementById('ds-btn');
     const status = document.getElementById('ds-status');
     const respDiv = document.getElementById('ds-response');
-    btn.disabled = true; status.textContent = '⏳ 正在调用DeepSeek...'; respDiv.style.display = 'none';
+    btn.disabled = true; status.textContent = '⏳ 正在生成深度解读...'; respDiv.style.display = 'none';
 
-    const d = lastBaziResult;
-    const prompt = `你是金镖门盲派八字大师。请分析此命盘：
+    setTimeout(function() {
+        try {
+            var text = generateBaziReport(d);
+            respDiv.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 盲派八字深度解读（金镖门老人参体系）</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">'+text+'</div></div>';
+            respDiv.style.display = 'block'; status.textContent = '✅ 解读完成';
+        } catch(e) {
+            status.textContent = '❌ '+e.message;
+            respDiv.innerHTML = '<div class="card" style="color:var(--redL)">生成错误: '+e.message+'</div>';
+            respDiv.style.display = 'block';
+        }
+        btn.disabled = false;
+        document.getElementById('ds-response').scrollIntoView({behavior:'smooth'});
+    }, 200);
+}
 
-八字: ${d.bazi} | 日主${d.riGan} | ${d.gender==='male'?'男':'女'} | ${d.chineseHour}
-公历: ${d.solarDate} ${d.time}
-纳音: ${d.nayin.map(n=>n.name+':'+n.nayin).join(' | ')}
-大运: ${d.dayun.direction} ${d.dayun.qiyunAge}岁${d.dayun.qiyunMonths}月起 | 当前${d.currentDayun?d.currentDayun.pillar+'('+d.currentDayun.startAge+'-'+d.currentDayun.endAge+'岁)':'N/A'}
-旺衰: ${d.wangshuai.level} | 日主在月令为${d.changsheng[1].stage}
-十神: ${d.shishenStems.map(s=>s.name+s.stem+'='+s.shishen).join(' | ')}
-空亡: ${d.kongBranches.join(' ')} | 拱局: ${(d.branchRelations.拱||[]).join(' ')}
-冲: ${(d.branchRelations.冲||[]).join(' ')} 穿: ${(d.branchRelations.穿||[]).join(' ')}
-胎元: ${d.taiyuan}(${d.taiyuanNayin})
+function generateBaziReport(d) {
+    var riGan = d.riGan, riZhi = d.riZhi;
+    var sz = [d.yearPillar[0], d.monthPillar[0], d.dayPillar[0], d.timePillar[0]];
+    var bz = [d.yearPillar[1], d.monthPillar[1], d.dayPillar[1], d.timePillar[1]];
+    var ws = d.wangshuai;
+    var ssAll = d.shishenStems.map(function(s){return s.shishen;});
+    var gender = d.gender;
+    var riWx = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[riGan];
+    var r = [];
+    var now = new Date();
+    var thisYear = now.getFullYear();
+    var curAge = d.currentAgeXusui;
 
-请按盲派过三关体系分析：①职业方向(公职/生意/技术) ②婚姻(夫妻星定位+应期+质量) ③父母(星宫同参) ④财运层次 ⑤当前大运流年吉凶 ⑥健康注意事项。用中文，简洁专业。`;
+    // ===== 一、命盘概况 =====
+    r.push('<div class="hl" style="background:rgba(200,164,92,.08);padding:12px;border-radius:8px;margin-bottom:12px">');
+    r.push('<b style="font-size:1.1em;color:var(--goldL)">📌 一、命盘概况</b><br>');
+    r.push('你出生于' + d.solarDate + '（公历），八字为 <b>' + d.bazi + '</b>。');
+    r.push('日主是 <b style="color:var(--goldL)">' + riGan + '</b>（五行属' + riWx + '），生于' + d.chineseHour + '，' + d.gender==='male'?'男':'女' + '命。');
+    r.push('日主在月令处于<b>' + d.changsheng[1].stage + '</b>状态，整体命局属于<b>' + ws.level + '</b>。');
+    r.push('年柱纳音' + d.nayin[0].nayin + '代表祖辈根基，日柱纳音' + d.nayin[2].nayin + '代表你自身的本质气质。');
+    r.push('</div>');
 
-    try {
-        const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-            body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [
-                    {role:'system',content:'你是专业八字命理大师，金镖门盲派传人。用中文，专业但不晦涩。'},
-                    {role:'user',content: prompt}
-                ],
-                temperature: 0.7, max_tokens: 3000
-            }),
-        });
-        if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message||'API错误'); }
-        const data = await resp.json();
-        const content = data.choices[0].message.content;
-        respDiv.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>🤖 DeepSeek AI 解读</h3><div style="white-space:pre-wrap;line-height:1.9;font-size:.9em">'+content.replace(/</g,'&lt;')+'</div></div>';
-        respDiv.style.display = 'block'; status.textContent = '✅ 解读完成';
-    } catch(e) {
-        status.textContent = '❌ '+e.message;
-        respDiv.innerHTML = '<div class="card" style="color:var(--redL)">错误: '+e.message+'</div>';
-        respDiv.style.display = 'block';
-    } finally { btn.disabled = false; }
+    // ===== 二、格局与做功 =====
+    r.push('<div class="hl" style="margin-bottom:10px">');
+    r.push('<b style="color:var(--goldL)">📌 二、格局与职业方向</b><br>');
+    var hasZG = ssAll.some(function(s){return s==='正官';}), hasQS = ssAll.some(function(s){return s==='七杀';});
+    var hasZY = ssAll.some(function(s){return s==='正印';}), hasPY = ssAll.some(function(s){return s==='偏印';});
+    var hasZC = ssAll.some(function(s){return s==='正财';}), hasPC = ssAll.some(function(s){return s==='偏财';});
+    var hasSS2 = ssAll.some(function(s){return s==='食神';}), hasSG = ssAll.some(function(s){return s==='伤官';});
+    var hasBJ = ssAll.some(function(s){return s==='比肩'||s==='劫财';});
+
+    if (hasZG && hasZY) r.push('你命带<b>正官+正印</b>，这是"化官生印"的经典组合。这个格局的人，天生适合在体制内工作——官来生印、印来生身，等于把外部的权力和规则"化"成了对自己有利的资源。简单说就是：你适合当公务员、事业单位人员、国企职工、教师这类稳定有保障的工作。');
+    else if (hasQS && hasZY) r.push('你命带<b>七杀+正印</b>，这叫"杀印相生"。七杀代表压力和挑战，正印代表化解和保护——两者配合，意味着你能在高压环境中脱颖而出，适合做管理、执法、军警、或者需要扛压力的领导岗位。');
+    else if (hasSS2 && hasZC) r.push('你命带<b>食神+正财</b>，这是"食神生财"的格局。食神代表你的才华和技艺，正财代表稳定的收入——你的才能可以直接变现。适合做生意、做技术、做手艺，靠自己的真本事赚钱。');
+    else if (hasSG && hasQS) r.push('你命带<b>伤官+七杀</b>，这是"伤官制杀"的格局。伤官代表打破常规的创造力，七杀代表压力和权力——你有能力化解压力、制服困难。适合创业、开拓新领域、或者做需要创新思维的工作。');
+    else if (hasPY && (!hasZY)) r.push('你命中<b>偏印(枭)旺而无正印</b>，说明你不适合走寻常路。偏印代表非传统、灵活变通的智慧，适合自己做生意、自由职业、或者在新兴行业打拼。');
+    else r.push('你的命局做功方式较为综合，没有单一的强烈信号。这意味着你的职业道路需要结合大运来选择——哪步大运来什么力量，你就往哪个方向发展。');
+
+    var wxJobs = {木:'教育、文化、出版、中医、园林',火:'能源、网络、餐饮、传媒、演艺',土:'房地产、建筑、农业、矿产、食品',金:'金融、法律、机械、公安、医疗',水:'物流、贸易、旅游、饮料、交通'};
+    r.push('<br>日主' + riGan + '属' + riWx + '，五行上天生适合的行业方向是：<b>' + (wxJobs[riWx]||'') + '</b>。');
+    r.push('</div>');
+
+    // ===== 三、婚姻 =====
+    r.push('<div class="hl" style="margin-bottom:10px">');
+    r.push('<b style="color:var(--goldL)">📌 三、婚姻分析</b><br>');
+    var riStage2 = getChangsheng(riGan, riZhi);
+    var homeCang = (CANGAN[bz[2]]||[]).concat(CANGAN[bz[3]]||[]);
+    var canStand = ['临官','帝旺','冠带','长生'].indexOf(riStage2) >= 0;
+    if (canStand) r.push('日主' + riGan + '坐' + riZhi + '，处于' + riStage2 + '状态，根基稳固，说明你在婚姻中能立得住、有自己的主见和地位。');
+    else r.push('日主在夫妻宫(日支)的状态是' + riStage2 + '，力量偏弱。这意味着你在感情中容易处于被动，建议等大运扶身（印比大运）时再考虑结婚，婚姻质量会更高。');
+
+    if (d.branchRelations.冲.some(function(c){return c.indexOf(bz[2])>=0;})) r.push('⚠️ 你的夫妻宫(日支)被冲，感情上容易有波动。建议找性格互补、能包容你的人，并且在冲劲减弱的年份结婚。');
+    if (d.branchRelations.穿&&d.branchRelations.穿.some(function(c){return c.indexOf(bz[2])>=0;})) r.push('⚠️ 你的夫妻宫被穿，这是婚姻中最需要注意的信号。穿的力量比冲更大，容易导致感情破裂。建议慎重选择伴侣，避免闪婚。');
+    r.push('</div>');
+
+    // ===== 四、财运 =====
+    r.push('<div class="hl" style="margin-bottom:10px">');
+    r.push('<b style="color:var(--goldL)">📌 四、财运分析</b><br>');
+    var homeCai = homeCang.filter(function(c){var s=getShishen(riGan,c);return s==='正财'||s==='偏财';});
+    var outerCai = (CANGAN[bz[0]]||[]).concat(CANGAN[bz[1]]||[]).filter(function(c){var s=getShishen(riGan,c);return s==='正财'||s==='偏财';});
+    if (homeCai.length) r.push('财星在你自己的"家里"（日柱或时柱），这说明<b>财运主动来找你</b>，属于"财气通门户"的好信号。你能靠自己掌控财富，不需要完全依赖别人。');
+    else if (outerCai.length) r.push('财星在"外面"（年柱或月柱），说明你需要<b>主动去求财</b>——通过合作、创业、或者等大运把财带进来。');
+    else r.push('原局没有明显的财星，财运主要靠大运来带。有正官的话可以"以官当财"——不做官但可以通过管理、职权来赚钱。');
+    r.push('</div>');
+
+    // ===== 五、当前运势 =====
+    r.push('<div class="hl" style="margin-bottom:10px">');
+    r.push('<b style="color:var(--goldL)">📌 五、当前运势（' + thisYear + '年）</b><br>');
+    if (d.currentDayun) {
+        var dy = d.currentDayun;
+        var dySS = getShishen(riGan, dy.pillar[0]);
+        r.push('你目前正处于<b>' + dy.pillar + '</b>大运（' + dy.startAge + '-' + dy.endAge + '岁），这十年大运的主题是<b>' + dySS + '</b>。');
+        if (dySS.includes('印')) r.push('印运是学习和积累的十年，适合提升学历、考证、或者积累人脉资源。');
+        else if (dySS.includes('官')||dySS.includes('杀')) r.push('官杀运是事业发展的十年，工作压力大但机会也多。');
+        else if (dySS.includes('财')) r.push('财运十年，挣钱机会多，但也要注意理财。');
+        else if (dySS.includes('食')||dySS.includes('伤')) r.push('食伤运是发挥才华的十年，创意多、想法多，适合开拓新方向。');
+    }
+    var lnPillar2 = getYearPillar(thisYear);
+    var lnSS2 = getShishen(riGan, lnPillar2[0]);
+    r.push('今年是<b>' + thisYear + '年 ' + lnPillar2 + '</b>，流年天干是<b>' + lnSS2 + '</b>。');
+    r.push('</div>');
+
+    // ===== 六、健康 =====
+    r.push('<div class="hl" style="margin-bottom:10px">');
+    r.push('<b style="color:var(--goldL)">📌 六、健康注意事项</b><br>');
+    var wxBody = {木:'肝胆、筋骨',火:'心脏、眼睛、血液',土:'脾胃、皮肤、消化',金:'肺、大肠、骨骼',水:'肾、膀胱、泌尿'};
+    r.push('你的日主' + riGan + '属' + riWx + '，对应的身体部位是：<b>' + (wxBody[riWx]||'') + '</b>。当' + riWx + '被克时，这些部位首当其冲，需要特别注意。');
+    var allWxSet2 = new Set(sz.concat(bz.flatMap(function(b){return CANGAN[b]||[];})).map(wxOf));
+    if (allWxSet2.has('金') && allWxSet2.has('木')) r.push('命局金木同见，注意肝胆和筋骨损伤，开车出行多加小心。');
+    if (allWxSet2.has('水') && allWxSet2.has('火')) r.push('命局水火同见，注意心脑血管和眼疾，作息规律很重要。');
+    if (d.branchRelations.穿&&d.branchRelations.穿.length) r.push('命局存在地支穿害，这是健康隐患的重要信号，建议定期体检。');
+    r.push('</div>');
+
+    // ===== 七、盲派总结 =====
+    r.push('<div class="hl" style="background:rgba(200,164,92,.06);padding:12px;border-radius:8px;border-left:3px solid var(--goldL)">');
+    r.push('<b style="color:var(--goldL)">📌 七、总结建议（大白话版）</b><br>');
+    r.push('命理分析不是定命，而是帮你认清自己的优势和短板。知道哪年运气好就多努力，知道哪年不太顺就稳一点。八字告诉你的是"出厂设置"，但人生怎么过，还是看你自己。');
+    if (ws.level === '身旺') r.push('你身旺，适合"做减法"——不要太贪多，专注一个方向深挖。');
+    else if (ws.level === '身弱') r.push('你身弱，适合"借力"——多借助团队、平台、贵人的力量。');
+    r.push('以上分析基于金镖门老人参盲派体系，仅供参考。命运可以改变，关键在于自己。');
+    r.push('</div>');
+
+    return r.join('\n');
 }
 </script>
 </body>
