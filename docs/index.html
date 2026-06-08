@@ -347,13 +347,13 @@ tr:last-child td{border-bottom:none}
 <div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.1</div>
 </div>
 
-<script src="terms_data.js?v=8658962"></script>
-<script src="bazi.js?v=8658962"></script>
-<script src="ziwei.js?v=8658962"></script>
-<script src="liuren.js?v=8658962"></script>
-<script src="liuyao.js?v=8658962"></script>
-<script src="analysis.js?v=8658962"></script>
-<script src="slider.js?v=8658962"></script>
+<script src="terms_data.js?v=8658963"></script>
+<script src="bazi.js?v=8658963"></script>
+<script src="ziwei.js?v=8658963"></script>
+<script src="liuren.js?v=8658963"></script>
+<script src="liuyao.js?v=8658963"></script>
+<script src="analysis.js?v=8658963"></script>
+<script src="slider.js?v=8658963"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -449,6 +449,13 @@ function makeAcc(title, body) {
 }
 
 function renderBazi(d) {
+    try { return renderBaziGrid(d); } catch(e) {
+        console.error('Grid render failed, fallback to simple:', e);
+        return renderBaziSimple(d);
+    }
+}
+
+function renderBaziGrid(d) {
     const pNames = ['年柱','月柱','日柱','时柱'];
     const pillars = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
     const stems = pillars.map(p => p[0]);
@@ -632,6 +639,52 @@ function renderBazi(d) {
       <div id="ds-response" style="margin-top:16px;text-align:left;display:none"></div>
     </div>`;
 
+    document.getElementById('bz-results').innerHTML = html;
+    document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
+}
+
+// Simple fallback if grid render fails
+function renderBaziSimple(d) {
+    var pillars = [{n:'年柱',v:d.yearPillar},{n:'月柱',v:d.monthPillar},{n:'日柱',v:d.dayPillar,m:true},{n:'时柱',v:d.timePillar}];
+    var names = ['年柱','月柱','日柱','时柱'];
+    var ps = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
+    var ssData = d.shishenStems;
+    var html = '<div class="card" style="text-align:center"><h3>🏮 八字命盘</h3>';
+    html += '<div class="bz-grid">';
+    // Header
+    html += '<div class="bz-gi lbl"></div>';
+    for (var i = 0; i < 4; i++) html += '<div class="bz-gi hdr">' + names[i] + '</div>';
+    // 主星
+    html += '<div class="bz-gi lbl">主星</div>';
+    for (var i = 0; i < 4; i++) {
+        var ss = ssData[i].shishen;
+        html += '<div class="bz-gi' + (i===2?' day-col':'') + '"><span class="bz-ss">' + (i===2?'元'+(d.gender==='male'?'男':'女'):ss) + '</span></div>';
+    }
+    // 天干
+    html += '<div class="bz-gi lbl">天干</div>';
+    for (var i = 0; i < 4; i++) html += '<div class="bz-gi' + (i===2?' day-col':'') + '"><span class="bz-pillar">' + ps[i] + '</span></div>';
+    // 地支
+    html += '<div class="bz-gi lbl">地支</div>';
+    for (var i = 0; i < 4; i++) html += '<div class="bz-gi' + (i===2?' day-col':'') + '">' + ps[i][1] + '</div>';
+    // 藏干
+    html += '<div class="bz-gi lbl">藏干</div>';
+    for (var i = 0; i < 4; i++) {
+        var cg = d.shishenCangan[i].hiddens.map(function(h){return h.stem;}).join('');
+        html += '<div class="bz-gi' + (i===2?' day-col':'') + '"><div class="bz-cang">' + cg + '</div></div>';
+    }
+    // 纳音
+    html += '<div class="bz-gi lbl">纳音</div>';
+    for (var i = 0; i < 4; i++) html += '<div class="bz-gi' + (i===2?' day-col':'') + '"><span style="font-size:.65em;color:var(--dim)">' + d.nayin[i].nayin + '</span></div>';
+    html += '</div>';
+    html += '<div style="color:var(--dim);font-size:.8em;margin-top:4px">日主 <b style="color:var(--goldL)">' + d.riGan + '</b> | ' + d.chineseHour + ' | 虚岁' + d.currentAgeXusui + '</div></div>';
+    html += renderDayunSlider(d);
+    html += makeAcc('📋 命盘数据', '<div class="grid2">' +
+      '<div class="card"><h3>🌿 十二长生</h3><table>' + d.changsheng.map(function(c){return '<tr><td>'+c.name+'</td><td>'+c.branch+'</td><td>'+c.stage+'</td></tr>';}).join('') + '</table></div>' +
+      '<div class="card"><h3>⛔ 空亡</h3><div class="hl">日柱 ' + d.dayPillar + ' → <span class="tag tag-warn">' + d.kongBranches.join(' ') + '</span></div></div>' +
+      '<div class="card"><h3>⚖️ 旺衰 & 胎元</h3><div class="hl">日主' + d.riGan + ' | ' + d.wangshuai.level + '</div><div class="hl">胎元: ' + d.taiyuan + '</div></div>' +
+    '</div>');
+    try { var aHTML = generateAnalysis(d); var cards = aHTML.split(/(?=<div class="card">)/); for (var ci = 0; ci < cards.length; ci++) { var c = cards[ci]; if (!c.trim()) continue; var h3m = c.match(/<h3>(.*?)<\/h3>/); html += makeAcc(h3m ? h3m[1] : '分析', c.replace(/<h3>.*?<\/h3>/, '')); } } catch(e2) {}
+    html += '<div class="card" style="text-align:center"><h3>🤖 AI解读</h3><button class="btn-go" onclick="doDeepSeek()">🔮 AI深度解读</button></div>';
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
 }
