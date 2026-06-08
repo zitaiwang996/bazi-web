@@ -1,6 +1,44 @@
 // slider.js — 大运/流年/流月 三层横向滚动 (v3.0 问真八字风格)
 // 简化为三排独立横向滚动，去除点击展开/收起
 
+// 太阳历月份索引(寅=0) → JS日历月份 (0=Jan)
+var SOLAR_TO_CAL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
+
+// 节气列表
+var JIE_LIST_S = [
+    { key: 'beginning_of_spring',  name: '立春', monthIdx: 0 },
+    { key: 'waking_of_insects',    name: '惊蛰', monthIdx: 1 },
+    { key: 'pure_brightness',      name: '清明', monthIdx: 2 },
+    { key: 'beginning_of_summer',  name: '立夏', monthIdx: 3 },
+    { key: 'grain_in_beard',       name: '芒种', monthIdx: 4 },
+    { key: 'lesser_heat',          name: '小暑', monthIdx: 5 },
+    { key: 'beginning_of_autumn',  name: '立秋', monthIdx: 6 },
+    { key: 'white_dew',            name: '白露', monthIdx: 7 },
+    { key: 'cold_dew',             name: '寒露', monthIdx: 8 },
+    { key: 'beginning_of_winter',  name: '立冬', monthIdx: 9 },
+    { key: 'greater_snow',         name: '大雪', monthIdx: 10 },
+    { key: 'lesser_cold',          name: '小寒', monthIdx: 11 },
+];
+
+function getYearJieInfo(year) {
+    var yrKey = String(year);
+    if (typeof SOLAR_TERMS === 'undefined' || !SOLAR_TERMS[yrKey]) return {};
+    var result = {};
+    for (var i = 0; i < JIE_LIST_S.length; i++) {
+        var info = JIE_LIST_S[i];
+        var val = SOLAR_TERMS[yrKey][info.key];
+        if (val) {
+            var parts = val.split(' ');
+            var dateParts = parts[0].split('-');
+            result[info.monthIdx] = {
+                name: info.name,
+                dateStr: parseInt(dateParts[1], 10) + '/' + parseInt(dateParts[2], 10),
+            };
+        }
+    }
+    return result;
+}
+
 function renderDayunSlider(d) {
     var birthYear = parseInt(d.solarDate, 10);
     var riGan = d.riGan;
