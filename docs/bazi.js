@@ -692,3 +692,122 @@ function calcSolarTermDistance(solarDateStr) {
     return { name: nearest.name, days, direction };
 }
 
+// =========== 神煞计算 ===========
+function calcShensha(pillars, riGan, riZhi, nianZhi, yueZhi, gender) {
+    // pillars = [year, month, day, time]
+    // Returns array of arrays: [[shensha for year pillar], [month], [day], [time]]
+    const results = [[], [], [], []];
+    const branches = pillars.map(p => p[1]);
+    const stems = pillars.map(p => p[0]);
+
+    function add(idx, name, cls) {
+        results[idx].push({ name, cls: cls || 'tag-info' });
+    }
+
+    // 五行
+    const wx = s => ({甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[s]||'');
+
+    // ---- 天乙贵人 (日干) ----
+    const tianyi = {甲:'丑未',乙:'子申',丙:'亥酉',丁:'亥酉',戊:'丑未',己:'子申',庚:'午寅',辛:'午寅',壬:'卯巳',癸:'卯巳'};
+    const tyBranches = (tianyi[riGan]||'').match(/../g) || [];
+    for (let i = 0; i < 4; i++) {
+        if (tyBranches.includes(branches[i])) add(i, '天乙贵人', 'tag-good');
+    }
+
+    // ---- 文昌 (日干) ----
+    const wenchang = {甲:'巳',乙:'午',丙:'申',丁:'酉',戊:'申',己:'酉',庚:'亥',辛:'子',壬:'寅',癸:'卯'};
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === wenchang[riGan]) add(i, '文昌', 'tag-good');
+    }
+
+    // ---- 学堂 (日干) ----
+    const xuetang = {甲:'亥',乙:'午',丙:'寅',丁:'酉',戊:'寅',己:'酉',庚:'巳',辛:'子',壬:'申',癸:'卯'};
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === xuetang[riGan]) add(i, '学堂', 'tag-good');
+    }
+
+    // ---- 驿马 (年支或日支) ----
+    const yima = {申:'寅',子:'寅',辰:'寅', 寅:'申',午:'申',戌:'申', 巳:'亥',酉:'亥',丑:'亥', 亥:'巳',卯:'巳',未:'巳'};
+    const maBranch = yima[nianZhi] || yima[riZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === maBranch) add(i, '驿马', 'tag-info');
+    }
+
+    // ---- 桃花 (年支或日支) ----
+    const taohua = {申:'酉',子:'酉',辰:'酉', 寅:'卯',午:'卯',戌:'卯', 巳:'午',酉:'午',丑:'午', 亥:'子',卯:'子',未:'子'};
+    const thBranch = taohua[nianZhi] || taohua[riZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === thBranch) add(i, '桃花', 'tag-warn');
+    }
+
+    // ---- 华盖 (日支) ----
+    const huagai = {申:'辰',子:'辰',辰:'辰', 寅:'戌',午:'戌',戌:'戌', 巳:'丑',酉:'丑',丑:'丑', 亥:'未',卯:'未',未:'未'};
+    const hgBranch = huagai[riZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === hgBranch) add(i, '华盖', 'tag-info');
+    }
+
+    // ---- 羊刃 (日干) ----
+    const yangren = {甲:'卯',乙:'寅',丙:'午',丁:'巳',戊:'午',己:'巳',庚:'酉',辛:'申',壬:'子',癸:'亥'};
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === yangren[riGan]) add(i, '羊刃', 'tag-warn');
+    }
+
+    // ---- 灾煞 (年支) ----
+    const zaisha = {申:'午',子:'午',辰:'午', 寅:'子',午:'子',戌:'子', 巳:'卯',酉:'卯',丑:'卯', 亥:'酉',卯:'酉',未:'酉'};
+    const zsBranch = zaisha[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === zsBranch) add(i, '灾煞', 'tag-warn');
+    }
+
+    // ---- 福星贵人 (日干) ----
+    const fuxingMap = {甲:'寅丑',乙:'卯子',丙:'戌',丁:'酉',戊:'申',己:'未',庚:'午',辛:'巳',壬:'辰',癸:'卯'};
+    const fxBranches = (fuxingMap[riGan]||'').match(/../g) || (fuxingMap[riGan] ? [fuxingMap[riGan]] : []);
+    for (let i = 0; i < 4; i++) {
+        if (fxBranches.includes(branches[i])) add(i, '福星贵人', 'tag-good');
+    }
+
+    // ---- 国印贵人 (日干) ----
+    const guoyinMap = {甲:'戌',乙:'亥',丙:'丑',丁:'寅',戊:'丑',己:'寅',庚:'辰',辛:'巳',壬:'未',癸:'申'};
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === guoyinMap[riGan]) add(i, '国印贵人', 'tag-good');
+    }
+
+    // ---- 太极贵人 (日干) ----
+    const taijiMap = {甲:'子午',乙:'子午',丙:'卯酉',丁:'卯酉',戊:'辰戌丑未',己:'辰戌丑未',庚:'寅亥',辛:'寅亥',壬:'巳申',癸:'巳申'};
+    const tjBranches = (taijiMap[riGan]||'').match(/../g) || [];
+    for (let i = 0; i < 4; i++) {
+        if (tjBranches.includes(branches[i])) add(i, '太极贵人', 'tag-good');
+    }
+
+    // ---- 魁罡 (日柱干支) ----
+    const kuigang = ['庚辰','庚戌','壬辰','戊戌'];
+    for (let i = 0; i < 4; i++) {
+        if (kuigang.includes(pillars[i])) add(i, '魁罡', 'tag-warn');
+    }
+
+    // ---- 阴差阳错 (日柱干支) ----
+    const ycc = ['丙子','丁丑','戊寅','辛卯','壬辰','癸巳','丙午','丁未','戊申','辛酉','壬戌','癸亥'];
+    for (let i = 0; i < 4; i++) {
+        if (ycc.includes(pillars[i])) add(i, '阴差阳错', 'tag-warn');
+    }
+
+    // ---- 金舆 (日干) ----
+    const jinyu = {甲:'辰',乙:'巳',丙:'未',丁:'申',戊:'未',己:'申',庚:'戌',辛:'亥',壬:'丑',癸:'寅'};
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === jinyu[riGan]) add(i, '金舆', 'tag-good');
+    }
+
+    return results;
+}
+
+// 五行颜色映射
+function wuxingClass(stem) {
+    return {
+        '甲':'c-wood','乙':'c-wood',
+        '丙':'c-fire','丁':'c-fire',
+        '戊':'c-earth','己':'c-earth',
+        '庚':'c-metal','辛':'c-metal',
+        '壬':'c-water','癸':'c-water',
+    }[stem] || '';
+}

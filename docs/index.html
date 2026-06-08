@@ -168,54 +168,57 @@ tr:last-child td{border-bottom:none}
 /* 流日 grid */
 .ld-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:2px; }
 .ld-cell { display:flex; flex-direction:column; align-items:center; padding:3px 2px; background:rgba(0,0,0,.15); border-radius:2px; font-size:.7em; }
-/* ====== 大运流年流月流日 (问真八字风格) ====== */
-.wz-dy { border:1px solid var(--border); border-radius:var(--r-md); margin-bottom:8px; overflow:hidden; }
-.wz-dy.cur { border-color:var(--gold); }
-.wz-dy-head { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; background:var(--card); }
-.wz-dy-head:hover { background:rgba(200,164,92,.06); }
-.wz-dy.cur .wz-dy-head { background:rgba(200,164,92,.08); }
-.wz-dy-pillar { font-family:'Noto Serif SC','SimSun',serif; font-size:1.15em; }
-.cur .wz-dy-pillar { color:var(--goldL); }
-.wz-dy-age { color:var(--dim); font-size:.9em; }
-.wz-dy-year { color:var(--dim); font-size:.8em; }
-.wz-dy-body { background:var(--input); border-top:1px solid var(--border); }
-.wz-tbl { width:100%; border-collapse:collapse; font-size:.85em; }
-.wz-tbl th { padding:8px 12px; text-align:left; color:var(--dim); font-weight:500; font-size:.8em; border-bottom:1px solid var(--border); }
-.wz-tbl td { padding:8px 12px; border-bottom:1px solid rgba(58,48,36,.3); }
-.wz-ln-row { cursor:pointer; }
-.wz-ln-row:hover { background:rgba(200,164,92,.05); }
-.wz-lm-td { background:rgba(0,0,0,.06); padding:0 !important; }
-.wz-lm-grid { display:flex; flex-wrap:wrap; gap:6px; padding:10px 12px; }
-.wz-lm-chip { display:flex; flex-direction:column; align-items:center; padding:5px 7px; background:var(--card); border:1px solid var(--border); border-radius:5px; cursor:pointer; min-width:52px; text-align:center; transition:border-color .15s; }
-.wz-lm-chip:hover { border-color:var(--gold); background:rgba(200,164,92,.08); }
-.wz-lm-name { font-size:.65em; color:var(--dim); }
-.wz-lm-pillar { font-family:'Noto Serif SC',serif; font-size:.85em; font-weight:700; margin:1px 0; }
-.wz-ld-grid { display:flex; flex-wrap:wrap; gap:2px; margin-top:4px; padding-top:4px; border-top:1px solid var(--border); }
-.wz-ld-chip { display:inline-flex; flex-direction:column; align-items:center; padding:2px 3px; background:rgba(0,0,0,.12); border-radius:2px; min-width:34px; text-align:center; }
-.st-arr { font-size:.7em; color:var(--dim); min-width:14px; display:inline-block; transition:color .2s; }
-.wz-ln-row:hover .st-arr, .wz-lm-chip:hover .st-arr { color:var(--gold); }
-@media(max-width:640px){.wz-lm-chip{min-width:44px}.wz-lm-pillar{font-size:.75em}.wz-dy-head{gap:6px;font-size:.9em}}
+<!-- old wz-* styles removed in v13 -->
 @media(max-width:640px){.header h1{font-size:1.5em}.card{padding:var(--s-md)}.form-row{flex-direction:column}.bz-p .ch{font-size:1.4em}.grid2{grid-template-columns:1fr}.zw-grid{grid-template-columns:repeat(2,1fr)}.acc-head{padding:var(--s-md)}}
 /* ====== HORIZONTAL SCROLL LAYOUT (大运→流年→流月→流日) ====== */
 .ctx-bar{background:rgba(200,164,92,.08);border-bottom:1px solid var(--border);padding:4px 10px;font-size:.7em;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ctx-bar b{color:var(--goldL)}
-/* ====== VERTICAL PILLAR DISPLAY ====== */
-.bz-vrow{display:flex;gap:var(--s-md);justify-content:center;flex-wrap:wrap;margin:var(--s-md) 0}
-.bz-vcol{display:flex;flex-direction:column;align-items:center;min-width:80px;padding:8px 6px;border-radius:var(--r-md);background:rgba(26,20,16,.3);border:1px solid transparent;transition:border-color .3s}
-.bz-vcol.day{border-color:var(--gold);background:rgba(200,164,92,.06);box-shadow:0 0 12px rgba(200,164,92,.08)}
-.bz-vlbl{font-size:.7em;color:var(--dim);margin-bottom:4px;letter-spacing:.08em}
-.bz-vstem{font-family:'Noto Serif SC','SimSun',serif;font-size:2em;font-weight:900;color:var(--text);line-height:1.2}
-.bz-vcol.day .bz-vstem{color:var(--goldL)}
-.bz-vss{font-size:.65em;color:var(--dim);margin-bottom:4px;line-height:1.1;min-height:1.1em}
-.bz-vss.warn{color:var(--redL)}
-.bz-vbranch{font-family:'Noto Serif SC','SimSun',serif;font-size:1.8em;font-weight:700;color:var(--text);line-height:1.2}
-.bz-vcang{font-size:.6em;color:var(--mute);margin-top:2px;line-height:1.2;text-align:center}
-.bz-vnayin{font-size:.55em;color:var(--dim);margin-top:3px;line-height:1.1}
+/* ====== WUXING COLORS ====== */
+.c-wood{color:#5a9e5a}.c-fire{color:#d4734e}.c-earth{color:#b8965a}.c-metal{color:#c4a44a}.c-water{color:#4a7db5}
+/* ====== BAZI GRID TABLE (问真八字风格) ====== */
+.bz-grid{display:grid;grid-template-columns:48px 60px 60px 72px 72px 72px 72px;font-size:.82em;border-top:1px solid var(--border);border-left:1px solid var(--border);margin:var(--s-md) 0;overflow-x:auto}
+.bz-gi{text-align:center;padding:6px 3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;min-height:28px;gap:0}
+.bz-gi.lbl{font-weight:700;background:rgba(200,164,92,.05);color:var(--dim);font-size:.7em;justify-content:flex-start;padding-left:6px}
+.bz-gi.hdr{font-weight:700;background:rgba(200,164,92,.08);color:var(--goldL);font-size:.7em}
+.bz-gi.day-col{background:rgba(200,164,92,.04)}
+.bz-pillar{font-family:'Noto Serif SC','SimSun',serif;font-size:1.1em;font-weight:700;line-height:1.2}
+.bz-ss{font-size:.7em;line-height:1.1}
+.bz-cang{display:flex;flex-wrap:wrap;justify-content:center;font-size:.6em;gap:0;line-height:1.3}
+.bz-cang span{padding:0 1px}
+.bz-shensha{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}
+.bz-shensha .tag{font-size:.55em;padding:1px 3px;margin:0}
+/* ====== QIYUN BAR ====== */
+.qy-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(200,164,92,.04);border:1px solid var(--border);border-radius:var(--r-md);margin-top:8px;font-size:.78em;color:var(--dim)}
+.qy-age{background:var(--goldD);color:var(--text);padding:2px 10px;border-radius:12px;font-weight:700;font-size:.95em}
+/* ====== SCROLL SECTIONS (大运/流年/流月) ====== */
+.scroll-section{padding:8px 0;border-bottom:1px solid var(--border)}
+.section-title{font-size:.75em;font-weight:700;color:var(--dim);margin-bottom:6px;letter-spacing:.05em}
+/* Dayun cards */
+.dy-card{min-width:62px;border:1px solid var(--border);border-radius:var(--r-md);padding:6px 8px;text-align:center;flex-shrink:0;background:var(--card);transition:border-color .2s}
+.dy-card.cur{border-color:var(--gold);box-shadow:0 0 6px rgba(200,164,92,.15);background:rgba(200,164,92,.06)}
+.dy-card-year{font-size:.65em;color:var(--dim)}
+.dy-card-pillar{font-family:'Noto Serif SC','SimSun',serif;font-size:.95em;font-weight:700;margin:2px 0}
+.dy-card-ss{font-size:.6em;color:var(--dim)}
+/* Liunian items */
+.ln-scroll{gap:12px;padding:4px 0}
+.ln-item{text-align:center;flex-shrink:0;min-width:38px;cursor:default}
+.ln-item.cur .ln-year-num{color:var(--redL);font-weight:700}
+.ln-year-num{font-size:.85em;color:var(--text)}
+.ln-item.cur .ln-pillar{color:var(--redL)}
+.ln-pillar{font-size:.65em;color:var(--dim);font-family:'Noto Serif SC',serif}
+/* Liuyue items */
+.lm-scroll{gap:6px;padding:4px 0}
+.lm-item{text-align:center;flex-shrink:0;min-width:44px;padding:3px 4px;border-radius:4px;cursor:default}
+.lm-item.cur{background:rgba(200,164,92,.08)}
+.lm-jie{font-size:.72em;font-weight:700;color:var(--text)}
+.lm-jie-date{font-size:.6em;color:var(--mute)}
+.lm-pillar{font-size:.65em;font-family:'Noto Serif SC',serif}
 /* Time info bar */
 .time-info{background:rgba(200,164,92,.06);border:1px solid var(--border);border-radius:var(--r-md);padding:8px 14px;margin-top:12px;font-size:.8em;color:var(--dim);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .time-info span{white-space:nowrap}
 .time-info b{color:var(--goldL)}
-@media(max-width:640px){.bz-vstem{font-size:1.5em}.bz-vbranch{font-size:1.3em}.bz-vcol{min-width:65px;padding:6px 4px}}
+/* Responsive grid */
+@media(max-width:640px){.bz-grid{font-size:.72em;grid-template-columns:38px 48px 48px 58px 58px 58px 58px}.bz-pillar{font-size:.9em}}
 .hscroll{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:thin;scrollbar-color:var(--borderL) transparent}
 .hscroll::-webkit-scrollbar{height:5px}.hscroll::-webkit-scrollbar-thumb{background:var(--borderL);border-radius:3px}
 .hcol{flex-shrink:0;min-width:90px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--card);overflow:hidden;transition:border-color .25s}
@@ -254,7 +257,7 @@ tr:last-child td{border-bottom:none}
 <body>
 <div class="container">
 <div class="header">
-  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v12</span></h1>
+  <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v13</span></h1>
   <div class="div"></div>
   <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
 </div>
@@ -446,36 +449,131 @@ function makeAcc(title, body) {
 }
 
 function renderBazi(d) {
-    // Build vertical pillar display
     const pNames = ['年柱','月柱','日柱','时柱'];
     const pillars = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
-    const stems = [pillars[0][0], pillars[1][0], pillars[2][0], pillars[3][0]];
-    const branches = [pillars[0][1], pillars[1][1], pillars[2][1], pillars[3][1]];
+    const stems = pillars.map(p => p[0]);
+    const branches = pillars.map(p => p[1]);
     const shishenData = d.shishenStems;
     const canganData = d.shishenCangan;
+    const changshengData = d.changsheng;
+    const kongData = d.kongWang;
+    const nayinData = d.nayin;
 
-    let pillarHTML = '<div class="bz-vrow">';
-    for (let i = 0; i < 4; i++) {
-        const isDay = i === 2;
-        const ss = shishenData[i].shishen;
-        const ssClass = (ss.includes('杀') || ss.includes('伤')) ? ' warn' : '';
-        const cgStems = canganData[i].hiddens.map(h => h.stem).join('');
-        pillarHTML += '<div class="bz-vcol' + (isDay ? ' day' : '') + '">';
-        pillarHTML += '<div class="bz-vlbl">' + pNames[i] + (isDay ? ' (日主)' : '') + '</div>';
-        pillarHTML += '<div class="bz-vstem">' + stems[i] + '</div>';
-        pillarHTML += '<div class="bz-vss' + ssClass + '">' + ss + '</div>';
-        pillarHTML += '<div class="bz-vbranch">' + branches[i] + '</div>';
-        pillarHTML += '<div class="bz-vcang">' + cgStems + '</div>';
-        pillarHTML += '<div class="bz-vnayin">' + getNayin(pillars[i]) + '</div>';
-        pillarHTML += '</div>';
+    // Current liunian and dayun for extra columns
+    const now = new Date();
+    const thisYear = now.getFullYear();
+    const lnPillar = getYearPillar(thisYear);
+    const lnGan = lnPillar[0], lnZhi = lnPillar[1];
+    const lnSS = getShishen(d.riGan, lnGan);
+    const dyPillar = d.currentDayun ? d.currentDayun.pillar : '--';
+    const dyGan = d.currentDayun ? d.currentDayun.pillar[0] : '?';
+    const dySS = d.currentDayun ? getShishen(d.riGan, dyGan) : '--';
+
+    // Shensha
+    const shensha = calcShensha(pillars, d.riGan, d.riZhi, branches[0], branches[1], d.gender);
+
+    // Helper: build a grid row
+    function gCell(content, cls) {
+        return '<div class="bz-gi' + (cls ? ' ' + cls : '') + '">' + content + '</div>';
     }
-    pillarHTML += '</div>';
+    function gLabel(text) { return '<div class="bz-gi lbl">' + text + '</div>'; }
+    function gHeader(text) { return '<div class="bz-gi hdr">' + text + '</div>'; }
 
-    let html = `<div class="card" style="text-align:center"><h3>🏮 八字命盘</h3>
-      ${pillarHTML}
-      <div style="color:var(--dim);font-size:.85em">日主 <b style="color:var(--goldL)">${d.riGan}</b> | 时辰: ${d.chineseHour} | 虚岁: ${d.currentAgeXusui}</div></div>`;
+    // Build grid
+    let grid = '<div class="bz-grid">';
 
-    // === 滑动式 大运→流年→流月→流日 ===
+    // Header row
+    grid += gLabel(''); grid += gHeader('流年'); grid += gHeader('大运');
+    grid += gHeader('年柱'); grid += gHeader('月柱'); grid += gHeader('日柱'); grid += gHeader('时柱');
+
+    // 主星 row
+    grid += gLabel('主星');
+    grid += gCell(lnSS);
+    grid += gCell(dySS);
+    for (let i = 0; i < 4; i++) {
+        const ss = shishenData[i].shishen;
+        const isWarn = ss.includes('杀') || ss.includes('伤');
+        grid += gCell('<span class="bz-ss' + (isWarn ? ' c-fire' : '') + '">' + (i === 2 ? '元' + (d.gender === 'male' ? '男' : '女') : ss) + '</span>', i === 2 ? 'day-col' : '');
+    }
+
+    // 天干 row
+    grid += gLabel('天干');
+    grid += gCell('<span class="bz-pillar ' + wuxingClass(lnGan) + '">' + lnPillar + '</span>');
+    grid += gCell('<span class="bz-pillar ' + wuxingClass(dyGan) + '">' + dyPillar + '</span>');
+    for (let i = 0; i < 4; i++) {
+        grid += gCell('<span class="bz-pillar ' + wuxingClass(stems[i]) + '">' + pillars[i] + '</span>', i === 2 ? 'day-col' : '');
+    }
+
+    // 地支 row
+    grid += gLabel('地支');
+    grid += gCell('<span class="' + wuxingClass(lnZhi) + '">' + lnZhi + '</span>');
+    grid += gCell('<span class="' + wuxingClass(d.currentDayun ? d.currentDayun.pillar[1] : '?') + '">' + (d.currentDayun ? d.currentDayun.pillar[1] : '--') + '</span>');
+    for (let i = 0; i < 4; i++) {
+        grid += gCell('<span class="' + wuxingClass(branches[i]) + '">' + branches[i] + '</span>', i === 2 ? 'day-col' : '');
+    }
+
+    // 藏干 row
+    grid += gLabel('藏干');
+    grid += gCell('');
+    grid += gCell('');
+    for (let i = 0; i < 4; i++) {
+        const cg = canganData[i].hiddens;
+        let cgHTML = '<div class="bz-cang">';
+        for (const h of cg) {
+            cgHTML += '<span class="' + wuxingClass(h.stem) + '">' + h.stem + '</span>';
+        }
+        cgHTML += '</div>';
+        grid += gCell(cgHTML, i === 2 ? 'day-col' : '');
+    }
+
+    // 自坐 (十二长生) row
+    grid += gLabel('自坐');
+    grid += gCell('');
+    grid += gCell('');
+    for (let i = 0; i < 4; i++) {
+        const stage = changshengData[i].stage;
+        const isGood = ['长生','临官','帝旺','冠带'].includes(stage);
+        const isBad = ['死','墓','绝'].includes(stage);
+        grid += gCell('<span class="' + (isGood ? 'c-wood' : isBad ? 'c-fire' : '') + '" style="font-size:.7em">' + stage + '</span>', i === 2 ? 'day-col' : '');
+    }
+
+    // 空亡 row
+    grid += gLabel('空亡');
+    grid += gCell('');
+    grid += gCell('');
+    for (let i = 0; i < 4; i++) {
+        grid += gCell(kongData[i].isKong ? '<span class="c-fire" style="font-size:.7em">' + d.kongBranches.join('') + '</span>' : '<span style="font-size:.7em;color:var(--mute)">—</span>', i === 2 ? 'day-col' : '');
+    }
+
+    // 纳音 row
+    grid += gLabel('纳音');
+    grid += gCell('');
+    grid += gCell('');
+    for (let i = 0; i < 4; i++) {
+        grid += gCell('<span style="font-size:.65em;color:var(--dim)">' + nayinData[i].nayin + '</span>', i === 2 ? 'day-col' : '');
+    }
+
+    // 神煞 row
+    grid += gLabel('神煞');
+    grid += gCell('');
+    grid += gCell('');
+    for (let i = 0; i < 4; i++) {
+        const ssList = shensha[i] || [];
+        let ssHTML = '<div class="bz-shensha">';
+        for (const s of ssList) {
+            ssHTML += '<span class="tag ' + s.cls + '">' + s.name + '</span>';
+        }
+        if (!ssList.length) ssHTML += '<span style="font-size:.6em;color:var(--mute)">—</span>';
+        ssHTML += '</div>';
+        grid += gCell(ssHTML, i === 2 ? 'day-col' : '');
+    }
+
+    grid += '</div>';
+
+    let html = '<div class="card" style="text-align:center"><h3>🏮 八字命盘</h3>' + grid;
+    html += '<div style="color:var(--dim);font-size:.8em;margin-top:4px">日主 <b style="color:var(--goldL)">' + d.riGan + '</b> | ' + d.chineseHour + ' | 虚岁' + d.currentAgeXusui + '</div></div>';
+
+    // === 大运/流年/流月 横向滚动 ===
     html += renderDayunSlider(d);
 
     // All data cards wrapped in accordion
