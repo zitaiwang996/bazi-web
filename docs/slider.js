@@ -123,5 +123,32 @@ function renderDayunSlider(d) {
     }
     html += '</div></div>';
 
+    // ========== 流日 横向列表 ==========
+    html += '<div class="scroll-section"><div class="section-title">流日</div>';
+    html += '<div class="hscroll ld-scroll">';
+
+    var nowMonth = now.getMonth(); // JS calendar month
+    var nowYear = now.getFullYear();
+    var daysInMonth = new Date(nowYear, nowMonth + 1, 0).getDate();
+    var ref = new Date(1900, 0, 1);
+
+    for (var d = 1; d <= daysInMonth; d++) {
+        var date = new Date(nowYear, nowMonth, d);
+        var dayDiff = Math.floor((date - ref) / 86400000);
+        var dayIdx = ((10 + dayDiff) % 60 + 60) % 60;
+        var dayGan = '甲乙丙丁戊己庚辛壬癸'[dayIdx % 10];
+        var dayZhi = '子丑寅卯辰巳午未申酉戌亥'[dayIdx % 12];
+        var dayPillar = dayGan + dayZhi;
+        var daySS = getShishen(riGan, dayGan);
+        var isToday = (d === now.getDate());
+
+        html += '<div class="ld-item' + (isToday ? ' cur' : '') + '">';
+        html += '<div class="ld-day-num">' + d + '</div>';
+        html += '<div class="ld-pillar-text ' + wuxingClass(dayGan) + '">' + dayPillar + '</div>';
+        html += '<div class="ld-ss-text">' + daySS + '</div>';
+        html += '</div>';
+    }
+    html += '</div></div>';
+
     return html;
 }
