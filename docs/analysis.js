@@ -831,7 +831,7 @@ function analyzeParents(riGan, riZhi, sz, bz, d) {
     h += `<div class="hl"><b>📅 终身大运流年对父母星/宫的影响（五行反目原则）：</b></div>`;
     h += `<div class="hl" style="font-size:.7em;color:var(--dim)">原则：流年干克父星/母星，或流年支冲/穿/刑年柱(父宫)月柱(母宫)，或大运+流年叠加引动→父母有难。五行反目=本命对立五行同时被加强时须警惕。</div>`;
 
-    if (d.dayun && d.dayun.steps) {
+    if (d.dayun && d.dayun.steps && d.dayun.steps.length) {
         const birthYear = parseInt(d.solarDate, 10);
         const CHONG_P = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
         const CHUAN_P = [['子','未'],['丑','午'],['寅','巳'],['卯','辰'],['申','亥'],['酉','戌']];
@@ -895,10 +895,10 @@ function analyzeParents(riGan, riZhi, sz, bz, d) {
         // Sort by severity desc, then by year
         allRiskEvents.sort((a,b) => b.severity - a.severity || a.year - b.year);
 
-        if (allRiskEvents.length) {
+        if (allRiskEvents && allRiskEvents.length) {
             // Summary counts
-            const highRisk = allRiskEvents.filter(e=>e.severity>=2);
-            h += `<div class="hl"><b>终身风险统计：</b>共检测到 <b>${allRiskEvents.length}</b> 个需关注的流年，其中 <span class="tag tag-warn">${highRisk.length}个高风险年</span>（五行反目/叠克）</div>`;
+            const highRisk = allRiskEvents.filter(function(e){return e.severity>=2;});
+            h += '<div class="hl"><b>终身风险统计：</b>共检测到 <b>' + allRiskEvents.length + '</b> 个需关注的流年，其中 <span class="tag tag-warn">' + highRisk.length + '个高风险年</span>（五行反目/叠克）</div>';
 
             // Show high-risk years first
             if (highRisk.length) {

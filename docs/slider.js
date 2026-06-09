@@ -76,6 +76,7 @@ var DY_STATE = {
 
 // ===== MAIN ENTRY =====
 function renderDayunSlider(d) {
+    if (!d || !d.dayun || !d.dayun.steps) return '<div class=card style=color:var(--redL)>❌ 大运数据缺失</div>';
     DY_STATE.d = d;
     DY_STATE.birthYear = parseInt(d.solarDate, 10) || new Date().getFullYear();
     DY_STATE.riGan = d.riGan;
@@ -120,14 +121,18 @@ function renderDayunSlider(d) {
 }
 
 function buildSliderHTML() {
-    var html = '';
-    html += renderQiyunBar();
-    html += renderBreadcrumb();
-    html += renderDayunScroll();
-    if (DY_STATE.dyIdx >= 0) html += renderLiunianScroll();
-    if (DY_STATE.lnIdx >= 0) html += renderLiuyueScroll();
-    if (DY_STATE.lmIdx >= 0) html += renderLiuriScroll();
-    return html;
+    try {
+        var html = '';
+        html += renderQiyunBar();
+        html += renderBreadcrumb();
+        html += renderDayunScroll();
+        if (DY_STATE.dyIdx >= 0) html += renderLiunianScroll();
+        if (DY_STATE.lnIdx >= 0) html += renderLiuyueScroll();
+        if (DY_STATE.lmIdx >= 0) html += renderLiuriScroll();
+        return html;
+    } catch(e) {
+        return '<div class=card style=color:var(--redL)>❌ 大运渲染错误: ' + e.message + '</div>';
+    }
 }
 
 // ===== CLICK HANDLER =====
@@ -271,7 +276,7 @@ function renderLiunianScroll() {
     var d = DY_STATE.d;
     var dy = d.dayun.steps[DY_STATE.dyIdx];
     var lnList = getLiunianForDayun(dy, DY_STATE.birthYear, DY_STATE.riGan);
-    if (!lnList.length) return '';
+    if (!lnList || !lnList.length) return '';
 
     var html = '<div class="scroll-section ln-section">';
     html += '<div class="section-title">📆 流年 <span class="section-hint">（点击展开流月 / 彩色标签=与命局地支关系）</span></div>';
@@ -279,6 +284,7 @@ function renderLiunianScroll() {
 
     for (var i = 0; i < lnList.length; i++) {
         var ln = lnList[i];
+        if (!ln) continue;
         var isSel = (i === DY_STATE.lnIdx);
         var rels = getBranchRelations(ln.pillar[1], DY_STATE.birthBranches);
 
@@ -310,6 +316,7 @@ function renderLiuyueScroll() {
     if (DY_STATE.lnIdx >= lnList.length) return '';
     var ln = lnList[DY_STATE.lnIdx];
     var lmList = getLiuyuePillars(ln.gan);
+    if (!lmList || !lmList.length) return '';
     var yearJie = getYearJieInfo(ln.year);
 
     var html = '<div class="scroll-section lm-section">';
@@ -318,6 +325,7 @@ function renderLiuyueScroll() {
 
     for (var i = 0; i < 12; i++) {
         var lm = lmList[i];
+        if (!lm) continue;
         var jie = yearJie[i];
         var isSel = (i === DY_STATE.lmIdx);
         var rels = getBranchRelations(lm.zhi, DY_STATE.birthBranches);
@@ -360,6 +368,7 @@ function renderLiuriScroll() {
 
     var calMonth = SOLAR_TO_CAL[DY_STATE.lmIdx];
     var liuri = getLiuriForMonth(ln.year, calMonth, DY_STATE.riGan);
+    if (!liuri || !liuri.length) return '';
 
     var now = new Date();
     var isCurrentPeriod = (ln.year === now.getFullYear() && calMonth === now.getMonth());
@@ -371,6 +380,7 @@ function renderLiuriScroll() {
 
     for (var i = 0; i < liuri.length; i++) {
         var ld = liuri[i];
+        if (!ld) continue;
         var isToday = isCurrentPeriod && ld.day === today;
         var rels = getBranchRelations(ld.pillar[1], DY_STATE.birthBranches);
 
