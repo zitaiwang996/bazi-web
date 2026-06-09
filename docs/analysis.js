@@ -848,15 +848,15 @@ function analyzeParents(riGan, riZhi, sz, bz, d) {
                 const lnGan2 = ln.pillar[0], lnZhi2 = ln.pillar[1];
                 const risks = [];
 
-                // 克父星
+                // Compute liunian-to-parent relationships (needed for both basic and 五行反目 checks)
+                var lnToF = null, lnToM = null;
                 if (fatherStar) {
-                    const lnToF = getShishen(fatherStar.stem, lnGan2);
-                    if (lnToF.includes('杀') || lnToF.includes('官')) risks.push('流年干克父星');
+                    lnToF = getShishen(fatherStar.stem, lnGan2);
+                    if (lnToF.indexOf('杀')>=0 || lnToF.indexOf('官')>=0) risks.push('流年干克父星');
                 }
-                // 克母星
                 if (motherStar) {
-                    const lnToM = getShishen(motherStar.stem, lnGan2);
-                    if (lnToM.includes('杀') || lnToM.includes('官')) risks.push('流年干克母星');
+                    lnToM = getShishen(motherStar.stem, lnGan2);
+                    if (lnToM.indexOf('杀')>=0 || lnToM.indexOf('官')>=0) risks.push('流年干克母星');
                 }
                 // 冲/穿/刑年柱
                 if (isP(lnZhi2, nianZhi2, CHONG_P)) risks.push('流年冲年柱(父宫)');
@@ -868,12 +868,11 @@ function analyzeParents(riGan, riZhi, sz, bz, d) {
                 if (isP(lnZhi2, yueZhi2, XING_P)) risks.push('流年刑月柱');
 
                 // 五行反目：大运流年同来克父星/母星
-                if (fatherStar && (getShishen(fatherStar.stem, dyGan2).includes('杀')||getShishen(fatherStar.stem, dyGan2).includes('官'))) {
-                    if (lnToF && (lnToF.includes('杀')||lnToF.includes('官'))) risks.push('大运+流年叠克父星⚠️');
+                if (fatherStar && lnToF && (getShishen(fatherStar.stem, dyGan2).indexOf('杀')>=0||getShishen(fatherStar.stem, dyGan2).indexOf('官')>=0)) {
+                    if (lnToF.indexOf('杀')>=0 || lnToF.indexOf('官')>=0) risks.push('大运+流年叠克父星⚠️');
                 }
-                if (motherStar && (getShishen(motherStar.stem, dyGan2).includes('杀')||getShishen(motherStar.stem, dyGan2).includes('官'))) {
-                    const lnToM2 = getShishen(motherStar.stem, lnGan2);
-                    if (lnToM2 && (lnToM2.includes('杀')||lnToM2.includes('官'))) risks.push('大运+流年叠克母星⚠️');
+                if (motherStar && lnToM && (getShishen(motherStar.stem, dyGan2).indexOf('杀')>=0||getShishen(motherStar.stem, dyGan2).indexOf('官')>=0)) {
+                    if (lnToM.indexOf('杀')>=0 || lnToM.indexOf('官')>=0) risks.push('大运+流年叠克母星⚠️');
                 }
                 // 五行反目：大运支+流年支同冲宫位
                 if (isP(dyZhi2, nianZhi2, CHONG_P) && isP(lnZhi2, nianZhi2, CHONG_P)) risks.push('叠冲父宫⚠️');
