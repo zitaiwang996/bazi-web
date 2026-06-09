@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -260,6 +260,34 @@ tr:last-child td{border-bottom:none}
 .ld-ss{font-size:.55em;color:var(--dim)}.ld-ss-warn{color:var(--redL)}
 /* Mobile tweaks for horizontal layout */
 @media(max-width:640px){.dy-col{min-width:90px}.ln-col{min-width:78px}.lm-col{min-width:68px}.ld-chip{min-width:36px}.ld-pillar{font-size:.7em}.hcol-head{padding:7px 8px}.dy-head{padding:10px 8px}}
+/* ====== INPUT UX ENHANCEMENTS ====== */
+/* Edit icon wrapper for date/time inputs */
+.input-icon-wrap{position:relative;display:flex;align-items:center}
+.input-icon-wrap input[type="date"],
+.input-icon-wrap input[type="time"]{width:100%;padding-right:34px;cursor:pointer}
+.input-icon-wrap .edit-ic{
+  position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;pointer-events:none;z-index:1;
+  opacity:.3;transition:opacity .25s,color .25s;
+  color:var(--dim);
+  background:currentColor;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/%3E%3C/svg%3E") center/contain no-repeat;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.input-icon-wrap:hover .edit-ic{opacity:.55;color:var(--gold)}
+.input-icon-wrap input:focus~.edit-ic{opacity:.75;color:var(--goldL)}
+/* Animated hint text */
+.input-hint{font-size:.62em;color:var(--mute);margin-top:3px;display:flex;align-items:center;gap:4px;user-select:none}
+.input-hint .hint-arrow{display:inline-block;font-size:.85em;color:var(--goldD);animation:hintBounce 1.8s ease-in-out infinite}
+@keyframes hintBounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-3px);opacity:1}}
+/* Desktop flow arrows between form fields */
+.form-flow-arrow{display:flex;align-items:flex-end;padding-bottom:14px;color:var(--goldD);font-size:1.4em;opacity:.45;flex-shrink:0;user-select:none}
+@media(max-width:640px){.form-flow-arrow{display:none}.input-hint{font-size:.68em}}
+/* Better calendar picker indicator */
+input[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.5;transition:opacity .2s}
+input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
+/* Enhanced focus glow */
+.fg input:focus,.fg select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,92,.15),0 0 14px rgba(200,164,92,.06)}
 </style>
 </head>
 <body>
@@ -283,14 +311,17 @@ tr:last-child td{border-bottom:none}
 <div class="card">
   <h3>📅 输入出生信息</h3>
   <div class="form-row">
-    <div class="fg"><label>出生日期（公历）</label><input type="date" id="bz-date" value="2000-01-01"></div>
-    <div class="fg"><label>出生时间</label><input type="time" id="bz-time" value="12:00"><span style="font-size:.8em;color:var(--goldL)" id="bz-shichen"></span></div>
-    <div class="fg"><label>性别</label>
+    <div class="fg"><label>📅 出生日期（公历）</label><div class="input-icon-wrap"><input type="date" id="bz-date" value="2000-01-01"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击年月日可直接修改</div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg"><label>🕐 出生时间</label><div class="input-icon-wrap"><input type="time" id="bz-time" value="12:00"><span class="edit-ic"></span></div><span style="font-size:.8em;color:var(--goldL)" id="bz-shichen"></span><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg"><label>⚤ 性别</label>
       <div class="gender-tog" id="bz-gender">
         <button data-g="male" class="active">男</button><button data-g="female">女</button>
       </div>
     </div>
-    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doBazi()">开始排盘</button></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doBazi()">✨ 开始排盘</button></div>
   </div>
   <div style="margin-top:8px;font-size:.75em;color:var(--dim)">💡 排盘后点击下方"AI深度解读"按钮，基于盲派规则自动生成详细命理报告</div>
   <div class="time-info" id="bz-time-info" style="display:none"></div>
@@ -305,14 +336,17 @@ tr:last-child td{border-bottom:none}
 <div class="card">
   <h3>📅 输入出生信息</h3>
   <div class="form-row">
-    <div class="fg"><label>出生日期（公历）</label><input type="date" id="zw-date" value="2000-01-01"></div>
-    <div class="fg"><label>出生时间</label><input type="time" id="zw-time" value="12:00"></div>
-    <div class="fg"><label>性别</label>
+    <div class="fg"><label>📅 出生日期（公历）</label><div class="input-icon-wrap"><input type="date" id="zw-date" value="2000-01-01"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击年月日可直接修改</div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg"><label>🕐 出生时间</label><div class="input-icon-wrap"><input type="time" id="zw-time" value="12:00"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg"><label>⚤ 性别</label>
       <div class="gender-tog" id="zw-gender">
         <button data-g="male" class="active">男</button><button data-g="female">女</button>
       </div>
     </div>
-    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doZiwei()">开始排盘</button></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doZiwei()">✨ 开始排盘</button></div>
   </div>
   <div class="time-info" id="zw-time-info" style="display:none"></div>
 </div>
@@ -325,10 +359,13 @@ tr:last-child td{border-bottom:none}
 <div class="card">
   <h3>🔮 大六壬占卜</h3>
   <div class="form-row">
-    <div class="fg"><label>占卜日期</label><input type="date" id="lr-date"></div>
-    <div class="fg"><label>占卜时间</label><input type="time" id="lr-time" value="12:00"></div>
-    <div class="fg" style="flex:2"><label>占问事项</label><input type="text" id="lr-question" placeholder="例如：今日出行如何？"></div>
-    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doLiuren()">起课</button></div>
+    <div class="fg"><label>📅 占卜日期</label><div class="input-icon-wrap"><input type="date" id="lr-date"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击年月日可直接修改</div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg"><label>🕐 占卜时间</label><div class="input-icon-wrap"><input type="time" id="lr-time" value="12:00"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg" style="flex:2"><label>📝 占问事项</label><input type="text" id="lr-question" placeholder="例如：今日出行如何？"></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doLiuren()">✨ 起课</button></div>
   </div>
 </div>
 <div id="lr-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">起课中...</div>
@@ -1322,4 +1359,5 @@ function generateBaziReport(d) {
 </script>
 </body>
 </html>
+
 
