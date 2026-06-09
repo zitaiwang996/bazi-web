@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
-<script src="lunar.min.js?v=8658970"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏮</text></svg>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
 
@@ -461,9 +461,12 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 <script src="liuren.js?v=8658970"></script>
 <script src="liuyao.js?v=8658970"></script>
 <script src="analysis.js?v=8658970"></script>
-<script src="slider.js?v=8658967"></script>
+<script src="lunar.min.js?v=8658970"></script>
+<script src="slider.js?v=8658970"></script>
 
 <script>
+// 确保核心函数优先定义
+function doBazi(){} function doZiwei(){} function doLiuren(){} function doLiuyao(){}
 // ========== TAB SWITCHING ==========
 function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
