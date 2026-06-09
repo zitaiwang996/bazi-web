@@ -5,46 +5,33 @@
 // ================================================================
 
 function generateAnalysis(d) {
-    const riGan = d.riGan, riZhi = d.riZhi;
-    const ps = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
-    const bz = [ps[0][1], ps[1][1], ps[2][1], ps[3][1]]; // branches
-    const sz = [ps[0][0], ps[1][0], ps[2][0], ps[3][0]]; // stems
-    const riWx = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[riGan];
-    const ws = d.wangshuai;
+    var riGan = d.riGan, riZhi = d.riZhi;
+    var ps = [d.yearPillar, d.monthPillar, d.dayPillar, d.timePillar];
+    var bz = [ps[0][1], ps[1][1], ps[2][1], ps[3][1]];
+    var sz = [ps[0][0], ps[1][0], ps[2][0], ps[3][0]];
+    var riWx = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'}[riGan];
+    var ws = d.wangshuai;
 
-    let sections = [];
+    var sections = [];
 
-    // === SECTION 0: 格局 + 做功 ===
-    sections.push(analyzePattern(riGan, riZhi, ps, sz, bz, ws, d));
+    // Each section wrapped in its own try-catch so one failure doesn't break others
+    function safePush(fn, args) {
+        try { var s = fn.apply(null, args); if (s) sections.push(s); }
+        catch(e) { sections.push('<div class=card style=color:var(--redL)><h3>⚠️ 模块错误</h3>' + e.message + '</div>'); }
+    }
 
-    // === SECTION 1: 喜用神框架 ===
-    sections.push(analyzeXiyong(riGan, riWx, ws, sz, bz, d));
+    safePush(analyzePattern, [riGan, riZhi, ps, sz, bz, ws, d]);
+    safePush(analyzeXiyong, [riGan, riWx, ws, sz, bz, d]);
+    safePush(analyzeMarriage, [riGan, riZhi, sz, bz, ps, d]);
+    safePush(analyzeCareer, [riGan, riZhi, sz, bz, ws, d]);
+    safePush(analyzeWealth, [riGan, riZhi, sz, bz, d]);
+    safePush(analyzeParents, [riGan, riZhi, sz, bz, d]);
+    safePush(analyzeSiblings, [riGan, sz, bz, d]);
+    safePush(analyzeHealth, [riGan, riWx, bz, sz, d]);
+    safePush(analyzeCurrent, [riGan, d]);
+    safePush(analyzePersonality, [riGan, riWx, sz, bz]);
 
-    // === SECTION 2: 婚姻关 ===
-    sections.push(analyzeMarriage(riGan, riZhi, sz, bz, ps, d));
-
-    // === SECTION 3: 工作关 ===
-    sections.push(analyzeCareer(riGan, riZhi, sz, bz, ws, d));
-
-    // === SECTION 5: 财运 ===
-    sections.push(analyzeWealth(riGan, riZhi, sz, bz, d));
-
-    // === SECTION 6: 父母 ===
-    sections.push(analyzeParents(riGan, riZhi, sz, bz, d));
-
-    // === SECTION 7: 兄弟姐妹 ===
-    sections.push(analyzeSiblings(riGan, sz, bz, d));
-
-    // === SECTION 8: 健康 + 五行交战 ===
-    sections.push(analyzeHealth(riGan, riWx, bz, sz, d));
-
-    // === SECTION 9: 当前运势 ===
-    sections.push(analyzeCurrent(riGan, d));
-
-    // === SECTION 9: 性格 ===
-    sections.push(analyzePersonality(riGan, riWx, sz, bz));
-
-    return sections.filter(s => s).join('\n');
+    return sections.join('\n');
 }
 
 // ================================================================
