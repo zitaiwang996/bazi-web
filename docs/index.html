@@ -340,6 +340,20 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
   .ld-chip-clickable{min-width:38px;padding:3px 4px}
   .ln-section{padding-left:6px}.lm-section{padding-left:8px}.ld-section{padding-left:10px}
 }
+/* ====== NEW SLIDER ELEMENTS ====== */
+.dy-card-age{font-size:.62em;color:var(--dim)}
+.ln-rels,.lm-rels,.ld-rels{display:flex;flex-wrap:wrap;justify-content:center;gap:1px;margin-top:1px}
+.ln-rels .tag,.lm-rels .tag,.ld-rels .tag{font-size:.48em;padding:0 2px;margin:0;line-height:1.4;border-radius:2px}
+/* 神煞 clickable */
+.shensha-tag{cursor:pointer;transition:all .15s}
+.shensha-tag:hover{transform:scale(1.1);box-shadow:0 0 6px rgba(200,164,92,.3)}
+/* 神煞 tooltip popup */
+.shensha-info-popup{position:absolute;z-index:9999;background:var(--card);border:1px solid var(--gold);border-radius:var(--r-md);padding:10px 14px;max-width:280px;box-shadow:0 6px 24px rgba(0,0,0,.5),0 0 12px rgba(200,164,92,.15);font-size:.8em;line-height:1.5;animation:fadeUp .2s ease-out}
+/* Beautify bazi grid */
+.bz-grid{border-radius:var(--r-md);overflow:hidden;box-shadow:0 2px 8px rgba(26,20,16,.3)}
+.bz-gi.hdr{letter-spacing:.05em}
+.bz-gi.day-col{position:relative}
+.bz-gi.day-col::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(200,164,92,.03);pointer-events:none;z-index:0}
 </style>
 </head>
 <body>
@@ -662,7 +676,7 @@ function renderBaziGrid(d) {
         const ssList = shensha[i] || [];
         let ssHTML = '<div class="bz-shensha">';
         for (const s of ssList) {
-            ssHTML += '<span class="tag ' + s.cls + '">' + s.name + '</span>';
+            ssHTML += '<span class="tag ' + s.cls + ' shensha-tag" onclick="toggleShenshaInfo(this,\'' + s.name + '\')" title="点击查看含义">' + s.name + '</span>';
         }
         if (!ssList.length) ssHTML += '<span style="font-size:.6em;color:var(--mute)">—</span>';
         ssHTML += '</div>';
@@ -1407,6 +1421,65 @@ function generateBaziReport(d) {
     r.push('</div>');
 
     return r.join('\n');
+}
+
+// ========== 神煞 MEANINGS DICTIONARY ==========
+var SHENSHA_MEANINGS = {
+    '天乙贵人':'最尊贵之吉神，主贵人扶持、逢凶化吉。命带天乙贵人者人缘好、遇难有救。',
+    '文昌':'主文采才华、学业聪慧。利考试、写作、学术研究。',
+    '学堂':'主读书运好、聪颖好学。利学历提升、知识积累。',
+    '驿马':'主奔波走动、迁移外出。动中求财，适合流动性工作。逢冲则动。',
+    '桃花':'主异性缘、人缘魅力。桃花在年=少年得人喜，在日=配偶相貌好，在时=晚年人缘旺。',
+    '华盖':'主孤芳自赏、艺术才华、宗教缘。聪明但性格偏孤，适合学术/艺术/修行。',
+    '羊刃':'主刚强果断、执行力强，但过刚易折。羊刃驾杀=将帅之才。女命多注意婚姻。',
+    '灾煞':'主意外灾祸、突发变故。需结合其他神煞同看，单见不忌。',
+    '福星贵人':'主福禄双全、衣食无忧。天生自带福气，不愁吃穿。',
+    '国印贵人':'主权柄印信、信任重用。适合体制内任职，易得上级赏识。',
+    '太极贵人':'主智慧超群、悟性极高。记忆力好，对玄学/哲学/神秘学有兴趣。',
+    '魁罡':'主性格刚烈、直言不讳。庚辰庚戌壬辰戊戌四日为魁罡日，果断敢为。',
+    '阴差阳错':'主婚姻感情不顺、好事多磨。宜晚婚，需多包容沟通。',
+    '金舆':'主富贵之气、出行顺利。金舆为车马之象，命带此星生活富足。',
+    '将星':'主领导才能、统御力强。适合做管理/指挥官/团队领袖。',
+    '天德贵人':'最大吉神之一，主上天庇佑、遇难呈祥。逢凶化吉之力最强。',
+    '月德贵人':'主阴德护佑、女性贵人。与天德同见=福泽深厚。',
+    '劫煞':'主意外破财、小人是非。劫煞在年=少年多难，在日=中年防小人。',
+    '亡神':'主心神不宁、意外失脱。亡神在日=自身易受惊，在时=晚年注意。',
+    '孤辰':'主性格孤僻、独来独往。男命不利婚姻，需多参与社交。',
+    '红鸾':'主姻缘喜事、桃花正缘。红鸾星动=婚期将至，流年遇之利婚嫁。',
+    '天喜':'主喜庆之事、添丁进口。流年遇天喜=有喜事发生，利婚育。',
+};
+
+function toggleShenshaInfo(el, name) {
+    // Remove any existing tooltip
+    var existing = document.querySelector('.shensha-info-popup');
+    if (existing) {
+        if (existing._trigger === el) { existing.remove(); return; }
+        existing.remove();
+    }
+
+    var meaning = SHENSHA_MEANINGS[name] || name + '：请参考盲派神煞大全。';
+    var popup = document.createElement('div');
+    popup.className = 'shensha-info-popup';
+    popup._trigger = el;
+    popup.innerHTML = '<b>' + name + '</b><br><span style="font-size:.85em;color:var(--text)">' + meaning + '</span>';
+    popup.onclick = function(e) { e.stopPropagation(); };
+
+    // Position near the element
+    var rect = el.getBoundingClientRect();
+    popup.style.left = Math.max(5, rect.left + window.scrollX - 80) + 'px';
+    popup.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+
+    document.body.appendChild(popup);
+
+    // Close on outside click
+    setTimeout(function() {
+        document.addEventListener('click', function closePopup(e) {
+            if (popup && popup.parentNode && e.target !== el) {
+                popup.remove();
+                document.removeEventListener('click', closePopup);
+            }
+        });
+    }, 10);
 }
 </script>
 </body>

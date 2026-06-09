@@ -1,6 +1,6 @@
-// slider.js — 大运→流年→流月→流日 四级可点击展开 (v4.0)
+// slider.js — 大运→流年→流月→流日 四级可点击展开 (v4.1)
 // 点击大运展开流年 → 点击流年展开流月 → 点击流月展开流日
-// 面包屑导航支持快速跳转
+// 面包屑导航 + 刑冲克害显示 + 实际年龄显示
 
 // ===== SOLAR TERM HELPERS =====
 var SOLAR_TO_CAL = [1,2,3,4,5,6,7,8,9,10,11,0]; // 寅月idx→JS日历月
@@ -38,22 +38,48 @@ function getYearJieInfo(year) {
     return result;
 }
 
+// ===== 刑冲克害 CHECKER =====
+var _CHONG_PAIRS = [['子','午'],['丑','未'],['寅','申'],['卯','酉'],['辰','戌'],['巳','亥']];
+var _CHUAN_PAIRS = [['子','未'],['丑','午'],['寅','巳'],['卯','辰'],['申','亥'],['酉','戌']];
+var _HE_PAIRS   = [['子','丑'],['寅','亥'],['卯','戌'],['辰','酉'],['巳','申'],['午','未']];
+var _BRANCH_NAMES = ['年','月','日','时'];
+
+function _pairMatch(b1, b2, pairs) {
+    for (var i = 0; i < pairs.length; i++) {
+        if ((pairs[i][0] === b1 && pairs[i][1] === b2) || (pairs[i][0] === b2 && pairs[i][1] === b1)) return true;
+    }
+    return false;
+}
+
+function getBranchRelations(branch, birthBranches) {
+    // Returns array of {type, target, cls} for clash/harm/combine with birth chart
+    var tags = [];
+    for (var i = 0; i < birthBranches.length; i++) {
+        var bb = birthBranches[i];
+        if (_pairMatch(branch, bb, _CHONG_PAIRS)) tags.push({type:'冲', target:_BRANCH_NAMES[i], cls:'tag-warn'});
+        if (_pairMatch(branch, bb, _CHUAN_PAIRS)) tags.push({type:'穿', target:_BRANCH_NAMES[i], cls:'tag-warn'});
+        if (_pairMatch(branch, bb, _HE_PAIRS))   tags.push({type:'合', target:_BRANCH_NAMES[i], cls:'tag-info'});
+    }
+    return tags;
+}
+
 // ===== GLOBAL STATE =====
 var DY_STATE = {
     d: null,          // chart data from calculateBazi
     birthYear: 0,
     riGan: '',
-    dyIdx: -1,        // selected 大运 index in d.dayun.steps
+    birthBranches: [], // [年支,月支,日支,时支]
+    dyIdx: -1,        // selected 大运 index
     lnIdx: -1,        // selected 流年 index (0-9)
     lmIdx: -1         // selected 流月 index (0-11, 寅=0)
 };
 
-// ===== MAIN ENTRY — called from renderBazi =====
+// ===== MAIN ENTRY =====
 function renderDayunSlider(d) {
-    // Initialize state from chart data
     DY_STATE.d = d;
     DY_STATE.birthYear = parseInt(d.solarDate, 10) || new Date().getFullYear();
     DY_STATE.riGan = d.riGan;
+    DY_STATE.birthBranches = [d.yearPillar[1], d.monthPillar[1], d.dayPillar[1], d.timePillar[1]];
 
     var now = new Date();
     var thisYear = now.getFullYear();
@@ -67,10 +93,9 @@ function renderDayunSlider(d) {
             }
         }
     }
-    // Fallback: first dayun if none is current
     if (DY_STATE.dyIdx < 0 && d.dayun.steps.length > 0) DY_STATE.dyIdx = 0;
 
-    // Default: current 流年 within selected 大运
+    // Default: current 流年
     DY_STATE.lnIdx = -1;
     if (DY_STATE.dyIdx >= 0) {
         var dy = d.dayun.steps[DY_STATE.dyIdx];
@@ -78,14 +103,13 @@ function renderDayunSlider(d) {
         for (var j = 0; j < lnList.length; j++) {
             if (lnList[j].year === thisYear) { DY_STATE.lnIdx = j; break; }
         }
-        // Fallback: first liunian if current year not in range
         if (DY_STATE.lnIdx < 0 && lnList.length > 0) DY_STATE.lnIdx = 0;
     }
 
-    // Default: current month (convert JS month to 寅月 index)
+    // Default: current month
     DY_STATE.lmIdx = -1;
     if (DY_STATE.lnIdx >= 0) {
-        var jsMonth = now.getMonth(); // 0=Jan
+        var jsMonth = now.getMonth();
         for (var k = 0; k < 12; k++) {
             if (SOLAR_TO_CAL[k] === jsMonth) { DY_STATE.lmIdx = k; break; }
         }
@@ -95,21 +119,14 @@ function renderDayunSlider(d) {
     return '<div id="slider-root">' + buildSliderHTML() + '</div>';
 }
 
-// ===== BUILD FULL HTML =====
 function buildSliderHTML() {
     var html = '';
     html += renderQiyunBar();
     html += renderBreadcrumb();
     html += renderDayunScroll();
-    if (DY_STATE.dyIdx >= 0) {
-        html += renderLiunianScroll();
-    }
-    if (DY_STATE.lnIdx >= 0) {
-        html += renderLiuyueScroll();
-    }
-    if (DY_STATE.lmIdx >= 0) {
-        html += renderLiuriScroll();
-    }
+    if (DY_STATE.dyIdx >= 0) html += renderLiunianScroll();
+    if (DY_STATE.lnIdx >= 0) html += renderLiuyueScroll();
+    if (DY_STATE.lmIdx >= 0) html += renderLiuriScroll();
     return html;
 }
 
@@ -117,7 +134,6 @@ function buildSliderHTML() {
 function sliderClick(level, idx) {
     if (level === 'dy') {
         if (DY_STATE.dyIdx === idx) {
-            // Toggle off
             DY_STATE.dyIdx = -1; DY_STATE.lnIdx = -1; DY_STATE.lmIdx = -1;
         } else {
             DY_STATE.dyIdx = idx; DY_STATE.lnIdx = -1; DY_STATE.lmIdx = -1;
@@ -136,11 +152,9 @@ function sliderClick(level, idx) {
         }
     }
 
-    // Update DOM
     var root = document.getElementById('slider-root');
     if (root) {
         root.innerHTML = buildSliderHTML();
-        // Scroll selected items into view
         setTimeout(function() {
             var selDy = root.querySelector('.dy-card.selected');
             if (selDy) selDy.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
@@ -164,7 +178,7 @@ function renderQiyunBar() {
         '</div>';
 }
 
-// ===== BREADCRUMB NAVIGATION =====
+// ===== BREADCRUMB (fixed: shows actual ages, not years) =====
 function renderBreadcrumb() {
     var d = DY_STATE.d;
     if (!d) return '';
@@ -173,10 +187,10 @@ function renderBreadcrumb() {
 
     if (DY_STATE.dyIdx >= 0) {
         var dy = d.dayun.steps[DY_STATE.dyIdx];
-        var dyStart = Math.floor(DY_STATE.birthYear + dy.startAge);
-        var dyEnd = Math.floor(DY_STATE.birthYear + dy.endAge) - 1;
+        var dyAgeS = Math.floor(dy.startAge);
+        var dyAgeE = Math.floor(dy.endAge) - 1;
         html += '<span class="breadcrumb-item" onclick="sliderClick(\'dy\',' + DY_STATE.dyIdx + ')" title="点击收起/展开此大运">' + dy.pillar + '运</span>';
-        html += '<span class="breadcrumb-meta">(' + dyStart + '-' + dyEnd + '岁)</span>';
+        html += '<span class="breadcrumb-meta">(' + dyAgeS + '-' + dyAgeE + '岁)</span>';
 
         if (DY_STATE.lnIdx >= 0) {
             var lnList = getLiunianForDayun(dy, DY_STATE.birthYear, DY_STATE.riGan);
@@ -193,6 +207,22 @@ function renderBreadcrumb() {
                         html += ' <span class="breadcrumb-sep">▸</span> ';
                         html += '<span class="breadcrumb-item" onclick="sliderClick(\'lm\',' + DY_STATE.lmIdx + ')" title="点击收起/展开此流月">' + lm.pillar + '月</span>';
                         html += '<span class="breadcrumb-meta">(' + lm.name + ')</span>';
+
+                        // Show current 流日 info if available
+                        var calMonth = SOLAR_TO_CAL[DY_STATE.lmIdx];
+                        var liuri = getLiuriForMonth(ln.year, calMonth, DY_STATE.riGan);
+                        var now = new Date();
+                        if (liuri.length > 0 && ln.year === now.getFullYear() && calMonth === now.getMonth()) {
+                            var todayDay = now.getDate();
+                            for (var di = 0; di < liuri.length; di++) {
+                                if (liuri[di].day === todayDay) {
+                                    html += ' <span class="breadcrumb-sep">▸</span> ';
+                                    html += '<span style="color:var(--goldL);font-weight:700;font-family:\'Noto Serif SC\',serif">' + liuri[di].pillar + '日</span>';
+                                    html += '<span class="breadcrumb-meta">(今天)</span>';
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -205,11 +235,10 @@ function renderBreadcrumb() {
     return html;
 }
 
-// ===== DAYUN SCROLL (always visible) =====
+// ===== DAYUN SCROLL =====
 function renderDayunScroll() {
     var d = DY_STATE.d;
     if (!d || !d.dayun) return '';
-    var anySel = DY_STATE.dyIdx >= 0;
 
     var html = '<div class="scroll-section">';
     html += '<div class="section-title">📅 大运 <span class="section-hint">（点击展开流年）</span></div>';
@@ -221,9 +250,12 @@ function renderDayunScroll() {
         var dySS = getShishen(DY_STATE.riGan, dy.pillar[0]);
         var startYr = Math.floor(DY_STATE.birthYear + dy.startAge);
         var endYr = Math.floor(DY_STATE.birthYear + dy.endAge) - 1;
+        var ageS = Math.floor(dy.startAge);
+        var ageE = Math.floor(dy.endAge) - 1;
 
         html += '<div class="dy-card clickable' + (isSel ? ' selected' : '') + '" onclick="sliderClick(\'dy\',' + i + ')" title="' + (isSel ? '点击收起' : '点击展开查看这十年的流年') + '">';
         html += '<div class="dy-card-year">' + startYr + '-' + endYr + '</div>';
+        html += '<div class="dy-card-age">' + ageS + '-' + ageE + '岁</div>';
         html += '<div class="dy-card-pillar ' + wuxingClass(dy.pillar[0]) + '">' + dy.pillar + '</div>';
         html += '<div class="dy-card-ss">' + dySS + '</div>';
         html += '<div class="expand-hint">' + (isSel ? '▲' : '▼') + '</div>';
@@ -234,7 +266,7 @@ function renderDayunScroll() {
     return html;
 }
 
-// ===== LIUNIAN SCROLL (shown when 大运 selected) =====
+// ===== LIUNIAN SCROLL (with 刑冲克害) =====
 function renderLiunianScroll() {
     var d = DY_STATE.d;
     var dy = d.dayun.steps[DY_STATE.dyIdx];
@@ -242,17 +274,26 @@ function renderLiunianScroll() {
     if (!lnList.length) return '';
 
     var html = '<div class="scroll-section ln-section">';
-    html += '<div class="section-title">📆 流年 <span class="section-hint">（点击展开流月）</span></div>';
+    html += '<div class="section-title">📆 流年 <span class="section-hint">（点击展开流月 / 彩色标签=与命局地支关系）</span></div>';
     html += '<div class="hscroll ln-scroll-h">';
 
     for (var i = 0; i < lnList.length; i++) {
         var ln = lnList[i];
         var isSel = (i === DY_STATE.lnIdx);
+        var rels = getBranchRelations(ln.pillar[1], DY_STATE.birthBranches);
 
         html += '<div class="ln-item clickable' + (isSel ? ' selected' : '') + '" onclick="sliderClick(\'ln\',' + i + ')" title="' + (isSel ? '点击收起' : '点击展开查看这年的流月') + '">';
         html += '<div class="ln-year-num">' + ln.year + '</div>';
         html += '<div class="ln-pillar ' + wuxingClass(ln.gan) + '">' + ln.pillar + '</div>';
         html += '<div class="ln-shishen-sm">' + ln.shishen + '</div>';
+        // 刑冲克害 mini tags
+        if (rels.length > 0) {
+            html += '<div class="ln-rels">';
+            for (var r = 0; r < rels.length; r++) {
+                html += '<span class="tag ' + rels[r].cls + '" style="font-size:.5em;padding:0 2px;margin:0 1px">' + rels[r].type + rels[r].target + '</span>';
+            }
+            html += '</div>';
+        }
         html += '<div class="expand-hint">' + (isSel ? '▲' : '▼') + '</div>';
         html += '</div>';
     }
@@ -261,7 +302,7 @@ function renderLiunianScroll() {
     return html;
 }
 
-// ===== LIUYUE SCROLL (shown when 流年 selected) =====
+// ===== LIUYUE SCROLL (with 刑冲克害) =====
 function renderLiuyueScroll() {
     var d = DY_STATE.d;
     var dy = d.dayun.steps[DY_STATE.dyIdx];
@@ -272,13 +313,14 @@ function renderLiuyueScroll() {
     var yearJie = getYearJieInfo(ln.year);
 
     var html = '<div class="scroll-section lm-section">';
-    html += '<div class="section-title">📅 流月 <span class="section-hint">（点击展开流日）</span></div>';
+    html += '<div class="section-title">📅 流月 <span class="section-hint">（点击展开流日 / 彩色标签=与命局地支关系）</span></div>';
     html += '<div class="hscroll lm-scroll-h">';
 
     for (var i = 0; i < 12; i++) {
         var lm = lmList[i];
         var jie = yearJie[i];
         var isSel = (i === DY_STATE.lmIdx);
+        var rels = getBranchRelations(lm.zhi, DY_STATE.birthBranches);
 
         html += '<div class="lm-item clickable' + (isSel ? ' selected' : '') + '" onclick="sliderClick(\'lm\',' + i + ')" title="' + (isSel ? '点击收起' : '点击展开查看这个月的流日') + '">';
         if (jie) {
@@ -289,6 +331,14 @@ function renderLiuyueScroll() {
             html += '<div class="lm-jie-date">&nbsp;</div>';
         }
         html += '<div class="lm-pillar ' + wuxingClass(lm.gan) + '">' + lm.pillar + '</div>';
+        // 刑冲克害 mini tags
+        if (rels.length > 0) {
+            html += '<div class="lm-rels">';
+            for (var r = 0; r < rels.length; r++) {
+                html += '<span class="tag ' + rels[r].cls + '" style="font-size:.5em;padding:0 2px;margin:0 1px">' + rels[r].type + rels[r].target + '</span>';
+            }
+            html += '</div>';
+        }
         html += '<div class="expand-hint">' + (isSel ? '▲' : '▼') + '</div>';
         html += '</div>';
     }
@@ -297,7 +347,7 @@ function renderLiuyueScroll() {
     return html;
 }
 
-// ===== LIURI GRID (shown when 流月 selected) =====
+// ===== LIURI GRID =====
 function renderLiuriScroll() {
     var d = DY_STATE.d;
     var dy = d.dayun.steps[DY_STATE.dyIdx];
@@ -308,7 +358,6 @@ function renderLiuriScroll() {
     if (DY_STATE.lmIdx >= lmList.length) return '';
     var lm = lmList[DY_STATE.lmIdx];
 
-    // Convert 寅月 idx to JS calendar month for day calculation
     var calMonth = SOLAR_TO_CAL[DY_STATE.lmIdx];
     var liuri = getLiuriForMonth(ln.year, calMonth, DY_STATE.riGan);
 
@@ -323,11 +372,20 @@ function renderLiuriScroll() {
     for (var i = 0; i < liuri.length; i++) {
         var ld = liuri[i];
         var isToday = isCurrentPeriod && ld.day === today;
+        var rels = getBranchRelations(ld.pillar[1], DY_STATE.birthBranches);
 
-        html += '<div class="ld-chip-clickable' + (isToday ? ' today' : '') + '">';
+        html += '<div class="ld-chip-clickable' + (isToday ? ' today' : '') + '" title="' + ld.pillar + ' ' + ld.shishen + '">';
         html += '<div class="ld-day-num2">' + ld.day + '</div>';
         html += '<div class="ld-pillar-text ' + wuxingClass(ld.gan) + '">' + ld.pillar + '</div>';
         html += '<div class="ld-ss-text">' + ld.shishen + '</div>';
+        // 刑冲克害 mini indicators
+        if (rels.length > 0) {
+            html += '<div class="ld-rels">';
+            for (var r = 0; r < Math.min(rels.length, 2); r++) { // max 2 to fit in chip
+                html += '<span class="tag ' + rels[r].cls + '" style="font-size:.45em;padding:0 1px;margin:0 1px">' + rels[r].type + rels[r].target + '</span>';
+            }
+            html += '</div>';
+        }
         html += '</div>';
     }
 

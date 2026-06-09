@@ -799,6 +799,62 @@ function calcShensha(pillars, riGan, riZhi, nianZhi, yueZhi, gender) {
         if (branches[i] === jinyu[riGan]) add(i, '金舆', 'tag-good');
     }
 
+    // ---- 将星 (年支) ----
+    const jiangxing = {申:'子',子:'子',辰:'子', 寅:'午',午:'午',戌:'午', 巳:'酉',酉:'酉',丑:'酉', 亥:'卯',卯:'卯',未:'卯'};
+    const jxBranch = jiangxing[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === jxBranch) add(i, '将星', 'tag-good');
+    }
+
+    // ---- 天德贵人 (月支) ----
+    const tiande = {寅:'丁',卯:'申',辰:'壬',巳:'辛',午:'亥',未:'甲',申:'癸',酉:'寅',戌:'丙',亥:'乙',子:'巳',丑:'庚'};
+    const tdStem = tiande[yueZhi];
+    for (let i = 0; i < 4; i++) {
+        if (stems[i] === tdStem) add(i, '天德贵人', 'tag-good');
+    }
+
+    // ---- 月德贵人 (月支) ----
+    const yuede = {寅:'丙',卯:'甲',辰:'壬',巳:'庚',午:'丙',未:'甲',申:'壬',酉:'庚',戌:'丙',亥:'甲',子:'壬',丑:'庚'};
+    const ydStem = yuede[yueZhi];
+    for (let i = 0; i < 4; i++) {
+        if (stems[i] === ydStem) add(i, '月德贵人', 'tag-good');
+    }
+
+    // ---- 劫煞 (年支) ----
+    const jiesha2 = {申:'巳',子:'巳',辰:'巳', 寅:'亥',午:'亥',戌:'亥', 巳:'申',酉:'申',丑:'申', 亥:'寅',卯:'寅',未:'寅'};
+    const jsBranch = jiesha2[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === jsBranch) add(i, '劫煞', 'tag-warn');
+    }
+
+    // ---- 亡神 (年支) ----
+    const wangshen = {申:'亥',子:'亥',辰:'亥', 寅:'巳',午:'巳',戌:'巳', 巳:'申',酉:'申',丑:'申', 亥:'寅',卯:'寅',未:'寅'};
+    const wsBranch = wangshen[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === wsBranch) add(i, '亡神', 'tag-warn');
+    }
+
+    // ---- 孤辰 (年支三合局) ----
+    const guchen = {申:'亥',子:'寅',辰:'巳', 寅:'巳',午:'申',戌:'亥', 巳:'申',酉:'亥',丑:'寅', 亥:'寅',卯:'巳',未:'申'};
+    const gcBranch = guchen[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === gcBranch) add(i, '孤辰', 'tag-neutral');
+    }
+
+    // ---- 红鸾 (年支) ----
+    const hongluan = {子:'卯',丑:'寅',寅:'丑',卯:'子',辰:'亥',巳:'戌',午:'酉',未:'申',申:'未',酉:'午',戌:'巳',亥:'辰'};
+    const hlBranch = hongluan[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === hlBranch) add(i, '红鸾', 'tag-info');
+    }
+
+    // ---- 天喜 (年支) ----
+    const tianxi = {子:'酉',丑:'申',寅:'未',卯:'午',辰:'巳',巳:'辰',午:'卯',未:'寅',申:'丑',酉:'子',戌:'亥',亥:'戌'};
+    const txBranch = tianxi[nianZhi];
+    for (let i = 0; i < 4; i++) {
+        if (branches[i] === txBranch) add(i, '天喜', 'tag-good');
+    }
+
     return results;
 }
 
