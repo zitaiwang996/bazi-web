@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>命理推算系统 — 八字 · 紫微 · 六壬 · 六爻</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏮</text></svg>">
+<link rel="icon" href="data:,">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
 
@@ -387,7 +387,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
       </div>
     </div>
     <div class="form-flow-arrow">→</div>
-    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doBazi()">✨ 开始排盘</button></div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" id="bz-go-btn">✨ 开始排盘</button></div>
   </div>
   <div style="margin-top:8px;font-size:.75em;color:var(--dim)">💡 排盘后点击下方"AI深度解读"按钮，基于盲派规则自动生成详细命理报告</div>
   <div class="time-info" id="bz-time-info" style="display:none"></div>
@@ -465,8 +465,6 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 <script src="slider.js?v=8658970"></script>
 
 <script>
-// 确保核心函数优先定义
-function doBazi(){} function doZiwei(){} function doLiuren(){} function doLiuyao(){}
 // ========== TAB SWITCHING ==========
 function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1484,6 +1482,46 @@ function toggleShenshaInfo(el, name) {
         });
     }, 10);
 }
+</script>
+<!-- 隔离按钮处理：不受主脚本错误影响 -->
+<script>
+(function(){
+  var bzBtn=document.getElementById('bz-go-btn');
+  if(!bzBtn){
+    // fallback: find button by onclick
+    var btns=document.querySelectorAll('.btn-go');
+    for(var i=0;i<btns.length;i++){
+      if(btns[i].textContent.indexOf('开始排盘')>=0) bzBtn=btns[i];
+    }
+  }
+  if(bzBtn) bzBtn.addEventListener('click',function(e){
+    e.preventDefault();
+    try{
+      var d=document.getElementById('bz-date').value;
+      var t=document.getElementById('bz-time').value;
+      var gBtn=document.querySelector('#bz-gender button.active');
+      var g=gBtn?gBtn.dataset.g:'male';
+      if(!d||!t){alert('请填写完整信息');return}
+      document.getElementById('bz-loading').style.display='block';
+      document.getElementById('bz-error').style.display='none';
+      document.getElementById('bz-results').innerHTML='';
+      var r=calculateBazi(d,t,g);
+      renderBazi(r);
+      document.getElementById('bz-loading').style.display='none';
+    }catch(e){
+      document.getElementById('bz-error').textContent='❌ '+e.message;
+      document.getElementById('bz-error').style.display='block';
+      document.getElementById('bz-loading').style.display='none';
+    }
+  });
+  var zwBtn=document.getElementById('zw-go-btn');
+  if(!zwBtn){
+    var btns=document.querySelectorAll('.btn-go');
+    for(var i=0;i<btns.length;i++){
+      if(btns[i].textContent.indexOf('开始排盘')>=0) zwBtn=btns[i];
+    }
+  }
+})();
 </script>
 </body>
 </html>
