@@ -51,7 +51,7 @@ function _pairMatch(b1, b2, pairs) {
     return false;
 }
 
-function getBranchRelations(branch, birthBranches) {
+function getLiuRelationTags(branch, birthBranches) {
     // Returns array of {type, target, cls} for clash/harm/combine with birth chart
     var tags = [];
     for (var i = 0; i < birthBranches.length; i++) {
@@ -286,7 +286,7 @@ function renderLiunianScroll() {
         var ln = lnList[i];
         if (!ln) continue;
         var isSel = (i === DY_STATE.lnIdx);
-        var rels = getBranchRelations(ln.pillar[1], DY_STATE.birthBranches);
+        var rels = getLiuRelationTags(ln.pillar[1], DY_STATE.birthBranches);
 
         html += '<div class="ln-item clickable' + (isSel ? ' selected' : '') + '" onclick="sliderClick(\'ln\',' + i + ')" title="' + (isSel ? '点击收起' : '点击展开查看这年的流月') + '">';
         html += '<div class="ln-year-num">' + ln.year + '</div>';
@@ -328,7 +328,7 @@ function renderLiuyueScroll() {
         if (!lm) continue;
         var jie = yearJie[i];
         var isSel = (i === DY_STATE.lmIdx);
-        var rels = getBranchRelations(lm.zhi, DY_STATE.birthBranches);
+        var rels = getLiuRelationTags(lm.zhi, DY_STATE.birthBranches);
 
         html += '<div class="lm-item clickable' + (isSel ? ' selected' : '') + '" onclick="sliderClick(\'lm\',' + i + ')" title="' + (isSel ? '点击收起' : '点击展开查看这个月的流日') + '">';
         if (jie) {
@@ -382,7 +382,7 @@ function renderLiuriScroll() {
         var ld = liuri[i];
         if (!ld) continue;
         var isToday = isCurrentPeriod && ld.day === today;
-        var rels = getBranchRelations(ld.pillar[1], DY_STATE.birthBranches);
+        var rels = getLiuRelationTags(ld.pillar[1], DY_STATE.birthBranches);
 
         html += '<div class="ld-chip-clickable' + (isToday ? ' today' : '') + '" title="' + ld.pillar + ' ' + ld.shishen + '">';
         html += '<div class="ld-day-num2">' + ld.day + '</div>';
