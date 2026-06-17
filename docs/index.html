@@ -361,7 +361,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 <div class="header">
   <h1>命理推算系统 <span style="font-size:.4em;color:var(--dim);vertical-align:super">v14</span></h1>
   <div class="div"></div>
-  <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
+  <div class="sub">八字 · 紫微斗数 · 大六壬 · 六爻 · 鸣法奇门 &nbsp;|&nbsp; 天文节气精确排盘 1900-2100</div>
 </div>
 
 <!-- Tabs -->
@@ -370,6 +370,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
   <button class="tab-btn" onclick="switchTab('ziwei')">⭐ 紫微斗数</button>
   <button class="tab-btn" onclick="switchTab('liuren')">🔮 大六壬</button>
   <button class="tab-btn" onclick="switchTab('liuyao')">🪙 六爻</button>
+  <button class="tab-btn" onclick="switchTab('qimen')">🗡️ 奇门</button>
 </div>
 
 <!-- ==================== BAZI TAB ==================== -->
@@ -452,7 +453,34 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 <div id="ly-results"></div>
 </div>
 
-<div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v2.1</div>
+<!-- ==================== QIMEN TAB ==================== -->
+<div id="tab-qimen" class="tab-content">
+<div class="card" style="text-align:center">
+  <h3>🗡️ 奇门排盘</h3>
+  <div style="margin-bottom:12px;display:flex;gap:12px;justify-content:center;">
+    <button class="tab-btn" style="flex:none;padding:6px 16px;border:1px solid var(--gold);border-radius:6px;background:rgba(200,164,92,.15);color:var(--goldL);font-size:.85em;cursor:pointer" onclick="switchQimenMode('mingfa')" id="qm-mode-mingfa">🌸 鸣法奇门 (飞盘拆补)</button>
+    <button class="tab-btn" style="flex:none;padding:6px 16px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--dim);font-size:.85em;cursor:pointer" onclick="switchQimenMode('normal')" id="qm-mode-normal">📜 传统奇门 (置闰)</button>
+  </div>
+  <p style="color:var(--dim);font-size:.75em" id="qm-mode-desc">鸣法奇门：龙伏山人飞盘奇门遁甲体系，拆补法定局，飞宫布星门神仪</p>
+</div>
+<div class="card">
+  <h3>📅 输入起局信息</h3>
+  <div class="form-row">
+    <div class="fg"><label>📅 日期（公历）</label><div class="input-icon-wrap"><input type="date" id="qm-date"><span class="edit-ic"></span></div></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg"><label>🕐 时间</label><div class="input-icon-wrap"><input type="time" id="qm-time" value="12:00"><span class="edit-ic"></span></div><span style="font-size:.8em;color:var(--goldL)" id="qm-shichen"></span></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg" style="flex:2"><label>📝 占问事项</label><input type="text" id="qm-question" placeholder="例如：今日出行如何？"></div>
+    <div class="form-flow-arrow">→</div>
+    <div class="fg" style="justify-content:flex-end"><button class="btn-go" onclick="doQimen()">✨ 起局</button></div>
+  </div>
+</div>
+<div id="qm-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">起局中...</div>
+<div id="qm-error" style="display:none;background:rgba(192,57,43,.15);border-radius:8px;padding:16px;color:var(--redL);margin-bottom:16px"></div>
+<div id="qm-results"></div>
+</div>
+
+<div class="footer">金镖门盲派八字 · 紫微斗数 · 大六壬 · 六爻 · 鸣法奇门 &nbsp;|&nbsp; 天文节气数据 1900-2100 &nbsp;|&nbsp; v4.0</div>
 </div>
 
 <script src="terms_data.js?v=8658970"></script>
@@ -461,8 +489,9 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 <script src="liuren.js?v=8658970"></script>
 <script src="liuyao.js?v=8658970"></script>
 <script src="analysis.js?v=8658970"></script>
-<script src="lunar.min.js?v=8658970"></script>
-<script src="slider.js?v=8658970"></script>
+<script src="lunar.min.js?v=3456789"></script>
+<script src="slider.js?v=3456789"></script>
+<script src="qimen.js?v=3456789"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -471,6 +500,32 @@ function switchTab(name) {
     document.querySelector(`.tab-btn[onclick*="${name}"]`)?.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ========== QIMEN MODE SWITCHING ==========
+var _qmMode = 'mingfa'; // 默认鸣法奇门
+function switchQimenMode(mode) {
+    _qmMode = mode;
+    var mingfaBtn = document.getElementById('qm-mode-mingfa');
+    var normalBtn = document.getElementById('qm-mode-normal');
+    var descEl = document.getElementById('qm-mode-desc');
+    if (mode === 'mingfa') {
+        mingfaBtn.style.border = '1px solid var(--gold)';
+        mingfaBtn.style.background = 'rgba(200,164,92,.15)';
+        mingfaBtn.style.color = 'var(--goldL)';
+        normalBtn.style.border = '1px solid var(--border)';
+        normalBtn.style.background = 'transparent';
+        normalBtn.style.color = 'var(--dim)';
+        descEl.textContent = '鸣法奇门：龙伏山人飞盘奇门遁甲体系，拆补法定局，飞宫布星门神仪';
+    } else {
+        normalBtn.style.border = '1px solid var(--gold)';
+        normalBtn.style.background = 'rgba(200,164,92,.15)';
+        normalBtn.style.color = 'var(--goldL)';
+        mingfaBtn.style.border = '1px solid var(--border)';
+        mingfaBtn.style.background = 'transparent';
+        mingfaBtn.style.color = 'var(--dim)';
+        descEl.textContent = '传统奇门：置闰法定局，转盘布星门神仪（暂未实现）';
+    }
 }
 
 // ========== ACCORDION ==========
@@ -957,6 +1012,156 @@ function renderLiuyao(d) {
     document.getElementById('ly-results').innerHTML = html;
     document.getElementById('ly-results').scrollIntoView({behavior:'smooth'});
 }
+
+// ========== QIMEN FUNCTIONS ==========
+function doQimen() {
+    var date = document.getElementById('qm-date').value;
+    var time = document.getElementById('qm-time').value;
+    var question = document.getElementById('qm-question').value;
+
+    if (!date || !time) {
+        var errEl = document.getElementById('qm-error');
+        errEl.textContent = '❌ 请填写完整的日期和时间';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    document.getElementById('qm-loading').style.display = 'block';
+    document.getElementById('qm-error').style.display = 'none';
+    document.getElementById('qm-results').innerHTML = '';
+
+    try {
+        if (_qmMode === 'mingfa' && typeof calculateQimen === 'function') {
+            var d = calculateQimen(date, time, question);
+            renderQimen(d);
+        } else {
+            document.getElementById('qm-results').innerHTML = '<div class="card" style="color:var(--dim);text-align:center;padding:40px">📜 传统奇门（置闰法）暂未实现，请先使用 🌸 鸣法奇门</div>';
+        }
+    } catch(e) {
+        document.getElementById('qm-results').innerHTML = '<div class="card" style="color:var(--redL)">❌ 起局出错: ' + e.message + '</div>';
+    }
+    document.getElementById('qm-loading').style.display = 'none';
+}
+
+function renderQimen(d) {
+    var layout = [[4,9,2],[3,5,7],[8,1,6]];
+    var gongNames = QM_GONG_NAME || {1:'坎一宫',2:'坤二宫',3:'震三宫',4:'巽四宫',5:'中五宫',6:'乾六宫',7:'兑七宫',8:'艮八宫',9:'离九宫'};
+    var gongShort = QM_GONG_SHORT || {1:'坎',2:'坤',3:'震',4:'巽',5:'中',6:'乾',7:'兑',8:'艮',9:'离'};
+    var idxMap = {};
+    for (var gi = 1; gi <= 9; gi++) idxMap[gi] = gi - 1;
+
+    // 九宫格
+    var gridHTML = '<div class="qm-grid">';
+    for (var ri = 0; ri < 3; ri++) {
+        for (var ci = 0; ci < 3; ci++) {
+            var gn = layout[ri][ci];
+            var i = idxMap[gn];
+            var tp = d.tianpan[i] || '';
+            var dp = d.dipan[i] || '';
+            var xng = d.tianpan_xing[i] || '';
+            var men = d.renpan[i] || '';
+            var sh = d.shen[i] || '';
+            var an = d.angan ? d.angan[i] : '';
+            var gq = d.guaqi ? d.guaqi[i] : '';
+            var isZf = (gn === d.gzf);
+            var hasYk = (tp.indexOf('◇') >= 0 || dp.indexOf('◇') >= 0);
+            var isYima = (gn === d.yima);
+            var xtra = [];
+            if (hasYk) xtra.push('<span class="tag tag-warn">◇空</span>');
+            if (isYima) xtra.push('<span class="tag tag-info">马</span>');
+            gridHTML += '<div class="qm-cell' + (isZf ? ' zf-cell' : '') + '">' +
+              '<div class="qm-gong">' + (gongShort[gn] || '') + gn + '</div>' +
+              '<div class="qm-shen">' + sh + '</div>' +
+              '<div class="qm-tian">' + tp + '</div>' +
+              '<div class="qm-star">' + xng + '</div>' +
+              '<div class="qm-men">' + men + '</div>' +
+              '<div class="qm-di">' + dp + '</div>' +
+              (an ? '<div class="qm-angan">暗:' + an + '</div>' : '') +
+              (gq ? '<div class="qm-guaqi">卦气:' + gq + '</div>' : '') +
+              (xtra.length ? '<div>' + xtra.join(' ') + '</div>' : '') +
+            '</div>';
+        }
+    }
+    gridHTML += '</div>';
+
+    // 信息摘要
+    var jishiStr = d.jishi ? ' <span class="tag tag-warn">⚠' + d.jishi + '</span>' : '';
+    var infoHTML = '<div class="qm-info-grid">' +
+      '<div class="qm-info-item"><span class="qmi-label">四柱</span><span class="qmi-val">' + d.year_gz + '年 ' + d.month_gz + '月 ' + d.day_gz + '日 ' + d.hour_gz + '时</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">局数</span><span class="qmi-val">' + d.st_name + d.yuan_name + d.dun_name + d.ju_num_str + '局</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">值符</span><span class="qmi-val">' + d.zf + ' 落' + (gongNames[d.gzf] || '') + '</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">值使</span><span class="qmi-val">' + d.zs_men + ' 落' + (gongNames[d.gzs] || '') + '</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">旬首</span><span class="qmi-val">' + d.xunshou + ' 旬空: ' + d.xunkong + jishiStr + '</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">驿马</span><span class="qmi-val">' + (gongNames[d.yima] || '') + '</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">日干</span><span class="qmi-val">' + d.rigan + ' 落' + (gongNames[d.rigong] || '?') + ' (' + (d.rigan_cs || '') + ')</span></div>' +
+      '<div class="qm-info-item"><span class="qmi-label">时干</span><span class="qmi-val">' + d.shigan + ' 落' + (gongNames[d.shigong] || '?') + ' (' + (d.shigan_cs || '') + ')</span></div>' +
+    '</div>';
+
+    // 格局
+    var geshiHTML = '';
+    if (d.geshi && d.geshi.length) {
+        geshiHTML = '<div class="qm-geshi-list">';
+        for (var ki = 0; ki < d.geshi.length; ki++) {
+            var line = d.geshi[ki];
+            var m = line.match(/^(.+?)\s+(.+?)\+(.+?)\s+\((.+?)\s+(.+?)\):\s+(.+)$/);
+            if (m) {
+                geshiHTML += '<div class="qm-geshi-item">' +
+                  '<span class="qmg-gong">' + m[1] + '</span>' +
+                  '<span class="qmg-pair">' + m[2] + '+' + m[3] + '</span>' +
+                  '<span class="qmg-men-star">' + m[4] + ' ' + m[5] + '</span>' +
+                  '<span class="qmg-pats">' + m[6] + '</span>' +
+                '</div>';
+            } else {
+                geshiHTML += '<div class="qm-geshi-item"><span>' + line + '</span></div>';
+            }
+        }
+        geshiHTML += '</div>';
+    }
+
+    var zkHTML = '<div class="hl">🤝 <strong>主客分析:</strong> ' + (d.zk || '') + '</div>';
+
+    var html = '<div class="card" style="text-align:center;">' +
+      '<h3>🗡️ 鸣法奇门时家排盘</h3>' +
+      infoHTML +
+    '</div>' +
+
+    '<div class="card" style="text-align:center;">' +
+      '<h3>🏯 奇门九宫格 ' + (d.zf ? '— 值符' + d.zf + '落' + (gongShort[d.gzf] || '') + '宫' : '') + '</h3>' +
+      gridHTML +
+    '</div>' +
+
+    (d.geshi && d.geshi.length ? '<div class="card"><h3>📜 格局分析</h3>' + geshiHTML + '</div>' : '') +
+
+    '<div class="card">' +
+      '<h3>🔍 解断提示</h3>' +
+      zkHTML +
+      '<div class="hl" style="margin-top:8px;">' +
+        '<strong>日干' + d.rigan + '</strong>落' + (gongNames[d.rigong] || '?') + '宫 (' + (d.rigan_cs || '?') + ')' +
+        ' &nbsp;|&nbsp; ' +
+        '<strong>时干' + d.shigan + '</strong>落' + (gongNames[d.shigong] || '?') + '宫 (' + (d.shigan_cs || '?') + ')' +
+      '</div>' +
+    '</div>';
+
+    document.getElementById('qm-results').innerHTML = html;
+    document.getElementById('qm-results').scrollIntoView({behavior:'smooth'});
+}
+
+// Init qimen date/time
+(function() {
+    var qd = document.getElementById('qm-date');
+    if (qd) qd.valueAsDate = new Date();
+    var qt = document.getElementById('qm-time');
+    function ssc() {
+        if (!qt) return;
+        var t = qt.value;
+        if (!t) return;
+        if (typeof getChineseHour === 'function') {
+            document.getElementById('qm-shichen').textContent = '对应时辰: ' + getChineseHour(t);
+        }
+    }
+    if (qt) { qt.addEventListener('change', ssc); ssc(); }
+})();
+
 
 // Init: set today's date for all date inputs
 document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.valueAsDate = new Date(); });
