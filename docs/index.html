@@ -103,15 +103,15 @@ tr:last-child td{border-bottom:none}
 .zw-cell .zw-stars{color:var(--text);margin-top:2px}
 .zw-cell .zw-tags{font-size:.7em;color:var(--redL);margin-top:2px}
 /* ====== QIMEN 9-PALACE GRID ====== */
-.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:420px;margin:8px auto}
-.qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-sm);padding:4px 3px;text-align:center;font-size:.82em;line-height:1.5;display:flex;flex-direction:column;min-height:80px}
+.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:780px;width:90%;margin:8px auto}
+.qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-sm);padding:6px 4px;text-align:center;font-size:.88em;line-height:1.5;display:flex;flex-direction:column;min-height:100px}
 .qm-cell.zf-cell{border-color:var(--gold);background:rgba(200,164,92,.08)}
-.qm-cell .qm-gong{font-size:.65em;color:var(--mute);text-align:left;padding-left:1px}
-.qm-cell .qm-main{font-family:'Noto Serif SC','SimSun',serif;font-size:1.2em;font-weight:900;color:var(--text);flex:1;display:flex;align-items:center;justify-content:center;gap:1px}
+.qm-cell .qm-gong{font-size:.7em;color:var(--mute);text-align:left;padding-left:2px}
+.qm-cell .qm-main{font-family:'Noto Serif SC','SimSun',serif;font-size:1.3em;font-weight:900;color:var(--text);flex:1;display:flex;align-items:center;justify-content:center;gap:3px}
 .qm-cell .qm-main .tp{color:var(--text)}
 .qm-cell .qm-main .dp{color:var(--dim);font-size:.85em}
 .qm-cell .qm-main .sep{color:var(--mute);font-size:.7em}
-.qm-cell .qm-info{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;font-size:.72em}
+.qm-cell .qm-info{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;font-size:.75em}
 .qm-cell .qm-info .men{font-weight:600}
 .qm-cell .qm-info .men-ji{color:#2a9d8f}
 .qm-cell .qm-info .men-xiong{color:#e76f51}
@@ -120,8 +120,8 @@ tr:last-child td{border-bottom:none}
 .qm-cell .qm-info .xing-ji{color:#2a9d8f}
 .qm-cell .qm-info .xing-xiong{color:#e76f51}
 .qm-cell .qm-info .shen{color:var(--goldL);font-weight:600}
-.qm-cell .qm-tags{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:1px}
-.qm-cell .qm-tags .tag{font-size:.6em;padding:1px 3px;border-radius:3px}
+.qm-cell .qm-tags{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:2px}
+.qm-cell .qm-tags .tag{font-size:.65em;padding:1px 3px;border-radius:3px}
 .qm-cell .qm-tags .tag-warn{background:rgba(231,111,81,.15);color:#e76f51}
 .qm-cell .qm-tags .tag-info{background:rgba(42,157,143,.12);color:#2a9d8f}
 /* ====== ACCORDION ====== */
@@ -576,7 +576,52 @@ button:active { transform: scale(0.97); }
 }
   transform: scale(0.97);
 }
- .container{max-width:800px;margin:0 auto;padding:0 16px;width:100%;box-sizing:border-box}*{box-sizing:border-box}.container,.tab-content.active{max-width:720px;margin:0 auto;padding:0 16px;width:100%;overflow:hidden}.card{width:100%;max-width:100%;word-break:break-word}.header,.tabs{max-width:720px;margin:0 auto;padding:0 16px;width:100%} *{box-sizing:border-box;word-break:break-word}.container,.tab-content.active{max-width:720px;margin:0 auto;padding:0 16px;width:100%;overflow:hidden}.card{width:100%;max-width:100%;word-break:break-word}.header,.tabs{max-width:720px;margin:0 auto;padding:0 16px;width:100%}img,table,pre{max-width:100%!important;height:auto}</style>
+ .container{max-width:800px;margin:0 auto;padding:0 16px;width:100%;box-sizing:border-box}*{box-sizing:border-box}.container,.tab-content.active{max-width:720px;margin:0 auto;padding:0 16px;width:100%}.card{width:100%;max-width:100%;overflow-x:auto}.header,.tabs{max-width:720px;margin:0 auto;padding:0 16px;width:100%} 
+/* ── Qimen Canvas Animation ── */
+.qm-grid-wrapper { position: relative; display: inline-block; }
+.qm-grid { position: relative; }
+#qm-anim-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+.qm-cell { transition: border-color 0.3s; }
+.qm-cell:hover { border-color: var(--goldL) !important; background: rgba(200,164,92,.15) !important; }
+@keyframes qmFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+.qm-cell { animation: qmFadeIn 0.4s ease both; }
+.qm-cell:nth-child(1){animation-delay:0.02s}.qm-cell:nth-child(2){animation-delay:0.04s}.qm-cell:nth-child(3){animation-delay:0.06s}
+.qm-cell:nth-child(4){animation-delay:0.08s}.qm-cell:nth-child(5){animation-delay:0.10s}.qm-cell:nth-child(6){animation-delay:0.12s}
+.qm-cell:nth-child(7){animation-delay:0.14s}.qm-cell:nth-child(8){animation-delay:0.16s}.qm-cell:nth-child(9){animation-delay:0.18s}
+
+/* ── Qimen Palace Modal ── */
+.qm-modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); z-index: 9998;
+  justify-content: center; align-items: center;
+}
+.qm-modal {
+  background: var(--card); border: 1px solid var(--gold); border-radius: var(--r-lg);
+  padding: 24px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(200,164,92,0.08);
+  position: relative; animation: modalIn 0.3s ease;
+}
+@keyframes modalIn { from { opacity:0; transform:translateY(20px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+.qm-modal-close {
+  position: absolute; top: 12px; right: 16px; color: var(--dim); cursor: pointer;
+  font-size: 1.2em; background: none; border: none; font-family: inherit;
+  transition: color 0.2s;
+}
+.qm-modal-close:hover { color: var(--goldL); }
+.qm-modal h2 { color: var(--goldL); font-size: 1.1em; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.qm-modal .qm-m-section { margin-bottom: 8px; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: var(--r-md); border-left: 2px solid var(--border); }
+.qm-modal .qm-m-label { color: var(--mute); font-size: 0.75em; display: inline-block; min-width: 50px; }
+.qm-modal .qm-m-ch { font-family: "Noto Serif SC",serif; font-size: 1.1em; font-weight: 700; display: inline-block; min-width: 28px; }
+.qm-modal .qm-m-desc { color: var(--text); font-size: 0.82em; margin-top: 2px; line-height: 1.6; }
+.qm-modal .qm-m-good { color: #2a9d8f; }
+.qm-modal .qm-m-bad { color: #e76f51; }
+.qm-modal .qm-m-mid { color: #e9c46a; }
+.qm-modal .qm-m-pats { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.qm-modal .qm-m-pat { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; background: rgba(200,164,92,0.1); color: var(--goldL); }
+.qm-modal .qm-m-footer { margin-top: 12px; text-align: center; color: var(--mute); font-size: 0.72em; }
+.qm-modal::-webkit-scrollbar { width: 4px; }
+.qm-modal::-webkit-scrollbar-thumb { background: var(--borderL); border-radius: 2px; }
+</style>
 </head>
 <body>
 <div class="container">
@@ -737,7 +782,7 @@ button:active { transform: scale(0.97); }
 <script src="analysis.js?v=8658970"></script>
 <script src="lunar.min.js?v=3456789"></script>
 <script src="slider.js?v=3456789"></script>
-<script src="qimen.js?v=3456789"></script>
+<script src="qimen.js?v=1"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -1361,12 +1406,12 @@ function renderQimen(d) {
     var zkHTML = '<div class="hl">🤝 <strong>主客分析:</strong> ' + (d.zk || '') + '</div>';
 
     var html = '<div class="card" style="text-align:center;">' +
-      '<h3>🗡️ 鸣法奇门时家排盘</h3>' +
+      '<h3 style="font-size:1.1em">🗡️ 鸣法奇门时家排盘</h3>' +
       infoHTML +
     '</div>' +
 
     '<div class="card" style="text-align:center;">' +
-      '<h3>🏯 奇门九宫格 ' + (d.zf ? '— 值符' + d.zf + '落' + (gongShort[d.gzf] || '') + '宫' : '') + '</h3>' +
+      '<h3 style="font-size:1.1em">🏯 奇门九宫格 ' + (d.zf ? '— 值符' + d.zf + '落' + (gongShort[d.gzf] || '') + '宫' : '') + '</h3>' +
       gridHTML +
     '</div>' +
 
@@ -1386,6 +1431,274 @@ function renderQimen(d) {
     document.getElementById('qm-results').scrollIntoView({behavior:'smooth'});
 }
 
+
+
+
+
+// ── Qimen Canvas Animation + Click Interaction ──
+var _qmCanvasTimer = null;
+var _lastQimenData = null;
+
+// Palace meanings for the click modal
+var QM_MEANINGS = {
+  '休门':['休门','吉门。主休养生息、平安祥和。利求职、求学、求财、婚姻。','good'],
+  '生门':['生门','吉门。主生机勃勃、财运亨通。利求财、创业、谋事。','good'],
+  '伤门':['伤门','凶门。主损伤、争斗、破财。不利出行、诉讼、求财。','bad'],
+  '杜门':['杜门','平门。主堵塞、隐藏、不通。利隐蔽、潜藏、捕猎。','mid'],
+  '景门':['景门','平门。主文书、口舌、虚诈。利考试、演讲、宣传。','mid'],
+  '死门':['死门','凶门。主死丧、刑伤、绝灭。不利出行、谋事、求医。','bad'],
+  '惊门':['惊门','凶门。主惊恐、怪异、官非。利诉讼、捕猎、斗讼。','bad'],
+  '开门':['开门','吉门。主开创、通达、顺利。利开业、出行、求财。','good'],
+  '天蓬':['天蓬','凶星。主盗贼、破财、暗昧。水星旺相时可出智谋之士。','bad'],
+  '天芮':['天芮','凶星。主疾病、灾祸、破败。土星旺相时可出商界奇才。','bad'],
+  '天冲':['天冲','平星。主冲动、快速、军事。利征战、奔袭。','mid'],
+  '天辅':['天辅','吉星。主教化、文明、辅助。利教育、文化、考试。','good'],
+  '天禽':['天禽','吉星。主中央、中正、稳定。利大事、重事、要事。','good'],
+  '天心':['天心','吉星。主谋划、医疗、智慧。利策划、求医、谋事。','good'],
+  '天柱':['天柱','凶星。主破败、口舌、毁伤。利求口舌之利。','bad'],
+  '天任':['天任','吉星。主任劳、稳定、诚信。利农耕、守成。','good'],
+  '天英':['天英','平星。主光明、显现、虚华。利表面之事。','mid'],
+  '值符':['值符','最吉之神。主贵人扶持、逢凶化吉。百事大利。','good'],
+  '螣蛇':['螣蛇','凶神。主虚惊、怪异、反复。多主不实之事。','bad'],
+  '太阴':['太阴','吉神。主隐秘、谋划、暗助。利秘密之事。','good'],
+  '六合':['六合','吉神。主合作、婚姻、中介。利婚嫁、合伙。','good'],
+  '勾陈':['勾陈','凶神。主留连、拖延、官司。主事情拖延不前。','bad'],
+  '白虎':['白虎','凶神。主凶杀、争斗、破财。利征战、诉讼。','bad'],
+  '太常':['太常','吉神。主喜庆、宴乐、文采。利聚会、文化之事。','good'],
+  '朱雀':['朱雀','凶神。主口舌、文书、官非。利诉讼、演艺。','bad'],
+  '玄武':['玄武','凶神。主偷盗、欺骗、隐晦。防小人之事。','bad'],
+  '九天':['九天','吉神。主高远、威猛、进取。利出征、开拓。','good'],
+  '九地':['九地','吉神。主稳固、收藏、蓄力。利固守、积累。','good'],
+};
+var QM_QYI_MEANING = {
+  '戊':['戊','六仪之一。属土。主资本、钱财、土地。为青龙，最旺。'],
+  '己':['己','六仪之一。属土。主计划、私欲、暗昧。为地户。'],
+  '庚':['庚','六仪之一。属金。主阻碍、仇敌、变革。为太白。'],
+  '辛':['辛','六仪之一。属金。主错误、罪过、改革。为天庭。'],
+  '壬':['壬','六仪之一。属水。主流动、迁移、不稳定。为天牢。'],
+  '癸':['癸','六仪之一。属水。主隐藏、陷阱、终结。为天网。'],
+  '丁':['丁','三奇之一。属火。主希望、机遇、贵人。三奇中最灵验。'],
+  '丙':['丙','三奇之一。属火。主光明、权力、权威。为月奇。'],
+  '乙':['乙','三奇之一。属木。主柔和、曲折、调解。为日奇。'],
+};
+
+function showQimenPalace(palaceIdx, d) {
+  if (!d) return;
+  var layout = [[4,9,2],[3,5,7],[8,1,6]];
+  var ri = Math.floor(palaceIdx / 3), ci = palaceIdx % 3;
+  var gn = layout[ri][ci];
+  var idxMap = {}; for (var k=1;k<=9;k++) idxMap[k]=k-1;
+  var i = idxMap[gn];
+  var gongNames = {1:'坎一宫',2:'坤二宫',3:'震三宫',4:'巽四宫',5:'中五宫',6:'乾六宫',7:'兑七宫',8:'艮八宫',9:'离九宫'};
+  var gongShort = {1:'坎',2:'坤',3:'震',4:'巽',5:'中',6:'乾',7:'兑',8:'艮',9:'离'};
+  var tp = d.tianpan[i] || '', dp = d.dipan[i] || '';
+  var men = d.renpan[i] || '', xing = d.tianpan_xing[i] || '', shen = d.shen[i] || '';
+  var isZf = (gn === d.gzf);
+  var isYima = (gn === d.yima);
+  var tpClean = typeof tp === 'string' ? tp.replace(/[◇○]/g,'') : '';
+  var dpClean = typeof dp === 'string' ? dp.replace(/[◇○]/g,'') : '';
+  var menClean = typeof men === 'string' ? men.replace(/[◇○]/g,'') : '';
+  var xingClean = typeof xing === 'string' ? xing.replace(/[◇○]/g,'') : '';
+  var shenClean = typeof shen === 'string' ? shen.replace(/[◇○]/g,'') : '';
+  
+  var html = '<h2>' + gongNames[gn] + (isZf ? ' ✦值符宫' : '');
+  if (isYima) html += ' ✦驿马';
+  html += '</h2>';
+  
+  // 天盘
+  var tpInfo = QM_QYI_MEANING[tpClean] || [tpClean,'',''];
+  html += '<div class="qm-m-section" style="border-left-color:#c9a94e"><span class="qm-m-label">天盘</span> <span class="qm-m-ch" style="color:#c9a94e">' + tpClean + '</span> <span style="font-size:0.75em;color:var(--dim)">' + tpInfo[1] + '</span></div>';
+  
+  // 地盘
+  var dpInfo = QM_QYI_MEANING[dpClean] || [dpClean,'',''];
+  html += '<div class="qm-m-section" style="border-left-color:rgba(180,160,130,0.5)"><span class="qm-m-label">地盘</span> <span class="qm-m-ch" style="color:var(--dim)">' + dpClean + '</span> <span style="font-size:0.75em;color:var(--dim)">' + dpInfo[1] + '</span></div>';
+  
+  // 八门
+  var menInfo = QM_MEANINGS[menClean];
+  var menClass = 'qm-m-mid';
+  if (menInfo) menClass = menInfo[2] === 'good' ? 'qm-m-good' : (menInfo[2] === 'bad' ? 'qm-m-bad' : 'qm-m-mid');
+  html += '<div class="qm-m-section" style="border-left-color:#e8585a"><span class="qm-m-label">八门</span> <span class="qm-m-ch" style="color:#e8585a">' + menClean + '</span>';
+  if (menInfo) html += ' <span class="' + menClass + '" style="font-size:0.75em">[' + menInfo[1] + ']</span>';
+  html += '</div>';
+  
+  // 九星
+  var xingInfo = QM_MEANINGS[xingClean];
+  var xingClass = 'qm-m-mid';
+  if (xingInfo) xingClass = xingInfo[2] === 'good' ? 'qm-m-good' : (xingInfo[2] === 'bad' ? 'qm-m-bad' : 'qm-m-mid');
+  html += '<div class="qm-m-section" style="border-left-color:rgba(100,200,255,0.5)"><span class="qm-m-label">九星</span> <span class="qm-m-ch" style="color:rgba(100,200,255,0.8)">' + xingClean + '</span>';
+  if (xingInfo) html += ' <span class="' + xingClass + '" style="font-size:0.75em">[' + xingInfo[1] + ']</span>';
+  html += '</div>';
+  
+  // 八神
+  var shenInfo = QM_MEANINGS[shenClean];
+  var shenClass = 'qm-m-mid';
+  if (shenInfo) shenClass = shenInfo[2] === 'good' ? 'qm-m-good' : (shenInfo[2] === 'bad' ? 'qm-m-bad' : 'qm-m-mid');
+  html += '<div class="qm-m-section" style="border-left-color:#c9a94e"><span class="qm-m-label">八神</span> <span class="qm-m-ch" style="color:#c9a94e">' + shenClean + '</span>';
+  if (shenInfo) html += ' <span class="' + shenClass + '" style="font-size:0.75em">[' + shenInfo[1] + ']</span>';
+  html += '</div>';
+  
+  // Patterns from d.geshi
+  var gongName = gongNames[gn];
+  var palacePatterns = [];
+  if (d.geshi && d.geshi.length) {
+    for (var pi = 0; pi < d.geshi.length; pi++) {
+      if (d.geshi[pi].indexOf(gongName) === 0) {
+        palacePatterns.push(d.geshi[pi]);
+      }
+    }
+  }
+  if (palacePatterns.length) {
+    html += '<div class="qm-m-section" style="border-left-color:#e9c46a"><span class="qm-m-label">格局</span>';
+    html += '<div class="qm-m-pats">';
+    for (var pi = 0; pi < palacePatterns.length; pi++) {
+      var parts = palacePatterns[pi].split(': ');
+      var patName = parts.length > 1 ? parts[1] : palacePatterns[pi];
+      html += '<span class="qm-m-pat">' + patName + '</span>';
+    }
+    html += '</div></div>';
+  }
+  
+  // Special markers
+  var hasKong = tp.indexOf('◇') >= 0 || dp.indexOf('◇') >= 0;
+  var marks = [];
+  if (isZf) marks.push('值符宫');
+  if (isYima) marks.push('驿马宫：主动荡奔波、出行迁移');
+  if (hasKong) marks.push('空亡宫：气散不实，吉不吉凶不凶');
+  if (marks.length) {
+    html += '<div class="qm-m-section" style="border-left-color:#8b6914"><span class="qm-m-label">标记</span>';
+    for (var mi = 0; mi < marks.length; mi++) {
+      html += '<div style="font-size:0.78em;color:var(--dim);margin-top:2px">• ' + marks[mi] + '</div>';
+    }
+    html += '</div>';
+  }
+  
+  document.getElementById('qmModalContent').innerHTML = html;
+  document.getElementById('qmModalOverlay').style.display = 'flex';
+}
+
+function startQimenCanvas(d) {
+  if (_qmCanvasTimer) { clearInterval(_qmCanvasTimer); _qmCanvasTimer = null; }
+  setTimeout(function() {
+    var gridEl = document.querySelector(".qm-grid");
+    if (!gridEl) return;
+    var existing = document.getElementById("qm-anim-canvas");
+    if (existing) existing.remove();
+    var canvas = document.createElement("canvas");
+    canvas.id = "qm-anim-canvas";
+    canvas.style = "position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:5; border-radius:4px;";
+    gridEl.style.position = "relative";
+    gridEl.appendChild(canvas);
+
+    var rect = gridEl.getBoundingClientRect();
+    var dpr = (window.devicePixelRatio || 1) * 2;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    var W = rect.width, H = rect.height;
+    var cw = W / 3, ch = H / 3;
+    var layout = [[4,9,2],[3,5,7],[8,1,6]];
+    var idxMap = {}; for (var k=1;k<=9;k++) idxMap[k]=k-1;
+    var flyOrder = [1,2,3,4,5,6,7,8,9];
+    var tp = d.tianpan || [];
+    var gzf = d.gzf || 1;
+
+    function palaceCenter(gn) {
+      for (var r=0;r<3;r++) for (var c=0;c<3;c++) if (layout[r][c]===gn) return {x:(c+0.5)*cw, y:(r+0.5)*ch};
+      return {x:0,y:0};
+    }
+
+    var trail = [];
+    var time = 0;
+
+    function draw() {
+      ctx.clearRect(0,0,W,H);
+      time += 0.016;
+      var step = Math.floor(time * 0.12) % 9;
+      var frac = (time * 0.12) - Math.floor(time * 0.12);
+      var fromGn = flyOrder[step % 9];
+      var toGn = flyOrder[(step + 1) % 9];
+      var fromC = palaceCenter(fromGn);
+      var toC = palaceCenter(toGn);
+      var cx = fromC.x + (toC.x - fromC.x) * frac;
+      var cy = fromC.y + (toC.y - fromC.y) * frac;
+
+      trail.push({x:cx, y:cy, a:1});
+      if (trail.length > 20) trail.shift();
+      for (var i=1;i<trail.length;i++) {
+        var s = trail[i]; s.a *= 0.96;
+        ctx.beginPath(); ctx.arc(s.x, s.y, 2 + i*0.3, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(201,169,78," + (s.a*0.15) + ")";
+        ctx.fill();
+        if (i>1) {
+          ctx.beginPath(); ctx.moveTo(trail[i-1].x, trail[i-1].y); ctx.lineTo(s.x, s.y);
+          ctx.strokeStyle = "rgba(201,169,78," + (s.a*0.08) + ")";
+          ctx.lineWidth = 0.8; ctx.stroke();
+        }
+      }
+
+      var toC2 = palaceCenter(toGn);
+      var grd = ctx.createRadialGradient(toC2.x, toC2.y, 0, toC2.x, toC2.y, cw*0.3);
+      grd.addColorStop(0, "rgba(201,169,78,0.12)");
+      grd.addColorStop(1, "rgba(201,169,78,0)");
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(toC2.x, toC2.y, cw*0.3, 0, Math.PI*2); ctx.fill();
+
+      var stemIdx = idxMap[flyOrder[step % 9]];
+      var stemCh = tp[stemIdx] || "";
+      ctx.font = "bold " + (cw*0.13) + 'px "Noto Serif SC", serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(255,215,100," + (0.5 + 0.5 * Math.sin(time*4)) + ")";
+      ctx.fillText(stemCh, cx, cy);
+
+      for (var i=0;i<9;i++) {
+        var gn = flyOrder[i];
+        var c = palaceCenter(gn);
+        if (gn === gzf) {
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, cw*0.32, 0, Math.PI*2);
+          ctx.strokeStyle = "rgba(201,169,78," + (0.08 + 0.06*Math.sin(time*1.5)) + ")";
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3,5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        if (i === (step+1)%9) {
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, cw*0.28, 0, Math.PI*2);
+          ctx.strokeStyle = "rgba(255,215,100," + (0.08 + 0.06*Math.sin(time*3)) + ")";
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+
+      _qmCanvasTimer = requestAnimationFrame(draw);
+    }
+    draw();
+  }, 200);
+}
+
+// Override renderQimen
+var _origRenderQimen2 = renderQimen;
+renderQimen = function(d) {
+  _lastQimenData = d;
+  _origRenderQimen2(d);
+  startQimenCanvas(d);
+  
+  // Add click handlers
+  setTimeout(function() {
+    var cells = document.querySelectorAll(`.qm-grid .qm-cell`);
+    cells.forEach(function(cell, idx) {
+      cell.style.cursor = 'pointer';
+      cell.onclick = function(e) {
+        e.stopPropagation();
+        showQimenPalace(idx, _lastQimenData);
+      };
+    });
+  }, 200);
+};
 // Init qimen date/time
 (function() {
     var qd = document.getElementById('qm-date');
@@ -2037,6 +2350,14 @@ function setDateTimeNow(prefix) {
   setTimeNow(prefix);
 }
 </script>
+
+<div class="qm-modal-overlay" id="qmModalOverlay" onclick="document.getElementById('qmModalOverlay').style.display='none'">
+  <div class="qm-modal" id="qmModal" onclick="event.stopPropagation()">
+    <button class="qm-modal-close" onclick="document.getElementById('qmModalOverlay').style.display='none'">✕</button>
+    <div id="qmModalContent"></div>
+  </div>
+</div>
+
 </body>
 </html>
 

@@ -454,15 +454,10 @@ function calculateQimen(dateStr, timeStr, question) {
     if (gzf < 1) gzf = 1;
 
     // 值使落宫
-    var anGan = [];
-    for (var ai2 = 0; ai2 < 9; ai2++) anGan.push(angan[ai2][0]);
-    var gzs;
-    if (hg === '甲') {
-        var ci = anGan.indexOf('癸');
-        gzs = (ci >= 0 ? ci : (anGan.indexOf(hg) >= 0 ? anGan.indexOf(hg) : 0)) + 1;
-    } else {
-        gzs = anGan.indexOf(hg) + 1;
-    }
+    var anZhi = [];
+    for (var ai2 = 0; ai2 < 9; ai2++) anZhi.push(angan[ai2][1] || '');
+    var hz2 = hgz[1];
+    gzs = anZhi.indexOf(hz2) + 1;
     if (gzs < 1) gzs = 1;
 
     // 天盘星
@@ -470,14 +465,18 @@ function calculateQimen(dateStr, timeStr, question) {
     if (zfIdx === 0) zfIdx = 1;
     var ns = 10 - zfIdx + gzf;
     if (ns > 9) ns -= 9;
-    var tianpanXing = _reorder(QM_JIU_XING.slice(), ns, 1);
+    var tianpanXing = _reorder(QM_JIU_XING.slice(), ns, dun);
 
     // 人盘门
     var zsIdx = QM_BA_MEN.indexOf(zsMen) + 1;
     if (zsIdx === 0) zsIdx = 1;
     ns = 10 - zsIdx + gzs;
     if (ns > 9) ns -= 9;
-    var renpan = _reorder(QM_BA_MEN.slice(), ns, 1);
+    var renpan = _reorder(QM_BA_MEN.slice(), ns, dun);
+    for (var ri = 0; ri < renpan.length; ri++) {
+      if (renpan[ri] === '中五') renpan[ri] = '';
+    }
+    renpan[4] = '';
 
     // 神盘
     var hz = hgz[1];
@@ -633,6 +632,8 @@ function calculateQimen(dateStr, timeStr, question) {
         yuan_name: yuanName, ju_num_str: juNumStr,
         zf: zf, zs_men: zsMen,
         gzf: gzf, gzs: gzs,
+        di_zf: xsYi !== '' ? QM_JIU_XING[dipan.indexOf(xsYi) % 9] : '',
+        di_zf_gong: (dipan.index(xsYi) % 9) + 1,
         yima: yima,
         dipan: dipan, tianpan: tianpan,
         tianpan_xing: tianpanXing, renpan: renpan,
