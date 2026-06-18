@@ -404,6 +404,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 }
 .tab-content.active {
   opacity: 1; transform: translateY(0);
+  position: relative;
 }
 .tab-content:not(.active) {
   opacity: 0; transform: translateY(6px);
@@ -1856,6 +1857,35 @@ document.addEventListener('DOMContentLoaded', function() {
     obs.observe(target, { childList: true, subtree: true });
   });
 });
+
+// === Apple Motion: switchTab with crossfade ===
+var _origSwitchTab = window.switchTab;
+window.switchTab = function(name) {
+  var oldTab = document.querySelector('.tab-content.active');
+  if (oldTab && oldTab.style) {
+    oldTab.style.opacity = '0';
+    oldTab.style.transform = 'translateY(6px)';
+    setTimeout(function() {
+      if (typeof _origSwitchTab === 'function') {
+        _origSwitchTab(name);
+      }
+      var newTab = document.getElementById('tab-' + name);
+      if (newTab) {
+        newTab.style.position = 'relative';
+        newTab.style.opacity = '0';
+        newTab.style.transform = 'translateY(6px)';
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            newTab.style.opacity = '1';
+            newTab.style.transform = 'translateY(0)';
+          });
+        });
+      }
+    }, 200);
+  } else {
+    if (typeof _origSwitchTab === 'function') _origSwitchTab(name);
+  }
+};
 </script>
 </body>
 </html>
