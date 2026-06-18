@@ -528,6 +528,52 @@ button:active { transform: scale(0.97); }
   border-color: var(--gold);
 }
 .dt-btn:active {
+/* === Date/Time mobile improvements === */
+.dt-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0;
+}
+.dt-input {
+  background: var(--input);
+  border: 1px solid var(--borderL);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: 'Noto Serif SC', system-ui, sans-serif;
+  min-height: 44px;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  flex: 1 0 130px;
+  min-width: 0;
+}
+.dt-input[type="time"] {
+  flex: 0 1 110px;
+}
+.dt-btn-sm {
+  background: transparent;
+  border: 1px solid var(--borderL);
+  color: var(--goldL);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  font-size: .8em;
+  min-height: 44px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s var(--ease-out);
+  font-family: inherit;
+}
+.dt-btn-sm:hover {
+  background: rgba(200,164,92,.1);
+  border-color: var(--gold);
+}
+.dt-btn-sm:active {
+  transform: scale(0.97);
+}
   transform: scale(0.97);
 }
 </style>
@@ -554,9 +600,17 @@ button:active { transform: scale(0.97); }
 <div class="card">
   <h3>📅 输入出生信息</h3>
   <div class="form-row">
-    <div class="fg"><label>📅 出生日期（公历）</label><div class="input-icon-wrap"><input type="date" id="bz-date" value="2000-01-01"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击年月日可直接修改</div></div>
-    <div class="form-flow-arrow">→</div>
-    <div class="fg"><label>🕐 出生时间</label><div class="input-icon-wrap"><input type="time" id="bz-time" value="12:00"><span class="edit-ic"></span></div><span style="font-size:.8em;color:var(--goldL)" id="bz-shichen"></span><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
+    <div class="fg"><label>📅 出生日期（公历）</label>
+      <div class="dt-inline">
+        <input type="date" id="bz-date" value="2000-01-01" class="dt-input">
+        <input type="time" id="bz-time" value="12:00" class="dt-input">
+        <button type="button" class="dt-btn-sm" onclick="setTimeNow('bz')">现在</button>
+        <button type="button" class="dt-btn-sm" onclick="setDateTimeNow('bz')">当前时间</button>
+      </div>
+      <span style="font-size:.8em;color:var(--goldL)" id="bz-shichen"></span>
+      <div class="input-hint"><span class="hint-arrow">↕</span> 点击或直接输入</div>
+    </div>
+  </div><span style="font-size:.8em;color:var(--goldL)" id="bz-shichen"></span><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
     <div class="form-flow-arrow">→</div>
     <div class="fg"><label>⚤ 性别</label>
       <div class="gender-tog" id="bz-gender">
@@ -579,9 +633,17 @@ button:active { transform: scale(0.97); }
 <div class="card">
   <h3>📅 输入出生信息</h3>
   <div class="form-row">
-    <div class="fg"><label>📅 出生日期（公历）</label><div class="input-icon-wrap"><input type="date" id="zw-date" value="2000-01-01"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击年月日可直接修改</div></div>
-    <div class="form-flow-arrow">→</div>
-    <div class="fg"><label>🕐 出生时间</label><div class="input-icon-wrap"><input type="time" id="zw-time" value="12:00"><span class="edit-ic"></span></div><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
+    <div class="fg"><label>📅 出生日期（公历）</label>
+      <div class="dt-inline">
+        <input type="date" id="zw-date" value="2000-01-01" class="dt-input">
+        <input type="time" id="zw-time" value="12:00" class="dt-input">
+        <button type="button" class="dt-btn-sm" onclick="setTimeNow('zw')">现在</button>
+        <button type="button" class="dt-btn-sm" onclick="setDateTimeNow('zw')">当前时间</button>
+      </div>
+      <span style="font-size:.8em;color:var(--goldL)" id="zw-shichen"></span>
+      <div class="input-hint"><span class="hint-arrow">↕</span> 点击或直接输入</div>
+    </div>
+  </div><div class="input-hint"><span class="hint-arrow">↕</span> 点击时分可直接修改</div></div>
     <div class="form-flow-arrow">→</div>
     <div class="fg"><label>⚤ 性别</label>
       <div class="gender-tog" id="zw-gender">
@@ -642,9 +704,17 @@ button:active { transform: scale(0.97); }
 <div class="card">
   <h3>📅 输入起局信息</h3>
   <div class="form-row">
-    <div class="fg"><label>📅 日期（公历）</label><div class="input-icon-wrap"><input type="date" id="qm-date"><span class="edit-ic"></span></div></div>
-    <div class="form-flow-arrow">→</div>
-    <div class="fg"><label>🕐 时间</label><div class="input-icon-wrap"><input type="time" id="qm-time" value="12:00"><span class="edit-ic"></span></div><span style="font-size:.8em;color:var(--goldL)" id="qm-shichen"></span></div>
+    <div class="fg"><label>📅 起局时间</label>
+      <div class="dt-inline">
+        <input type="date" id="qm-date" value="2000-01-01" class="dt-input">
+        <input type="time" id="qm-time" value="12:00" class="dt-input">
+        <button type="button" class="dt-btn-sm" onclick="setTimeNow('qm')">现在</button>
+        <button type="button" class="dt-btn-sm" onclick="setDateTimeNow('qm')">当前时间</button>
+      </div>
+      <span style="font-size:.8em;color:var(--goldL)" id="qm-shichen"></span>
+      <div class="input-hint"><span class="hint-arrow">↕</span> 点击或直接输入</div>
+    </div>
+  </div>
     <div class="form-flow-arrow">→</div>
     <div class="fg" style="flex:2"><label>📝 占问事项</label><input type="text" id="qm-question" placeholder="例如：今日出行如何？"></div>
     <div class="form-flow-arrow">→</div>
