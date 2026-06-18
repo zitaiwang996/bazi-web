@@ -271,7 +271,7 @@ function _qmMonthPillar(dateStr, hour) {
     var info = stMonth[stName];
     if (!info) return '';
     var mn = info;
-    var ziMap = {'立春':2,'惊蛰':3,'清明':4,'立夏':5,'芒种':6,'小暑':7,'立秋':8,'白露':9,'寒露':10,'立冬':11,'大雪':12,'小寒':2,'雨水':2,'春分':3,'谷雨':4,'小满':5,'夏至':6,'大暑':7,'处暑':8,'秋分':9,'霜降':10,'小雪':11,'冬至':12,'大寒':1};
+    var ziMap = {'立春':3,'惊蛰':4,'清明':5,'立夏':6,'芒种':7,'小暑':8,'立秋':9,'白露':10,'寒露':11,'立冬':12,'大雪':1,'小寒':2,'雨水':3,'春分':4,'谷雨':5,'小满':6,'夏至':7,'大暑':8,'处暑':9,'秋分':10,'霜降':11,'小雪':12,'冬至':1,'大寒':2};
     var zi = ziMap[stName] - 1; // 0-based
 
     var yg = _qmYearPillar(dateStr, hour)[0];
@@ -307,7 +307,7 @@ function _qmHourPillar(dateStr, hour, minute) {
 function _qmXunkong(gz) {
     var gi = QM_GAN_IX[gz[0]] || 1;
     var zi = QM_ZHI_IX[gz[1]] || 1;
-    var off = (zi - gi - 1 + 12) % 12;
+    var off = (zi - gi + 10) % 12;
     return QM_ZHI[off] + QM_ZHI[(off + 1) % 12];
 }
 

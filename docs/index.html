@@ -103,30 +103,7 @@ tr:last-child td{border-bottom:none}
 .zw-cell .zw-stars{color:var(--text);margin-top:2px}
 .zw-cell .zw-tags{font-size:.7em;color:var(--redL);margin-top:2px}
 /* ====== QIMEN 9-PALACE GRID ====== */
-.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;max-width:540px;margin:0 auto}
-.qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-md);padding:6px 4px;text-align:center;font-size:.78em;line-height:1.45}
-.qm-cell.zf-cell{border-color:var(--gold);background:rgba(200,164,92,.08)}
-.qm-cell .qm-gong{font-size:.7em;color:var(--mute);margin-bottom:1px}
-.qm-cell .qm-shen{font-size:.7em;color:var(--goldL);font-weight:600}
-.qm-cell .qm-star{font-size:.72em;color:var(--dim)}
-.qm-cell .qm-tian{font-family:'Noto Serif SC','SimSun',serif;font-size:1.3em;font-weight:900;color:var(--text)}
-.qm-cell .qm-men{font-size:.72em;color:var(--water)}
-.qm-cell .qm-di{font-family:'Noto Serif SC','SimSun',serif;font-size:.95em;color:var(--dim)}
-.qm-cell .qm-xk{font-size:.65em;color:var(--redL)}
-.qm-cell .qm-yima{font-size:.65em;color:var(--goldL)}
-.qm-cell .qm-angan{font-size:.68em;color:var(--mute)}
-.qm-cell .qm-guaqi{font-size:.68em;color:var(--dim);margin-top:1px}
-.qm-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;font-size:.85em}
-.qm-info-item{display:flex;gap:6px;align-items:baseline}
-.qm-info-item .qmi-label{color:var(--dim);font-size:.82em;white-space:nowrap}
-.qm-info-item .qmi-val{color:var(--text);font-weight:600}
-.qm-geshi-list{display:flex;flex-direction:column;gap:4px}
-.qm-geshi-item{background:var(--input);border-radius:var(--r-md);padding:6px 12px;font-size:.82em;display:flex;gap:6px;align-items:baseline}
-.qm-geshi-item .qmg-gong{color:var(--dim);font-size:.82em;min-width:48px}
-.qm-geshi-item .qmg-pair{font-family:'Noto Serif SC',serif;font-weight:700;color:var(--text);min-width:44px}
-.qm-geshi-item .qmg-men-star{color:var(--dim);font-size:.78em;min-width:90px}
-.qm-geshi-item .qmg-pats{color:var(--goldL)}
-/* ====== ACCORDION ====== */
+.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:540px;margin:0 auto}\n.qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-sm);padding:4px 3px;text-align:center;font-size:.82em;line-height:1.5;display:flex;flex-direction:column;min-height:80px}\n.qm-cell.zf-cell{border-color:var(--gold);background:rgba(200,164,92,.08)}\n.qm-cell .qm-gong{font-size:.65em;color:var(--mute);text-align:left;padding-left:1px}\n.qm-cell .qm-main{font-family:'Noto Serif SC','SimSun',serif;font-size:1.2em;font-weight:900;color:var(--text);flex:1;display:flex;align-items:center;justify-content:center;gap:1px}\n.qm-cell .qm-main .tp{color:var(--text)}\n.qm-cell .qm-main .dp{color:var(--dim);font-size:.85em}\n.qm-cell .qm-main .sep{color:var(--mute);font-size:.7em}\n.qm-cell .qm-info{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;font-size:.72em}\n.qm-cell .qm-info .men{font-weight:600}\n.qm-cell .qm-info .men-ji{color:#2a9d8f}\n.qm-cell .qm-info .men-xiong{color:#e76f51}\n.qm-cell .qm-info .men-ping{color:#e9c46a}\n.qm-cell .qm-info .xing{color:var(--dim)}\n.qm-cell .qm-info .xing-ji{color:#2a9d8f}\n.qm-cell .qm-info .xing-xiong{color:#e76f51}\n.qm-cell .qm-info .shen{color:var(--goldL);font-weight:600}\n.qm-cell .qm-tags{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:1px}/* ====== ACCORDION ====== */
 .acc { margin-bottom: var(--s-sm); }
 .acc-head {
   display:flex; align-items:center; justify-content:space-between;
@@ -414,7 +391,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
     <div class="form-flow-arrow">→</div>
     <div class="fg" style="justify-content:flex-end"><button class="btn-go" id="bz-go-btn">✨ 开始排盘</button></div>
   </div>
-  <div style="margin-top:8px;font-size:.75em;color:var(--dim)">💡 排盘后点击下方"AI深度解读"按钮，基于盲派规则自动生成详细命理报告</div>
+  <div style="margin-top:8px;font-size:.75em;color:var(--dim)">💡 排盘后点击下方"AI深度解读"按钮，</div>
   <div class="time-info" id="bz-time-info" style="display:none"></div>
 </div>
 <div id="bz-loading" style="display:none;text-align:center;padding:20px;color:var(--dim)">推算中...</div>
@@ -819,13 +796,7 @@ function renderBaziGrid(d) {
     } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
 
     // AI Deep Analysis button
-    html += `<div class="card" style="text-align:center">
-      <h3>📜 盲派八字深度解读</h3>
-      <p style="color:var(--dim);font-size:.85em;margin-bottom:12px">基于金镖门老人参盲派体系，自动生成大白话详细命理报告（本地生成，无需联网）</p>
-      <button class="btn-go" onclick="doDeepSeek()" id="ds-btn" style="background:linear-gradient(135deg,#4a6fa5,#6b8fc5);color:#fff">📜 生成深度解读报告</button>
-      <span id="ds-status" style="margin-left:12px;color:var(--dim);font-size:.85em"></span>
-      <div id="ds-response" style="margin-top:16px;text-align:left;display:none"></div>
-    </div>`;
+    html += `
 
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
@@ -1075,7 +1046,7 @@ function renderQimen(d) {
     for (var gi = 1; gi <= 9; gi++) idxMap[gi] = gi - 1;
 
     // 九宫格
-    var gridHTML = '<div class="qm-grid">';
+            var gridHTML = '<div class="qm-grid">';
     for (var ri = 0; ri < 3; ri++) {
         for (var ci = 0; ci < 3; ci++) {
             var gn = layout[ri][ci];
@@ -1085,32 +1056,31 @@ function renderQimen(d) {
             var xng = d.tianpan_xing[i] || '';
             var men = d.renpan[i] || '';
             var sh = d.shen[i] || '';
-            var an = d.angan ? d.angan[i] : '';
-            var gq = d.guaqi ? d.guaqi[i] : '';
             var isZf = (gn === d.gzf);
-            var hasYk = (tp.indexOf('◇') >= 0 || dp.indexOf('◇') >= 0);
+            var hasYk = (tp.indexOf('\u25c7') >= 0 || dp.indexOf('\u25c7') >= 0);
             var isYima = (gn === d.yima);
+            var menClass = 'men-ping';
+            if (['休门','生门','开门'].indexOf(men) >= 0) menClass = 'men-ji';
+            else if (['死门','惊门','伤门'].indexOf(men) >= 0) menClass = 'men-xiong';
+            var xingClass = 'xing-ping';
+            if (['天辅','天禽','天心','天任'].indexOf(xng) >= 0) xingClass = 'xing-ji';
+            else if (['天蓬','天芮','天柱'].indexOf(xng) >= 0) xingClass = 'xing-xiong';
             var xtra = [];
-            if (hasYk) xtra.push('<span class="tag tag-warn">◇空</span>');
+            if (hasYk) xtra.push('<span class="tag tag-warn">\u25c7空</span>');
             if (isYima) xtra.push('<span class="tag tag-info">马</span>');
             gridHTML += '<div class="qm-cell' + (isZf ? ' zf-cell' : '') + '">' +
               '<div class="qm-gong">' + (gongShort[gn] || '') + gn + '</div>' +
-              '<div class="qm-shen">' + sh + '</div>' +
-              '<div class="qm-tian">' + tp + '</div>' +
-              '<div class="qm-star">' + xng + '</div>' +
-              '<div class="qm-men">' + men + '</div>' +
-              '<div class="qm-di">' + dp + '</div>' +
-              (an ? '<div class="qm-angan">暗:' + an + '</div>' : '') +
-              (gq ? '<div class="qm-guaqi">卦气:' + gq + '</div>' : '') +
-              (xtra.length ? '<div class="qm-tags-row">' + xtra.join(' ') + '</div>' : '') +
+              '<div class="qm-main"><span class="tp">' + tp + '</span><span class="sep">/</span><span class="dp">' + dp + '</span></div>' +
+              '<div class="qm-info">' +
+                '<span class="men ' + menClass + '">' + men + '</span>' +
+                '<span class="xing ' + xingClass + '">' + xng + '</span>' +
+                '<span class="shen">' + sh + '</span>' +
+              '</div>' +
+              (xtra.length ? '<div class="qm-tags">' + xtra.join(' ') + '</div>' : '') +
             '</div>';
         }
     }
-    gridHTML += '</div>';
-
-    // 信息摘要
-    var jishiStr = d.jishi ? ' <span class="tag tag-warn">⚠' + d.jishi + '</span>' : '';
-    var infoHTML = '<div class="qm-info-grid">' +
+    gridHTML += '</div>';    var infoHTML = '<div class="qm-info-grid">' +
       '<div class="qm-info-item"><span class="qmi-label">四柱</span><span class="qmi-val">' + d.year_gz + '年 ' + d.month_gz + '月 ' + d.day_gz + '日 ' + d.hour_gz + '时</span></div>' +
       '<div class="qm-info-item"><span class="qmi-label">局数</span><span class="qmi-val">' + d.st_name + d.yuan_name + d.dun_name + d.ju_num_str + '局</span></div>' +
       '<div class="qm-info-item"><span class="qmi-label">值符</span><span class="qmi-val">' + d.zf + ' 落' + (gongNames[d.gzf] || '') + '</span></div>' +
