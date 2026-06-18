@@ -470,6 +470,66 @@ button:active { transform: scale(0.97); }
 /* Scrollbar hover refinement */
 ::-webkit-scrollbar-thumb { transition: background 0.2s var(--ease-out); }
 ::-webkit-scrollbar-thumb:hover { background: var(--goldD); }
+
+/* === Date/Time Input Improvements === */
+.dt-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dt-row label {
+  font-size: .82em;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.dt-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dt-input-wrap input[type="date"],
+.dt-input-wrap input[type="time"] {
+  background: var(--input);
+  border: 1px solid var(--borderL);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: 'Noto Serif SC', system-ui, sans-serif;
+  min-height: 44px; /* Apple HIG minimum 44pt */
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  min-width: 0;
+  flex: 1 0 auto;
+}
+.dt-input-wrap input[type="date"] {
+  min-width: 140px;
+}
+.dt-input-wrap input[type="time"] {
+  min-width: 110px;
+}
+.dt-btn {
+  background: transparent;
+  border: 1px solid var(--borderL);
+  color: var(--goldL);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  font-size: .78em;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: background 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
+  font-family: inherit;
+}
+.dt-btn:hover {
+  background: rgba(200,164,92,.1);
+  border-color: var(--gold);
+}
+.dt-btn:active {
+  transform: scale(0.97);
+}
 </style>
 </head>
 <body>
@@ -1886,6 +1946,26 @@ window.switchTab = function(name) {
     if (typeof _origSwitchTab === 'function') _origSwitchTab(name);
   }
 };
+
+// === Date/Time helper ===
+function setTimeNow(prefix) {
+  const now = new Date();
+  const timeInput = document.getElementById(prefix + '-time');
+  if (timeInput) {
+    timeInput.value = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  }
+}
+function setDateTimeNow(prefix) {
+  const now = new Date();
+  const dateInput = document.getElementById(prefix + '-date');
+  if (dateInput) {
+    const y = now.getFullYear();
+    const m = (now.getMonth()+1).toString().padStart(2,'0');
+    const d = now.getDate().toString().padStart(2,'0');
+    dateInput.value = y + '-' + m + '-' + d;
+  }
+  setTimeNow(prefix);
+}
 </script>
 </body>
 </html>
