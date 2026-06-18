@@ -199,6 +199,12 @@ tr:last-child td{border-bottom:none}
 .c-wood{color:#5a9e5a}.c-fire{color:#d4734e}.c-earth{color:#b8965a}.c-metal{color:#c4a44a}.c-water{color:#4a7db5}
 /* ====== BAZI GRID TABLE (问真八字风格) ====== */
  .bz-grid{display:grid;grid-template-columns:48px 60px 60px 72px 72px 72px 72px;font-size:.82em;border-top:1px solid var(--border);border-left:1px solid var(--border);margin:var(--s-md) auto;overflow-x:auto;justify-content:center}
+@media(min-width:641px){
+  .bz-grid{overflow-x:visible;margin:var(--s-md) auto;width:fit-content}
+}
+@media(max-width:640px){
+  .bz-grid{overflow-x:auto}
+}
 .bz-gi{text-align:center;padding:6px 3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;min-height:28px;gap:0;flex-direction:column}
 .bz-gi.lbl{font-weight:700;background:rgba(200,164,92,.05);color:var(--dim);font-size:.7em;justify-content:flex-start;padding-left:6px}
 .bz-gi.hdr{font-weight:700;background:rgba(200,164,92,.08);color:var(--goldL);font-size:.7em}
@@ -209,12 +215,24 @@ tr:last-child td{border-bottom:none}
 .bz-cang span{padding:0 1px}
 .bz-shensha{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}
 .bz-shensha .tag{font-size:.55em;padding:1px 3px;margin:0}
+/* ====== ACCORDION BODY TEXT ALIGNMENT ====== */
+.acc-inner{text-align:left}
+.acc-inner table{margin:0 auto}
 /* ====== QIYUN BAR ====== */
 .qy-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(200,164,92,.04);border:1px solid var(--border);border-radius:var(--r-md);margin-top:8px;font-size:.78em;color:var(--dim)}
 .qy-age{background:var(--goldD);color:var(--text);padding:2px 10px;border-radius:12px;font-weight:700;font-size:.95em}
+/* ====== CARD TITLE CENTERING ====== */
+.card h3{text-align:center}
 /* ====== SCROLL SECTIONS (大运/流年/流月) ====== */
 .scroll-section{padding:8px 0;border-bottom:1px solid var(--border)}
 .section-title{font-size:.75em;font-weight:700;color:var(--dim);margin-bottom:6px;letter-spacing:.05em}
+/* ====== DESKTOP CONTAINER ALIGNMENT ====== */
+@media(min-width:641px){
+  .container .card{text-align:center}
+  .container .card > table,
+  .container .card > .grid2,
+  .container .card > .bz-grid{margin-left:auto;margin-right:auto}
+}
 /* Dayun cards */
 .dy-card{min-width:62px;border:1px solid var(--border);border-radius:var(--r-md);padding:6px 8px;text-align:center;flex-shrink:0;background:var(--card);transition:border-color .2s}
 .dy-card.cur{border-color:var(--gold);box-shadow:0 0 6px rgba(200,164,92,.15);background:rgba(200,164,92,.06)}
@@ -807,17 +825,32 @@ function switchQimenMode(mode) {
 // ========== ACCORDION ==========
  function toggleAcc(el) {
    var acc = el.closest('.acc');
-   var body = acc.querySelector('.acc-body');
-   if (acc.classList.contains('open')) {
-     body.style.maxHeight = '0';
-     acc.classList.remove('open');
-   } else {
+ var body = acc.querySelector('.acc-body');
+ if (acc.classList.contains('open')) {
+    // Ensure we start from actual content height for smooth animation
+    body.style.maxHeight = body.scrollHeight + 'px';
+    // Force reflow
+    void body.offsetHeight;
+    body.style.maxHeight = '0';
+    acc.classList.remove('open');
+  } else {
      body.style.maxHeight = 'none';
      var h = body.scrollHeight;
-     body.style.maxHeight = h + 'px';
-     acc.classList.add('open');
-   }
- }
+    body.style.maxHeight = h + 'px';
+    acc.classList.add('open');
+  }
+}
+
+function initAccordions(root) {
+    (root || document).querySelectorAll('.acc.open').forEach(function(acc) {
+        var body = acc.querySelector('.acc-body');
+        if (body && !body.style.maxHeight) {
+            body.style.maxHeight = 'none';
+            var h = body.scrollHeight;
+            body.style.maxHeight = h + 'px';
+        }
+    });
+}
 
 // ========== GENDER TOGGLES ==========
 document.querySelectorAll('.gender-tog').forEach(gt => {
@@ -1088,6 +1121,7 @@ function renderBaziGrid(d) {
 
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
+    initAccordions();
 }
 
 // Simple fallback if grid render fails
@@ -1134,9 +1168,24 @@ function renderBaziSimple(d) {
     html += '<div class="card" style="text-align:center"><h3>🤖 AI解读</h3><button class="btn-go" onclick="doDeepSeek()">🔮 AI深度解读</button></div>';
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
+    initAccordions();
 }
 
 // ========== ZIWEI ==========
+
+// ===== ACCORDION AUTO-INIT FOR DYNAMIC CONTENT =====
+// Use MutationObserver to auto-init accordions in any tab
+(function() {
+  var accTabs = ['bz-results', 'zw-results', 'lr-results', 'ly-results', 'qm-results'];
+  accTabs.forEach(function(tabId) {
+    var el = document.getElementById(tabId);
+    if (!el) return;
+    var obs = new MutationObserver(function() {
+      initAccordions();
+    });
+    obs.observe(el, { childList: true, subtree: true });
+  });
+})();
 document.getElementById('zw-date').valueAsDate = new Date();
 document.getElementById('zw-date').addEventListener('change', updateZiweiTimeInfo);
 document.getElementById('zw-time').addEventListener('change', updateZiweiTimeInfo);
