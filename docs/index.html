@@ -821,7 +821,7 @@ function updateZiweiTimeInfo() {
     const stDist = calcSolarTermDistance(date);
     el.innerHTML = '<span>📅 <b>阳历：</b>' + date + (time ? ' ' + time : '') + '</span>' +
         '<span>🌙 <b>阴历：</b>' + getLunarInfo(date) + '</span>' +
-        '<span>📐 <b>距' + stDist.name + '：</b>' + stDist.days + '天' + (stDist.direction==='前'?'后':'前') + '</span>';
+        '<span>📐 <b>距' + stDist.name + '：</b>' + stDist.days + '天' + (stDist.direction==='前'?'前':'后') + '</span>';
 }
 
 // ========== BAZI ==========
