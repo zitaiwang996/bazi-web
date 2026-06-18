@@ -124,6 +124,11 @@ tr:last-child td{border-bottom:none}
 .qm-cell .qm-tags .tag{font-size:.65em;padding:1px 3px;border-radius:3px}
 .qm-cell .qm-tags .tag-warn{background:rgba(231,111,81,.15);color:#e76f51}
 .qm-cell .qm-tags .tag-info{background:rgba(42,157,143,.12);color:#2a9d8f}
+/* ====== QIMEN INFO GRID ====== */
+.qm-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:8px 0}
+.qm-info-item{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-md);padding:8px 12px;display:flex;flex-direction:column;gap:2px}
+.qm-info-item .qmi-label{font-size:.7em;color:var(--goldD);font-weight:600;letter-spacing:.04em}
+.qm-info-item .qmi-val{font-size:.88em;color:var(--text);font-weight:500}
 /* ====== ACCORDION ====== */
 .acc { margin-bottom: var(--s-sm); }
 .acc-head {
@@ -1396,6 +1401,18 @@ function doQimen() {
     document.getElementById('qm-loading').style.display = 'none';
 }
 
+function qmColorGan(s) {
+  if (!s) return '';
+  var cl = s.replace(/[\u25c7\u25cb]/g,'');
+  if (!cl) return s;
+  var lc = cl.slice(-1);
+  if (!lc) return s;
+  var wx = wuxingClass(lc);
+  if (!wx) return s;
+  var li = s.lastIndexOf(cl.slice(-1));
+  if (li < 0) return s;
+  return s.slice(0,li) + '<span class="' + wx + '">' + s[li] + '</span>' + s.slice(li+1);
+}
 function renderQimen(d) {
     var layout = [[4,9,2],[3,5,7],[8,1,6]];
     var gongNames = QM_GONG_NAME || {1:'坎一宫',2:'坤二宫',3:'震三宫',4:'巽四宫',5:'中五宫',6:'乾六宫',7:'兑七宫',8:'艮八宫',9:'离九宫'};
@@ -1428,7 +1445,7 @@ function renderQimen(d) {
             if (isYima) xtra.push('<span class="tag tag-info">马</span>');
             gridHTML += '<div class="qm-cell' + (isZf ? ' zf-cell' : '') + '">' +
               '<div class="qm-gong">' + (gongShort[gn] || '') + gn + '</div>' +
-              '<div class="qm-main"><span class="tp">' + tp + '</span><span class="sep">/</span><span class="dp">' + dp + '</span></div>' +
+              '<div class="qm-main"><span class="tp">' + qmColorGan(tp) + '</span><span class="sep">/</span><span class="dp">' + qmColorGan(dp) + '</span>'</div>' +
               '<div class="qm-info">' +
                 '<span class="men ' + menClass + '">' + men + '</span>' +
                 '<span class="xing ' + xingClass + '">' + xng + '</span>' +
