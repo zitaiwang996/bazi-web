@@ -1101,7 +1101,7 @@ function renderQimen(d) {
             '</div>';
         }
     }
-    gridHTML += '</div>';    var infoHTML = '<div class="qm-info-grid">' +
+    gridHTML += '</div>';            var jishiStr = d.jishi ? ' <span class="tag tag-warn">\u26a0' + d.jishi + '</span>' : '';\n    var infoHTML = '<div class="qm-info-grid">' +
       '<div class="qm-info-item"><span class="qmi-label">四柱</span><span class="qmi-val">' + d.year_gz + '年 ' + d.month_gz + '月 ' + d.day_gz + '日 ' + d.hour_gz + '时</span></div>' +
       '<div class="qm-info-item"><span class="qmi-label">局数</span><span class="qmi-val">' + d.st_name + d.yuan_name + d.dun_name + d.ju_num_str + '局</span></div>' +
       '<div class="qm-info-item"><span class="qmi-label">值符</span><span class="qmi-val">' + d.zf + ' 落' + (gongNames[d.gzf] || '') + '</span></div>' +
