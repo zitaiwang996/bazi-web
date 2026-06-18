@@ -88,7 +88,7 @@ tr:last-child td{border-bottom:none}
 /* Grid */
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--s-md)}
 /* Liuren specific */
-.lr-layout{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-sm);text-align:center}
+.lr-layout{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-sm);text-align:center;max-width:500px;margin:0 auto}
 .lr-cell{padding:var(--s-sm);background:var(--input);border-radius:var(--r-md);font-size:.8em}
 /* Liuyao specific */
 .gua-display{font-family:monospace;white-space:pre;background:var(--input);padding:var(--s-md);border-radius:var(--r-md);overflow-x:auto;font-size:.9em;line-height:1.8}
@@ -96,14 +96,14 @@ tr:last-child td{border-bottom:none}
 /* Footer */
 .footer{text-align:center;margin-top:var(--s-2xl);padding:var(--s-lg);color:var(--mute);font-size:.75em}
 /* Ziwei palace grid */
-.zw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-xs)}
+.zw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-xs);max-width:500px;margin:0 auto}
 .zw-cell{border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-sm);font-size:.78em;text-align:center;background:var(--bg)}
 .zw-cell.highlight{border-color:var(--gold);background:rgba(200,164,92,.08)}
 .zw-cell .zw-name{font-weight:700;color:var(--goldL)}
 .zw-cell .zw-stars{color:var(--text);margin-top:2px}
 .zw-cell .zw-tags{font-size:.7em;color:var(--redL);margin-top:2px}
 /* ====== QIMEN 9-PALACE GRID ====== */
-.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:540px;margin:0 auto}
+.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:420px;margin:8px auto}
 .qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-sm);padding:4px 3px;text-align:center;font-size:.82em;line-height:1.5;display:flex;flex-direction:column;min-height:80px}
 .qm-cell.zf-cell{border-color:var(--gold);background:rgba(200,164,92,.08)}
 .qm-cell .qm-gong{font-size:.65em;color:var(--mute);text-align:left;padding-left:1px}
@@ -576,7 +576,7 @@ button:active { transform: scale(0.97); }
 }
   transform: scale(0.97);
 }
-</style>
+ .container{max-width:800px;margin:0 auto;padding:0 16px;width:100%;box-sizing:border-box}</style>
 </head>
 <body>
 <div class="container">
