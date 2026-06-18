@@ -886,6 +886,7 @@ function doBazi() {
     try {
         const d = calculateBazi(date, time, gender);
         renderBazi(d);
+        document.getElementById("bz-time-info").style.display = "none";
     } catch(e) {
         document.getElementById('bz-error').textContent = '❌ ' + e.message;
         document.getElementById('bz-error').style.display = 'block';
