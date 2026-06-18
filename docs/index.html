@@ -38,7 +38,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 .tabs{display:flex;gap:0;margin-bottom:var(--s-lg);border-bottom:2px solid var(--border)}
 .tab-btn{flex:1;padding:var(--s-md) var(--s-sm);background:transparent;border:none;color:var(--dim);cursor:pointer;font-family:inherit;font-size:1em;font-weight:600;transition:color .25s cubic-bezier(.4,0,.2,1);letter-spacing:.05em;position:relative}
 .tab-btn:hover{color:var(--text)}
-.tab-btn.active{color:var(--goldL)}
+.tab-btn{position:relative}.tab-btn.active{color:var(--goldL)}
 .tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:20%;right:20%;height:2px;background:var(--gold)}
 .tab-content{display:none}.tab-content.active{display:block}
 /* Cards */
@@ -376,6 +376,99 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator{opacity:.8}
 .bz-gi.hdr{letter-spacing:.05em}
 .bz-gi.day-col{position:relative}
 .bz-gi.day-col::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(200,164,92,.03);pointer-events:none;z-index:0}
+
+/* === Apple Motion Animations === */
+:root {
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Fade-up entrance for all card-like elements */
+.card, .qm-cell, .acc-head, .tab-btn, .bz-gi, .qm-info-item, .qm-geshi-item {
+  animation: fadeSlideUp 0.5s var(--ease-out) both;
+}
+.card:nth-child(1), .qm-cell:nth-child(1) { animation-delay: 0.03s; }
+.card:nth-child(2), .qm-cell:nth-child(2) { animation-delay: 0.06s; }
+.card:nth-child(3), .qm-cell:nth-child(3) { animation-delay: 0.09s; }
+.card:nth-child(n+4) { animation-delay: calc(0.12s + (n - 4) * 0.03s); }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tab content crossfade */
+.tab-content {
+  transition: opacity 0.35s var(--ease-smooth), transform 0.35s var(--ease-smooth);
+}
+.tab-content.active {
+  opacity: 1; transform: translateY(0);
+}
+.tab-content:not(.active) {
+  opacity: 0; transform: translateY(6px);
+  pointer-events: none; position: absolute;
+  width: calc(100% - 32px);
+}
+
+/* Hover lifts */
+.card, .qm-cell, .acc-head, button:not(.tab-btn) {
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.2);
+}
+.qm-cell:hover {
+  transform: translateY(-2px) scale(1.02);
+  z-index: 2;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.tab-btn:hover { transform: translateY(-1px); }
+button:active { transform: scale(0.97); }
+
+/* Gold shimmer on value-star palace */
+.zf-cell {
+  animation: goldBreath 3s var(--ease-smooth) infinite;
+}
+@keyframes goldBreath {
+  0%, 100% { box-shadow: 0 0 4px rgba(200,164,92,0.06); }
+  50% { box-shadow: 0 0 16px rgba(200,164,92,0.12); }
+}
+
+/* Tab active underline animation */
+.tab-btn.active::after {
+  content: ''; position: absolute;
+  bottom: -1px; left: 15%; right: 15%; height: 2px;
+  background: var(--gold); border-radius: 1px;
+  animation: underlineIn 0.3s var(--ease-out) both;
+}
+@keyframes underlineIn {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Button shimmer */
+.btn-go { position: relative; overflow: hidden; }
+.btn-go::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s var(--ease-out);
+}
+.btn-go:hover::after { transform: translateX(100%); }
+
+/* Accordion smooth */
+.acc-body {
+  overflow: hidden;
+  transition: max-height 0.4s var(--ease-smooth), opacity 0.3s var(--ease-smooth);
+  max-height: 0; opacity: 0;
+}
+.acc.open .acc-body { max-height: 3000px; opacity: 1; }
+
+/* Scrollbar hover refinement */
+::-webkit-scrollbar-thumb { transition: background 0.2s var(--ease-out); }
+::-webkit-scrollbar-thumb:hover { background: var(--goldD); }
 </style>
 </head>
 <body>
@@ -1743,6 +1836,26 @@ function toggleShenshaInfo(el, name) {
     }
   }
 })();
+
+// === Apple Motion: stagger card reveal ===
+document.addEventListener('DOMContentLoaded', function() {
+  ['tab-bazi', 'tab-ziwei', 'tab-liuren', 'tab-liuyao', 'tab-qimen'].forEach(function(tabId) {
+    var tab = document.getElementById(tabId);
+    if (!tab) return;
+    var target = tab.querySelector('[id$="-results"]');
+    if (!target) return;
+    var obs = new MutationObserver(function() {
+      var cards = target.querySelectorAll('.card, .qm-cell');
+      cards.forEach(function(c, i) {
+        c.style.animation = 'none';
+        c.offsetHeight;
+        c.style.animation = '';
+        c.style.animationDelay = (i * 0.04) + 's';
+      });
+    });
+    obs.observe(target, { childList: true, subtree: true });
+  });
+});
 </script>
 </body>
 </html>
