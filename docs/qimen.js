@@ -633,7 +633,7 @@ function calculateQimen(dateStr, timeStr, question) {
         zf: zf, zs_men: zsMen,
         gzf: gzf, gzs: gzs,
         di_zf: xsYi !== '' ? QM_JIU_XING[dipan.indexOf(xsYi) % 9] : '',
-        di_zf_gong: (dipan.index(xsYi) % 9) + 1,
+        di_zf_gong: (dipan.indexOf(xsYi) % 9) + 1,
         yima: yima,
         dipan: dipan, tianpan: tianpan,
         tianpan_xing: tianpanXing, renpan: renpan,
