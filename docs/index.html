@@ -103,7 +103,28 @@ tr:last-child td{border-bottom:none}
 .zw-cell .zw-stars{color:var(--text);margin-top:2px}
 .zw-cell .zw-tags{font-size:.7em;color:var(--redL);margin-top:2px}
 /* ====== QIMEN 9-PALACE GRID ====== */
-.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:540px;margin:0 auto}\n.qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-sm);padding:4px 3px;text-align:center;font-size:.82em;line-height:1.5;display:flex;flex-direction:column;min-height:80px}\n.qm-cell.zf-cell{border-color:var(--gold);background:rgba(200,164,92,.08)}\n.qm-cell .qm-gong{font-size:.65em;color:var(--mute);text-align:left;padding-left:1px}\n.qm-cell .qm-main{font-family:'Noto Serif SC','SimSun',serif;font-size:1.2em;font-weight:900;color:var(--text);flex:1;display:flex;align-items:center;justify-content:center;gap:1px}\n.qm-cell .qm-main .tp{color:var(--text)}\n.qm-cell .qm-main .dp{color:var(--dim);font-size:.85em}\n.qm-cell .qm-main .sep{color:var(--mute);font-size:.7em}\n.qm-cell .qm-info{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;font-size:.72em}\n.qm-cell .qm-info .men{font-weight:600}\n.qm-cell .qm-info .men-ji{color:#2a9d8f}\n.qm-cell .qm-info .men-xiong{color:#e76f51}\n.qm-cell .qm-info .men-ping{color:#e9c46a}\n.qm-cell .qm-info .xing{color:var(--dim)}\n.qm-cell .qm-info .xing-ji{color:#2a9d8f}\n.qm-cell .qm-info .xing-xiong{color:#e76f51}\n.qm-cell .qm-info .shen{color:var(--goldL);font-weight:600}\n.qm-cell .qm-tags{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:1px}/* ====== ACCORDION ====== */
+.qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:540px;margin:0 auto}
+.qm-cell{background:var(--input);border:1px solid var(--borderL);border-radius:var(--r-sm);padding:4px 3px;text-align:center;font-size:.82em;line-height:1.5;display:flex;flex-direction:column;min-height:80px}
+.qm-cell.zf-cell{border-color:var(--gold);background:rgba(200,164,92,.08)}
+.qm-cell .qm-gong{font-size:.65em;color:var(--mute);text-align:left;padding-left:1px}
+.qm-cell .qm-main{font-family:'Noto Serif SC','SimSun',serif;font-size:1.2em;font-weight:900;color:var(--text);flex:1;display:flex;align-items:center;justify-content:center;gap:1px}
+.qm-cell .qm-main .tp{color:var(--text)}
+.qm-cell .qm-main .dp{color:var(--dim);font-size:.85em}
+.qm-cell .qm-main .sep{color:var(--mute);font-size:.7em}
+.qm-cell .qm-info{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;font-size:.72em}
+.qm-cell .qm-info .men{font-weight:600}
+.qm-cell .qm-info .men-ji{color:#2a9d8f}
+.qm-cell .qm-info .men-xiong{color:#e76f51}
+.qm-cell .qm-info .men-ping{color:#e9c46a}
+.qm-cell .qm-info .xing{color:var(--dim)}
+.qm-cell .qm-info .xing-ji{color:#2a9d8f}
+.qm-cell .qm-info .xing-xiong{color:#e76f51}
+.qm-cell .qm-info .shen{color:var(--goldL);font-weight:600}
+.qm-cell .qm-tags{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:1px}
+.qm-cell .qm-tags .tag{font-size:.6em;padding:1px 3px;border-radius:3px}
+.qm-cell .qm-tags .tag-warn{background:rgba(231,111,81,.15);color:#e76f51}
+.qm-cell .qm-tags .tag-info{background:rgba(42,157,143,.12);color:#2a9d8f}
+/* ====== ACCORDION ====== */
 .acc { margin-bottom: var(--s-sm); }
 .acc-head {
   display:flex; align-items:center; justify-content:space-between;
@@ -796,7 +817,7 @@ function renderBaziGrid(d) {
     } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
 
     // AI Deep Analysis button
-    html += `
+    
 
     document.getElementById('bz-results').innerHTML = html;
     document.getElementById('bz-results').scrollIntoView({behavior:'smooth'});
@@ -1046,7 +1067,7 @@ function renderQimen(d) {
     for (var gi = 1; gi <= 9; gi++) idxMap[gi] = gi - 1;
 
     // 九宫格
-            var gridHTML = '<div class="qm-grid">';
+        var gridHTML = '<div class="qm-grid">';
     for (var ri = 0; ri < 3; ri++) {
         for (var ci = 0; ci < 3; ci++) {
             var gn = layout[ri][ci];
@@ -1057,7 +1078,7 @@ function renderQimen(d) {
             var men = d.renpan[i] || '';
             var sh = d.shen[i] || '';
             var isZf = (gn === d.gzf);
-            var hasYk = (tp.indexOf('\u25c7') >= 0 || dp.indexOf('\u25c7') >= 0);
+            var hasYk = (tp.indexOf('◇') >= 0 || dp.indexOf('◇') >= 0);
             var isYima = (gn === d.yima);
             var menClass = 'men-ping';
             if (['休门','生门','开门'].indexOf(men) >= 0) menClass = 'men-ji';
@@ -1066,7 +1087,7 @@ function renderQimen(d) {
             if (['天辅','天禽','天心','天任'].indexOf(xng) >= 0) xingClass = 'xing-ji';
             else if (['天蓬','天芮','天柱'].indexOf(xng) >= 0) xingClass = 'xing-xiong';
             var xtra = [];
-            if (hasYk) xtra.push('<span class="tag tag-warn">\u25c7空</span>');
+            if (hasYk) xtra.push('<span class="tag tag-warn">◇空</span>');
             if (isYima) xtra.push('<span class="tag tag-info">马</span>');
             gridHTML += '<div class="qm-cell' + (isZf ? ' zf-cell' : '') + '">' +
               '<div class="qm-gong">' + (gongShort[gn] || '') + gn + '</div>' +
