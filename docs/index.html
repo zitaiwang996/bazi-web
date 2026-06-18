@@ -40,7 +40,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
 .tab-btn:hover{color:var(--text)}
 .tab-btn{position:relative}.tab-btn.active{color:var(--goldL)}
 .tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:20%;right:20%;height:2px;background:var(--gold)}
- .tab-content:not(.active){opacity:0;transform:translateY(6px);pointer-events:none;position:absolute;width:calc(100% - 32px)}.tab-content.active{opacity:1;transform:translateY(0);position:relative;pointer-events:auto}
+ .tab-content{display:none}.tab-content.active{display:block}
 /* Cards */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s-lg) var(--s-lg);margin-bottom:var(--s-md);
   box-shadow:0 2px 8px rgba(26,20,16,.4),0 8px 32px rgba(26,20,16,.12)}
@@ -141,9 +141,9 @@ tr:last-child td{border-bottom:none}
 .acc-body {
   max-height:0; overflow:hidden;
   background:var(--card); border:1px solid transparent; border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg);
-  transition:max-height .45s cubic-bezier(.16,1,.3,1),border-color .3s;
-}
-.acc.open .acc-body { max-height:8000px; border-color:var(--gold); }
+   transition:max-height .45s cubic-bezier(.16,1,.3,1),border-color .3s,opacity .35s cubic-bezier(.16,1,.3,1);
+ }
+ .acc.open .acc-body { border-color:var(--gold); opacity:1; }
 .acc-inner { padding:var(--s-md) var(--s-lg) var(--s-lg); }
 /* Nested cards in accordion lose shadow */
 .acc-body .card { box-shadow:none; border-color:var(--border); margin-bottom:var(--s-sm); }
@@ -198,7 +198,7 @@ tr:last-child td{border-bottom:none}
 /* ====== WUXING COLORS ====== */
 .c-wood{color:#5a9e5a}.c-fire{color:#d4734e}.c-earth{color:#b8965a}.c-metal{color:#c4a44a}.c-water{color:#4a7db5}
 /* ====== BAZI GRID TABLE (问真八字风格) ====== */
-.bz-grid{display:grid;grid-template-columns:48px 60px 60px 72px 72px 72px 72px;font-size:.82em;border-top:1px solid var(--border);border-left:1px solid var(--border);margin:var(--s-md) 0;overflow-x:auto}
+ .bz-grid{display:grid;grid-template-columns:48px 60px 60px 72px 72px 72px 72px;font-size:.82em;border-top:1px solid var(--border);border-left:1px solid var(--border);margin:var(--s-md) auto;overflow-x:auto;justify-content:center}
 .bz-gi{text-align:center;padding:6px 3px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;min-height:28px;gap:0;flex-direction:column}
 .bz-gi.lbl{font-weight:700;background:rgba(200,164,92,.05);color:var(--dim);font-size:.7em;justify-content:flex-start;padding-left:6px}
 .bz-gi.hdr{font-weight:700;background:rgba(200,164,92,.08);color:var(--goldL);font-size:.7em}
@@ -451,13 +451,6 @@ button:active { transform: scale(0.97); }
 
 /* Button shimmer */
 
-/* Accordion smooth */
-.acc-body {
-  overflow: hidden;
-  transition: max-height 0.4s var(--ease-smooth), opacity 0.3s var(--ease-smooth);
-  max-height: 0; opacity: 0;
-}
-.acc.open .acc-body { max-height: 3000px; opacity: 1; }
 
 /* Scrollbar hover refinement */
 ::-webkit-scrollbar-thumb { transition: background 0.2s var(--ease-out); }
@@ -812,7 +805,19 @@ function switchQimenMode(mode) {
 }
 
 // ========== ACCORDION ==========
-function toggleAcc(el) { el.closest('.acc').classList.toggle('open'); }
+ function toggleAcc(el) {
+   var acc = el.closest('.acc');
+   var body = acc.querySelector('.acc-body');
+   if (acc.classList.contains('open')) {
+     body.style.maxHeight = '0';
+     acc.classList.remove('open');
+   } else {
+     body.style.maxHeight = 'none';
+     var h = body.scrollHeight;
+     body.style.maxHeight = h + 'px';
+     acc.classList.add('open');
+   }
+ }
 
 // ========== GENDER TOGGLES ==========
 document.querySelectorAll('.gender-tog').forEach(gt => {
