@@ -953,9 +953,10 @@ function doBazi() {
     document.getElementById('bz-loading').style.display = 'none';
 }
 
-function makeAcc(title, body) {
-    return `<div class="acc open fade-up">
-      <div class="acc-head" onclick="toggleAcc(this)"><h3>${title}</h3><span class="arr">▼</span></div>
+function makeAcc(title, body, open) {
+    if (open === undefined) open = false;
+    return `<div class="acc${open?" open":""} fade-up">
+      <div class="acc-head" onclick="toggleAcc(this)"><h3>${title}</h3><span class="arr">${open?"\u25bc":"\u25b6"}</span></div>
       <div class="acc-body"><div class="acc-inner">${body}</div></div>
     </div>`;
 }
@@ -1124,7 +1125,7 @@ function renderBaziGrid(d) {
         <div style="margin-top:8px">${Object.entries(d.shishenCounts).sort((a,b)=>b[1]-a[1]).map(([ss,c]) => `<span class="tag tag-neutral">${ss}:${c}</span>`).join(' ')}</div></div>
 
       </div>
-    `);
+    `,true);
 
     // Add SKILL-based analysis - each card becomes a collapsible accordion
     try {
