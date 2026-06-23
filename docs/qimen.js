@@ -647,3 +647,543 @@ function calculateQimen(dateStr, timeStr, question) {
         question: question || ''
     };
 }
+
+
+// ============================================================
+// 传统时家奇门（置闰法·超神接气）— 基于《景祐遁甲符应经》
+// ============================================================
+
+// 节气→阴阳遁表 (节气索引, 遁类型, 起宫)
+var QM_TRAD_JQ = [
+    {name:'冬至', type:'阳', gong:1}, {name:'小寒', type:'阳', gong:2}, {name:'大寒', type:'阳', gong:3},
+    {name:'立春', type:'阳', gong:8}, {name:'雨水', type:'阳', gong:9}, {name:'惊蛰', type:'阳', gong:1},
+    {name:'春分', type:'阳', gong:3}, {name:'清明', type:'阳', gong:4}, {name:'谷雨', type:'阳', gong:5},
+    {name:'立夏', type:'阳', gong:4}, {name:'小满', type:'阳', gong:5}, {name:'芒种', type:'阳', gong:6},
+    {name:'夏至', type:'阴', gong:9}, {name:'小暑', type:'阴', gong:8}, {name:'大暑', type:'阴', gong:7},
+    {name:'立秋', type:'阴', gong:2}, {name:'处暑', type:'阴', gong:1}, {name:'白露', type:'阴', gong:9},
+    {name:'秋分', type:'阴', gong:7}, {name:'寒露', type:'阴', gong:6}, {name:'霜降', type:'阴', gong:5},
+    {name:'立冬', type:'阴', gong:6}, {name:'小雪', type:'阴', gong:5}, {name:'大雪', type:'阴', gong:4}
+];
+
+// 阳遁三元局数表
+var QM_YANG_JU = {
+    '冬至':[1,7,4], '小寒':[2,8,5], '大寒':[3,9,6],
+    '立春':[8,5,2], '雨水':[9,6,3], '惊蛰':[1,7,4],
+    '春分':[3,9,6], '清明':[4,1,7], '谷雨':[5,2,8],
+    '立夏':[4,1,7], '小满':[5,2,8], '芒种':[6,3,9]
+};
+var QM_YIN_JU = {
+    '夏至':[9,3,6], '小暑':[8,2,5], '大暑':[7,1,4],
+    '立秋':[2,5,8], '处暑':[1,4,7], '白露':[9,3,6],
+    '秋分':[7,1,4], '寒露':[6,9,3], '霜降':[5,8,2],
+    '立冬':[6,9,3], '小雪':[5,8,2], '大雪':[4,7,1]
+};
+
+// 符头上中下元判定（甲己日干支→元索引 0上元 1中元 2下元）
+// 上局(仲): 甲子己卯甲午己酉 | 中局(孟): 己巳甲申己亥甲寅 | 下局(季): 甲戌己丑甲辰己未
+var QM_FUTOU_YUAN = {
+    '甲子':0,'己卯':0,'甲午':0,'己酉':0,
+    '己巳':1,'甲申':1,'己亥':1,'甲寅':1,
+    '甲戌':2,'己丑':2,'甲辰':2,'己未':2
+};
+
+// 天干英语名索引
+var QM_ENG_NAMES = [
+    'lesser_cold','greater_cold','beginning_of_spring','rain_water',
+    'waking_of_insects','spring_equinox','pure_brightness','grain_rain',
+    'beginning_of_summer','lesser_fullness','grain_in_beard','summer_solstice',
+    'lesser_heat','greater_heat','beginning_of_autumn','end_of_heat',
+    'white_dew','autumn_equinox','cold_dew','frost_descent',
+    'beginning_of_winter','lesser_snow','greater_snow','winter_solstice'
+];
+
+// 获取节气精确日期时间(Date对象)
+function _getJieQiDate(year, idx) {
+    if (typeof SOLAR_TERMS === 'undefined') return null;
+    var yrKey = String(year);
+    var val = SOLAR_TERMS[yrKey] && SOLAR_TERMS[yrKey][QM_ENG_NAMES[idx]];
+    if (!val) {
+        yrKey = String(year - 1);
+        val = SOLAR_TERMS[yrKey] && SOLAR_TERMS[yrKey][QM_ENG_NAMES[idx]];
+    }
+    if (!val) {
+        yrKey = String(year + 1);
+        val = SOLAR_TERMS[yrKey] && SOLAR_TERMS[yrKey][QM_ENG_NAMES[idx]];
+    }
+    if (!val) return null;
+    var p = val.split(' ');
+    var dp = p[0].split('-');
+    var tp = p[1].split(':');
+    return new Date(parseInt(dp[0]), parseInt(dp[1])-1, parseInt(dp[2]), parseInt(tp[0]), parseInt(tp[1]));
+}
+
+// 判断某天是否为甲己日（符头）
+function _isJiaJiDay(ganZhi) {
+    if (!ganZhi || ganZhi.length < 1) return false;
+    var gan = ganZhi[0];
+    return gan === '甲' || gan === '己';
+}
+
+// 找到date之前/之后最近的甲己日
+function _findNearestJiaJi(date, after) {
+    var d = new Date(date);
+    var maxDays = 30;
+    for (var di = 0; di < maxDays; di++) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        var gz = getDayPillar(y + '-' + m + '-' + day);
+        if (_isJiaJiDay(gz)) {
+            return { date: new Date(d), ganZhi: gz };
+        }
+        if (after) d.setDate(d.getDate() + 1);
+        else d.setDate(d.getDate() - 1);
+    }
+    return null;
+}
+
+// 找到当前节气（基于SOLAR_TERMS精确时间）
+function _findExactJieQi(year, month, day) {
+    var curDT = new Date(year, month - 1, day).getTime();
+    var bestIdx = 0, bestDiff = -Infinity;
+    for (var yr = year - 1; yr <= year + 1; yr++) {
+        for (var i = 0; i < 24; i++) {
+            var jqDate = _getJieQiDate(yr, i);
+            if (!jqDate) continue;
+            var diff = curDT - jqDate.getTime();
+            if (diff >= 0 && diff > bestDiff) {
+                bestDiff = diff;
+                bestIdx = i;
+            }
+        }
+    }
+    return { idx: bestIdx, name: QM_JIEQI[bestIdx], type: bestIdx < 12 ? '阳' : '阴' };
+}
+
+// ========== 置闰法核心：计算上中下元 ==========
+function _calcYuanZhirun(year, month, day) {
+    // 1. 确定当前处于哪个节气
+    var jqInfo = _findExactJieQi(year, month, day);
+    var jqIdx = jqInfo.idx;
+    var jqName = QM_JIEQI[jqIdx];
+    
+    // 2. 找到当前节气精确开始时间
+    var jqStart = _getJieQiDate(year, jqIdx);
+    if (!jqStart) return { yuan: 0, name: jqName, juType: jqInfo.type };
+    
+    // 3. 找到节气开始后第一个甲己日（符头）
+    var firstJiaJi = _findNearestJiaJi(jqStart, true);
+    
+    // 4. 找到节气前最后一个甲己日
+    var prevJiaJi = _findNearestJiaJi(new Date(jqStart.getTime() - 86400000), false);
+    
+    // 5. 当前日期时间
+    var curDate = new Date(year, month - 1, day);
+    var curTime = curDate.getTime();
+    var jqStartTime = jqStart.getTime();
+    
+    // 6. 确定用哪个节气、哪个元
+    var usedJqName = jqName;
+    var usedJqIdx = jqIdx;
+    var yuanGanZhi = '';
+    var yuan = 0;
+    
+    if (firstJiaJi && curTime >= firstJiaJi.date.getTime()) {
+        // 情况A：已经过了节气后的第一个符头 → 使用本节气，由符头定元
+        var jqGZ = getDayPillar(
+            firstJiaJi.date.getFullYear() + '-' + 
+            String(firstJiaJi.date.getMonth() + 1).padStart(2,'0') + '-' + 
+            String(firstJiaJi.date.getDate()).padStart(2,'0')
+        );
+        yuanGanZhi = jqGZ;
+        yuan = QM_FUTOU_YUAN[jqGZ] || 0;
+        
+        // 检查是否已经超神或接气
+        if (prevJiaJi && curTime >= prevJiaJi.date.getTime() && curTime < jqStartTime) {
+            // 超神：节气还没到但符头已经到了
+            // 检查上一个符头是否落在上一个节气范围内
+            // 如果是，则继续用上一个节气的局
+            // 否则用本节气
+            var prevJqEnd = _getJieQiDate(year, jqIdx > 0 ? jqIdx - 1 : 23);
+            if (prevJiaJi.date.getTime() >= (prevJqEnd ? prevJqEnd.getTime() : 0)) {
+                // 符头在上一个节气范围内，应该用上一个节气
+                var prevIdx = jqIdx > 0 ? jqIdx - 1 : 23;
+                usedJqName = QM_JIEQI[prevIdx];
+                usedJqIdx = prevIdx;
+                // 用当前日期前最近的符头
+                var recentJiaJi = _findNearestJiaJi(curDate, false);
+                if (recentJiaJi) {
+                    var recentGZ = getDayPillar(
+                        recentJiaJi.date.getFullYear() + '-' + 
+                        String(recentJiaJi.date.getMonth() + 1).padStart(2,'0') + '-' + 
+                        String(recentJiaJi.date.getDate()).padStart(2,'0')
+                    );
+                    yuanGanZhi = recentGZ;
+                    yuan = QM_FUTOU_YUAN[recentGZ] || 0;
+                }
+            }
+        }
+    } else if (prevJiaJi && curTime >= prevJiaJi.date.getTime() && curTime < jqStartTime) {
+        // 情况B：超神 — 符头已到但节气未到
+        // 检查前一个节气是否已结束
+        var prevIdx = jqIdx > 0 ? jqIdx - 1 : 23;
+        var prevJqEnd = _getJieQiDate(year, (jqIdx + 23) % 24); // 前一个节气开始
+        
+        if (prevJiaJi.date.getTime() >= (prevJqEnd ? prevJqEnd.getTime() : 0)) {
+            // 符头还在前一个节气范围内 → 用前一个节气
+            usedJqName = QM_JIEQI[prevIdx];
+            usedJqIdx = prevIdx;
+        } else {
+            // 超神：符头已经进入本节气 → 用本节气
+            usedJqName = jqName;
+            usedJqIdx = jqIdx;
+        }
+        
+        var jiaJiGZ = getDayPillar(
+            prevJiaJi.date.getFullYear() + '-' + 
+            String(prevJiaJi.date.getMonth() + 1).padStart(2,'0') + '-' + 
+            String(prevJiaJi.date.getDate()).padStart(2,'0')
+        );
+        yuanGanZhi = jiaJiGZ;
+        yuan = QM_FUTOU_YUAN[jiaJiGZ] || 0;
+    } else {
+        // 情况C：接气 — 节气已到但符头未到
+        // 用前一个节气的局
+        var prevIdx = jqIdx > 0 ? jqIdx - 1 : 23;
+        usedJqName = QM_JIEQI[prevIdx];
+        usedJqIdx = prevIdx;
+        
+        // 用当前日期前最近的符头
+        var recentJiaJi = _findNearestJiaJi(curDate, false);
+        if (recentJiaJi) {
+            var recentGZ = getDayPillar(
+                recentJiaJi.date.getFullYear() + '-' + 
+                String(recentJiaJi.date.getMonth() + 1).padStart(2,'0') + '-' + 
+                String(recentJiaJi.date.getDate()).padStart(2,'0')
+            );
+            yuanGanZhi = recentGZ;
+            yuan = QM_FUTOU_YUAN[recentGZ] || 0;
+        }
+    }
+    
+    // 7. 查局数
+    var dunType = usedJqIdx < 12 ? '阳' : '阴';
+    var juTable = dunType === '阳' ? QM_YANG_JU : QM_YIN_JU;
+    var ju = juTable[usedJqName] || [1,7,4];
+    var dunNum = ju[yuan];
+    
+    return {
+        yuan: yuan,
+        yuanName: ['上元','中元','下元'][yuan],
+        jqName: usedJqName,
+        jqIdx: usedJqIdx,
+        dunType: dunType,
+        dunNum: dunNum,
+        futouGZ: yuanGanZhi,
+        isChaoShen: curTime < jqStartTime && prevJiaJi && curTime >= prevJiaJi.date.getTime(),
+        isJieQi: curTime >= jqStartTime && (!firstJiaJi || curTime < firstJiaJi.date.getTime())
+    };
+}
+
+// ========== 主计算函数（置闰法） ==========
+function calculateQimenTraditional(dateStr, timeStr, question) {
+    try {
+        var dp = dateStr.split('-').map(Number);
+        var year = dp[0], month = dp[1], day = dp[2];
+        var tp = timeStr.split(':').map(Number);
+        
+        // 1. 计算节气符头元（置闰法）
+        var info = _calcYuanZhirun(year, month, day);
+        
+        // 2. 排地盘
+        var dunType = info.dunType;
+        var dunNum = info.dunNum;
+        var qyi = ['戊','己','庚','辛','壬','癸','丁','丙','乙'];
+        if (dunType === '阴') qyi = qyi.slice().reverse();
+        
+        var dipan = [];
+        for (var g = 0; g < 9; g++) {
+            var idx = (dunNum - 1 + g) % 9;
+            dipan.push(qyi[idx]);
+        }
+        
+        // 3. 日时干支
+        var dayGZ = getDayPillar(dateStr);
+        var hourGZ = getHourPillar(dayGZ, timeStr);
+        var shiGan = hourGZ[0];
+        var shiZhi = hourGZ[1];
+        var riGan = dayGZ[0];
+        
+        // 4. 旬首值符
+        var xunShou = QM_XUNSHOU[hourGZ] || '甲子戊';
+        var xunShouGan = xunShou[0];
+        var xunGong = dipan.indexOf(xunShouGan) + 1;
+        if (xunGong < 1) xunGong = 5;
+        var zhiFuStar = QM_JIU_XING[xunGong - 1];
+        var zhiShiDoor = QM_BA_MEN[xunGong - 1];
+        
+        // 5. 天盘
+        var tianpan = [];
+        for (var g2 = 0; g2 < 9; g2++) tianpan.push(QM_JIU_XING[g2] + dipan[g2]);
+        
+        // 6. 构建九宫
+        var grid = [];
+        for (var g3 = 0; g3 < 9; g3++) {
+            grid.push({
+                gong: g3 + 1,
+                gongName: QM_GONG_NAME[g3 + 1],
+                diPan: dipan[g3],
+                tianPan: tianpan[g3],
+                star: QM_JIU_XING[g3],
+                door: QM_BA_MEN[g3],
+                isZhiFu: zhiFuStar === QM_JIU_XING[g3],
+                isZhiShi: zhiShiDoor === QM_BA_MEN[g3]
+            });
+        }
+        
+        // 7. 描述信息
+        var extraNote = '';
+        if (info.isChaoShen) extraNote = '（超神）';
+        if (info.isJieQi) extraNote = '（接气）';
+        
+        return {
+            dateTime: dateStr + ' ' + timeStr,
+            jieQi: info.jqName + extraNote,
+            dunType: dunType + '遁',
+            yuan: info.yuanName,
+            yuanIndex: info.yuan,
+            dunNum: dunNum + '局',
+            zhiFu: zhiFuStar,
+            zhiShi: zhiShiDoor,
+            xunShou: xunShou,
+            futou: info.futouGZ,
+            riGan: riGan,
+            shiGan: shiGan,
+            shiZhi: shiZhi,
+            grid: grid,
+            question: question || ''
+        };
+    } catch(e) {
+        return { error: e.message };
+    }
+}
+
+// ========== 渲染传统奇门 ==========
+function renderQimenTraditional(d) {
+    if (d.error) {
+        document.getElementById('qm-results').innerHTML = '<div class="card" style="color:var(--redL)">❌ ' + d.error + '</div>';
+        return;
+    }
+    
+    var html = '<div class="card" style="text-align:center">';
+    html += '<h3>🗡️ 传统时家奇门（置闰法）</h3>';
+    html += '<div style="font-size:.85em;color:var(--dim);margin-bottom:8px">' + d.dateTime + '</div>';
+    html += '<div style="font-size:.85em;color:var(--goldL)">' + d.jieQi + ' ' + d.dunType + ' ' + d.yuan + ' ' + d.dunNum;
+    html += ' | 值符:' + d.zhiFu + ' 值使:' + d.zhiShi;
+    html += ' | 旬首:' + d.xunShou + ' 符头:' + d.futou;
+    if (d.question) html += ' | 占:' + d.question;
+    html += '</div></div>';
+    
+    // 九宫图
+    html += '<div class="card"><h3>九宫盘（洛书）</h3><div class="qm-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:420px;margin:0 auto">';
+    var layout = [4,9,2,3,5,7,8,1,6];
+    for (var li = 0; li < 9; li++) {
+        var g = layout[li];
+        var cell = null;
+        for (var ci = 0; ci < d.grid.length; ci++) {
+            if (d.grid[ci].gong === g) { cell = d.grid[ci]; break; }
+        }
+        if (!cell) continue;
+        var cls = 'qm-cell';
+        if (cell.isZhiFu) cls += ' highlight';
+        if (cell.isZhiShi) cls += ' cur';
+        
+        html += '<div class="' + cls + '" style="padding:6px;text-align:center;border:1px solid var(--border);border-radius:4px;min-height:90px;cursor:pointer" onclick="showQimenGongDetail(event.currentTarget)">';
+        html += '<div class="qm-gong-label" style="font-size:.65em;color:var(--mute)">' + cell.gongName + '</div>';
+        html += '<div style="font-size:.72em">地盘:<b>' + cell.diPan + '</b></div>';
+        var scell = QM_XING_JX[cell.star]||'';
+        html += '<div style="font-size:.7em;margin-top:2px">' + cell.star + ' <span style="color:' + (scell==='吉'?'var(--green)':scell==='凶'?'var(--redL)':'var(--dim)') + '">[' + scell + ']</span></div>';
+        var dcell = QM_MEN_JX[cell.door]||'';
+        html += '<div style="font-size:.7em;color:var(--goldL)">' + cell.door + ' <span style="color:' + (dcell==='吉'?'var(--green)':dcell==='凶'?'var(--redL)':'var(--dim)') + '">[' + dcell + ']</span></div>';
+        html += '</div>';
+    }
+    html += '</div></div>';
+    
+    // 星门参考表
+    html += '<div class="card"><h3>九星八门参考</h3><table style="font-size:.8em;width:100%"><tr><th>宫</th><th>星</th><th>吉凶</th><th>门</th><th>吉凶</th></tr>';
+    for (var gs = 1; gs <= 9; gs++) {
+        if (gs === 5) {
+            html += '<tr><td>中五</td><td>天禽</td><td>吉</td><td>-</td><td>-</td></tr>';
+            continue;
+        }
+        html += '<tr><td>' + QM_GONG_SHORT[gs] + '</td><td>' + QM_JIU_XING[gs-1] + '</td><td>' + QM_XING_JX[QM_JIU_XING[gs-1]] + '</td>';
+        html += '<td>' + QM_BA_MEN[gs-1] + '</td><td>' + QM_MEN_JX[QM_BA_MEN[gs-1]] + '</td></tr>';
+    }
+    
+    
+    window.__qmData = d;
+    document.getElementById('qm-results').innerHTML = html;
+    // bindQimenGongClicks disabled
+}
+
+// ========== 传统奇门格局判断 ==========
+var QM_PATTERNS_INFO = {
+    '三遁': {type:'大吉', desc:'得星/日精之蔽，百事吉'},
+    '青龙回首': {type:'大吉', desc:'甲+丙，百事吉，利出行'},
+    '飞鸟跌穴': {type:'大吉', desc:'丙+甲，百事吉，出行营造皆吉'},
+    '三奇得使': {type:'吉', desc:'乙丙丁三奇在开休生门'},
+    '荧惑入太白': {type:'吉', desc:'丙+庚，贼当退，占贼不来'},
+    '青龙逃走': {type:'大凶', desc:'乙+辛，百事凶，主逃亡'},
+    '白虎猖狂': {type:'大凶', desc:'辛+乙，百事凶，出行主车祸'},
+    '朱雀入江': {type:'凶', desc:'丁+癸，忌百事，文书不利'},
+    '腾蛇夭矫': {type:'凶', desc:'癸+丁，百事不利'},
+    '太白入荧惑': {type:'凶', desc:'庚+丙，防贼来，占贼必来'},
+    '大格': {type:'大凶', desc:'庚+癸，不可举事，车破马伤'},
+    '刑格': {type:'凶', desc:'庚+己，车破马伤，官非'},
+    '伏宫格': {type:'凶', desc:'庚+直符，主客皆不利'},
+    '飞宫格': {type:'凶', desc:'直符+庚，主客皆不利'},
+    '五不遇时': {type:'大凶', desc:'时干克日干，纵有奇门不可行'},
+    '天网四张': {type:'凶', desc:'时干癸，万物尽伤'},
+    '伏吟': {type:'凶', desc:'天盘干=地盘干，不宜用兵'},
+    '反吟': {type:'凶', desc:'天盘干冲地盘干，不利举兵动众'}
+};
+var QM_GAN_WX2 = {'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
+var QM_WX_S2 = {'木':'火','火':'土','土':'金','金':'水','水':'木'};
+var QM_WX_K2 = {'木':'土','土':'水','水':'火','火':'金','金':'木'};
+
+function _calcQimenPatterns(d) {
+    var results = [];
+    if (!d || !d.grid) return results;
+    var palaces = {};
+    for (var gi = 0; gi < d.grid.length; gi++) palaces[d.grid[gi].gong] = d.grid[gi];
+    var zhiFuGong = -1;
+    for (var gi2 = 0; gi2 < d.grid.length; gi2++) { if (d.grid[gi2].isZhiFu) zhiFuGong = d.grid[gi2].gong; }
+    var tpGan = [], dpGan = [];
+    for (var g = 1; g <= 9; g++) {
+        var cell = palaces[g];
+        tpGan[g] = cell ? (cell.tianPan || '').slice(-1) : '';
+        dpGan[g] = cell ? (cell.diPan || '') : '';
+    }
+    for (var g3 = 1; g3 <= 9; g3++) {
+        var tp = tpGan[g3] || '', dp = dpGan[g3] || '', cell = palaces[g3];
+        if (!cell) continue;
+        var pair = tp + dp;
+        if (pair === '甲丙') results.push({name:'青龙回首', gong:g3, ji:'大吉', desc:'百事吉'});
+        if (pair === '丙甲') results.push({name:'飞鸟跌穴', gong:g3, ji:'大吉', desc:'百事吉'});
+        if (pair === '乙辛') results.push({name:'青龙逃走', gong:g3, ji:'大凶', desc:'百事凶'});
+        if (pair === '辛乙') results.push({name:'白虎猖狂', gong:g3, ji:'大凶', desc:'百事凶'});
+        if (pair === '丁癸') results.push({name:'朱雀入江', gong:g3, ji:'凶', desc:'忌百事'});
+        if (pair === '癸丁') results.push({name:'腾蛇夭矫', gong:g3, ji:'凶', desc:'百事不利'});
+        if (pair === '庚丙') results.push({name:'太白入荧惑', gong:g3, ji:'凶', desc:'防贼来'});
+        if (pair === '丙庚') results.push({name:'荧惑入太白', gong:g3, ji:'吉', desc:'贼当退'});
+        if (pair === '庚癸') results.push({name:'大格', gong:g3, ji:'大凶', desc:'不可举事'});
+        if (pair === '庚己') results.push({name:'刑格', gong:g3, ji:'凶', desc:'车破马伤'});
+        if (tp === dp && tp !== '') results.push({name:'伏吟', gong:g3, ji:'凶', desc:'不宜用兵'});
+        if (((tp==='甲'&&dp==='庚')||(tp==='庚'&&dp==='甲')||(tp==='乙'&&dp==='辛')||(tp==='辛'&&dp==='乙')||(tp==='丙'&&dp==='壬')||(tp==='壬'&&dp==='丙')||(tp==='丁'&&dp==='癸')||(tp==='癸'&&dp==='丁'))) results.push({name:'反吟', gong:g3, ji:'凶', desc:'不利举兵动众'});
+        var isSanJi = tp==='乙'||tp==='丙'||tp==='丁';
+        var isJiMen = cell.door==='开门'||cell.door==='休门'||cell.door==='生门';
+        if (isSanJi && isJiMen) results.push({name:'三奇得使', gong:g3, ji:'吉', desc:tp+'在'+cell.door});
+    }
+    if (d.shiGan && d.riGan) {
+        var dw = QM_GAN_WX2[d.riGan]||'', hw = QM_GAN_WX2[d.shiGan]||'';
+        if (dw && hw && QM_WX_K2[hw] === dw) results.push({name:'五不遇时', gong:0, ji:'大凶', desc:'时干'+d.shiGan+'克日干'+d.riGan});
+    }
+    if (d.shiGan === '癸') results.push({name:'天网四张', gong:0, ji:'凶', desc:'时干癸'});
+    var priority = {'大吉':0,'吉':1,'平':2,'凶':3,'大凶':4};
+    results.sort(function(a,b){ return (priority[a.ji]||2)-(priority[b.ji]||2); });
+    d.patterns = results;
+    return results;
+}
+
+function _qimenBaseInfo(d) {
+    if (!d || !d.grid) return '无法获取信息';
+    return '值符:'+(d.zhiFu||'?')+' 值使:'+(d.zhiShi||'?')+' 旬首:'+(d.xunShou||'?')+' 日干:'+(d.riGan||'?')+' 时干:'+(d.shiGan||'?');
+}
+
+// ========== 九宫详情及点击 ==========
+var QM_GONG_WUXING = {1:'水',2:'土',3:'木',4:'木',5:'土',6:'金',7:'金',8:'土',9:'火'};
+var QM_GONG_FANGWEI = {1:'北',2:'西南',3:'东',4:'东南',5:'中',6:'西北',7:'西',8:'东北',9:'南'};
+
+function showQimenGongDetail(el) {
+    var data = window.__qmData;
+        if (!data || !data.grid) return;
+        var gong = 0;
+        if (typeof el === 'number' || typeof el === 'string') { gong = Number(el); }
+        else if (el) {
+            var label = el.querySelector('.qm-gong-label');
+            if (label) {
+                var name = label.textContent;
+                var gongMap = {'坎一宫':1,'坤二宫':2,'震三宫':3,'巽四宫':4,'中五宫':5,'乾六宫':6,'兑七宫':7,'艮八宫':8,'离九宫':9};
+                gong = gongMap[name] || 0;
+            }
+        }
+        if (gong < 1) return;
+        var cell = null;
+        for (var ci = 0; ci < data.grid.length; ci++) { if (data.grid[ci].gong === gong) { cell = data.grid[ci]; break; } }
+        if (!cell) return;
+        var wx = QM_GONG_WUXING[gong]||'', fw = QM_GONG_FANGWEI[gong]||'';
+        var html = '<div style="text-align:center"><h2 style="margin:0 0 4px;color:var(--goldL)">'+cell.gongName+'</h2>';
+        html += '<div style="font-size:.82em;margin-bottom:10px;color:var(--dim)">'+data.jieQi+' '+data.dunType+' '+data.dunNum+' | 五行:'+wx+' 方位:'+fw+'</div>';
+        html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;border-left:2px solid var(--gold)"><span style="color:var(--mute);font-size:.78em">天盘星</span><div style="font-size:.95em;font-weight:700;margin-top:2px">'+(cell.star||'')+'</div></div>';
+        html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;border-left:2px solid var(--goldL)"><span style="color:var(--mute);font-size:.78em">地盘奇仪</span><div style="font-size:.95em;font-weight:700;margin-top:2px">'+(cell.diPan||'')+' (五行:'+(QM_GAN_WX2[cell.diPan]||'')+')</div></div>';
+        var sj = QM_XING_JX[cell.star]||'', sc = sj==='吉'?'var(--green)':sj==='凶'?'var(--redL)':'var(--dim)';
+        html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;border-left:2px solid #4a7db5"><span style="color:var(--mute);font-size:.78em">九星</span><div style="font-size:.95em;font-weight:700;margin-top:2px">'+cell.star+' <span style="color:'+sc+'">['+sj+']</span></div></div>';
+        var dj = QM_MEN_JX[cell.door]||'', dc = dj==='吉'?'var(--green)':dj==='凶'?'var(--redL)':'var(--dim)';
+        html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;border-left:2px solid #5a8f5a"><span style="color:var(--mute);font-size:.78em">八门</span><div style="font-size:.95em;font-weight:700;margin-top:2px">'+cell.door+' <span style="color:'+dc+'">['+dj+']</span></div></div>';
+        if (cell.isZhiFu) html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;border-left:2px solid var(--gold);color:var(--goldL);font-weight:700">★ 值符所在</div>';
+        if (cell.isZhiShi) html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;border-left:2px solid var(--gold);color:var(--goldL);font-weight:700">★ 值使所在</div>';
+        if (data.patterns) {
+            var gp = [];
+            for (var pi = 0; pi < data.patterns.length; pi++) { if (data.patterns[pi].gong === gong) gp.push(data.patterns[pi]); }
+            if (gp.length > 0) {
+                html += '<div style="margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px"><span style="color:var(--mute);font-size:.78em">格局</span>';
+                for (var pj = 0; pj < gp.length; pj++) {
+                    var p = gp[pj], pc2 = p.ji==='大吉'?'var(--goldL)':p.ji==='吉'?'var(--green)':p.ji==='大凶'?'var(--redL)':'var(--text)';
+                    html += '<div style="font-size:.85em;color:'+pc2+'">'+p.name+' <span style="font-size:.78em;color:var(--dim)">['+p.ji+'] '+p.desc+'</span></div>';
+                }
+                html += '</div>';
+            }
+        }
+        html += '<div style="margin-top:8px;font-size:.72em;color:var(--mute);text-align:center">点击空白关闭</div>';
+        var overlay = document.getElementById('qm-modal-dynamic');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'qm-modal-dynamic';
+            overlay.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9998;justify-content:center;align-items:center';
+            overlay.onclick = function(e) { if (e.target === this) this.style.display = 'none'; };
+            document.body.appendChild(overlay);
+        }
+        var bodyDiv = overlay.querySelector('.qm-dynamic-body');
+        if (!bodyDiv) {
+            var modalDiv = document.createElement('div');
+            modalDiv.style.cssText = 'background:var(--card);border:1px solid var(--gold);border-radius:12px;padding:24px;max-width:380px;width:90%;max-height:80vh;overflow-y:auto;position:relative;';
+            modalDiv.onclick = function(e) { e.stopPropagation(); };
+            overlay.appendChild(modalDiv);
+            bodyDiv = document.createElement('div');
+            bodyDiv.className = 'qm-dynamic-body';
+            modalDiv.appendChild(bodyDiv);
+            var closeBtn = document.createElement('span');
+            closeBtn.textContent = String.fromCharCode(10005);
+            closeBtn.style.cssText = 'position:absolute;top:12px;right:16px;color:var(--dim);cursor:pointer;font-size:1.2em';
+            closeBtn.onclick = function() { overlay.style.display = 'none'; };
+            modalDiv.appendChild(closeBtn);
+        }
+        bodyDiv.innerHTML = html;
+        overlay.style.display = 'flex';
+
+}
+function bindQimenGongClicks(data) {
+    window.__qmData = data;
+    var cells = document.querySelectorAll('#qm-results .qm-cell');
+    for (var ci = 0; ci < cells.length; ci++) {
+        (function(idx) { cells[idx].onclick = function() {
+            var label = this.querySelector('.qm-gong-label');
+            if (label) {
+                var name = label.textContent;
+                var gongMap = {'坎一宫':1,'坤二宫':2,'震三宫':3,'巽四宫':4,'中五宫':5,'乾六宫':6,'兑七宫':7,'艮八宫':8,'离九宫':9};
+                var gn = gongMap[name] || 0;
+                if (gn > 0) showQimenGongDetail(this);
+            }
+        }; })(ci);
+    }
+}

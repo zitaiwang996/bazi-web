@@ -657,40 +657,52 @@ function calcSolarTermDistance(solarDateStr) {
     const d = parseDate(solarDateStr);
     const birthDT = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0);
 
-    const jieKeys = [
-        'beginning_of_spring','waking_of_insects','pure_brightness',
-        'beginning_of_summer','grain_in_beard','lesser_heat',
-        'beginning_of_autumn','white_dew','cold_dew',
-        'beginning_of_winter','greater_snow','lesser_cold'
+    // All 24 solar terms
+    const allKeys = [
+        'lesser_cold','greater_cold','beginning_of_spring','rain_water',
+        'waking_of_insects','spring_equinox','pure_brightness','grain_rain',
+        'beginning_of_summer','lesser_fullness','grain_in_beard','summer_solstice',
+        'lesser_heat','greater_heat','beginning_of_autumn','end_of_heat',
+        'white_dew','autumn_equinox','cold_dew','frost_descent',
+        'beginning_of_winter','lesser_snow','greater_snow','winter_solstice'
     ];
-    const jieNames = ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'];
+    const allNames = [
+        '小寒','大寒','立春','雨水','惊蛰','春分','清明','谷雨',
+        '立夏','小满','芒种','夏至','小暑','大暑','立秋','处暑',
+        '白露','秋分','寒露','霜降','立冬','小雪','大雪','冬至'
+    ];
 
-    // Collect all jie within +/- 2 years
-    const allJie = [];
+    // Collect ALL solar terms within +/- 1 year
+    const allTerms = [];
     for (let yr = d.getFullYear() - 1; yr <= d.getFullYear() + 1; yr++) {
         const yrKey = String(yr);
         if (!SOLAR_TERMS[yrKey]) continue;
-        for (let i = 0; i < jieKeys.length; i++) {
-            const dt = parseSolarTerm(yrKey, jieKeys[i]);
-            if (dt) allJie.push({ dt, name: jieNames[i] });
+        for (let i = 0; i < allKeys.length; i++) {
+            const dt = parseSolarTerm(yrKey, allKeys[i]);
+            if (dt) allTerms.push({ dt, name: allNames[i], key: allKeys[i] });
         }
     }
-    allJie.sort((a, b) => a.dt - b.dt);
+    allTerms.sort((a, b) => a.dt - b.dt);
 
-    // Find nearest
-    let nearest = null, minDiff = Infinity;
-    for (const jie of allJie) {
-        const diff = Math.abs(jie.dt - birthDT);
-        if (diff < minDiff) { minDiff = diff; nearest = jie; }
+    // Find NEXT solar term (first one after birth date)
+    let next = null;
+    for (const term of allTerms) {
+        if (term.dt > birthDT) { next = term; break; }
     }
 
-    if (!nearest) return { name: '?', days: 0, direction: '' };
+    if (!next) return { name: '?', days: 0, dateStr: '' };
 
-    const diffMs = nearest.dt - birthDT;
-    const days = Math.abs(Math.round(diffMs / 86400000));
-    const direction = diffMs >= 0 ? '后' : '前';
+    const diffMs = next.dt - birthDT;
+    const days = Math.round(diffMs / 86400000);
+    // Format the exact date/time of the solar term
+    const y = next.dt.getFullYear();
+    const m = String(next.dt.getMonth() + 1).padStart(2, '0');
+    const day = String(next.dt.getDate()).padStart(2, '0');
+    const h = String(next.dt.getHours()).padStart(2, '0');
+    const min = String(next.dt.getMinutes()).padStart(2, '0');
+    const dateStr = y + '-' + m + '-' + day + ' ' + h + ':' + min;
 
-    return { name: nearest.name, days, direction };
+    return { name: next.name, days, dateStr };
 }
 
 // =========== 神煞计算 ===========
