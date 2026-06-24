@@ -927,6 +927,29 @@ function updateTimeInfo(prefix, showShichen) {
 
 
 
+
+// ========== SET DATE/TIME NOW ==========
+function setTimeNow(prefix) {
+    setDateTimeNow(prefix);
+}
+function setDateTimeNow(prefix) {
+    const now = new Date();
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const dy = String(now.getDate()).padStart(2, '0');
+    const hr = String(now.getHours()).padStart(2, '0');
+    const mi = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById(prefix + '-date').value = yr + '-' + mo + '-' + dy;
+    document.getElementById(prefix + '-time').value = hr + ':' + mi;
+    updateTimeInfo(prefix, true);
+    if (prefix === 'bz') {
+        const shichenEl = document.getElementById('bz-shichen');
+        if (shichenEl) {
+            shichenEl.textContent = '对应时辰: ' + getChineseHour(hr + ':' + mi);
+        }
+    }
+}
+
 // ========== BAZI ==========
 document.getElementById('bz-date').valueAsDate = new Date();
 document.getElementById('bz-date').addEventListener('change', function(){updateTimeInfo('bz',true)});
