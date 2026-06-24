@@ -823,7 +823,7 @@ function switchTab(name) {
 // ========== QIMEN MODE SWITCHING ==========
 var _qmMode = 'mingfa'; // 默认鸣法奇门
 function switchQimenMode(mode) {
-    alert('switchQimenMode called: ' + mode);
+    console.log('switchQimenMode called:', mode);
     _qmMode = mode;
     var btns = document.querySelectorAll('#tab-qimen .tab-btn.mode-btn');
     var descEl = document.getElementById('qm-mode-desc');
@@ -2469,6 +2469,7 @@ if (typeof switchTab !== "function") {
 
 </body>
 </html>
+
 
 
 
