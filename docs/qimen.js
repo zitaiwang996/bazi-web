@@ -1,3 +1,4 @@
+﻿// qimen.js v1782440708
 // qimen.js — 鸣法奇门飞盘排盘引擎 (JavaScript)
 // Ported from skills/鸣法奇门/qimen_mingfa.py for GitHub Pages
 // 折补法 + 飞宫时家奇门，经验证与教材完全一致
@@ -1305,3 +1306,4 @@ function bindQimenGongClicks(data) {
         }; })(ci);
     }
 }
+
