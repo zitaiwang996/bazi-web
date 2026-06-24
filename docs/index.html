@@ -1511,6 +1511,22 @@ function renderQimen(d) {
         geshiHTML += '</div>';
     }
 
+    // 暗干暗支冲合
+    var anheHTML = '';
+    if (d.anhe_lines && d.anhe_lines.length) {
+        anheHTML = '<div class="qm-geshi-list" style="font-size:.85em">';
+        for (var ai = 0; ai < d.anhe_lines.length; ai++) {
+            anheHTML += '<div class="qm-geshi-item"><span>' + d.anhe_lines[ai] + '</span></div>';
+        }
+        anheHTML += '</div>';
+    }
+    if (d.anhe_summary && d.anhe_summary.length) {
+        anheHTML += '<div style="margin-top:8px;padding:6px 12px;background:var(--input);border-radius:6px;font-size:.82em;color:var(--dim)">';
+        for (var si = 0; si < d.anhe_summary.length; si++) {
+            anheHTML += '<div>' + d.anhe_summary[si] + '</div>';
+        }
+        anheHTML += '</div>';
+    }
     var zkHTML = '<div class="hl">🤝 <strong>主客分析:</strong> ' + (d.zk || '') + '</div>';
 
     var html = '<div class="card" style="text-align:center;">' +
@@ -1524,6 +1540,7 @@ function renderQimen(d) {
     '</div>' +
 
     (d.geshi && d.geshi.length ? '<div class="card"><h3>📜 格局分析</h3>' + geshiHTML + '</div>' : '') +
+      (d.anhe_lines && d.anhe_lines.length ? '<div class="card"><h3>⚡ 暗干暗支冲合</h3>' + anheHTML + '</div>' : '') +
 
     '<div class="card">' +
       '<h3>🔍 解断提示</h3>' +
