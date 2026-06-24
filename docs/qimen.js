@@ -111,6 +111,25 @@ var QM_SHENG_CHANG = ['长生','沐浴','冠带','临官','帝旺','衰','病','
 // 天干五行
 var QM_GAN_WX = {'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
 
+
+// 天干五合化
+var QM_HE_WX = {};
+(function() {
+    var data = [["甲","己","土"],["乙","庚","金"],["丙","辛","水"],["丁","壬","木"],["戊","癸","火"]];
+    for (var i = 0; i < data.length; i++) {
+        QM_HE_WX[data[i][0]+data[i][1]] = data[i][2];
+        QM_HE_WX[data[i][1]+data[i][0]] = data[i][2];
+    }
+})();
+// 天干七杀冲
+var QM_G_CHONG = {"甲":"庚","乙":"辛","丙":"壬","丁":"癸","庚":"甲","辛":"乙","壬":"丙","癸":"丁"};
+// 地支六合
+var QM_ZHI_HE = {"子":"丑","丑":"子","寅":"亥","亥":"寅","卯":"戌","戌":"卯","辰":"酉","酉":"辰","巳":"申","申":"巳","午":"未","未":"午"};
+// 地支六冲
+var QM_ZHI_CHONG = {"子":"午","午":"子","丑":"未","未":"丑","寅":"申","申":"寅","卯":"酉","酉":"卯","辰":"戌","戌":"辰","巳":"亥","亥":"巳"};
+// 地支三合
+var QM_SAN_HE = [["申","子","辰","水"],["亥","卯","未","木"],["寅","午","戌","火"],["巳","酉","丑","金"]];
+
 // 五行生克
 var QM_WX_S = {'木':'火','火':'土','土':'金','金':'水','水':'木'};
 var QM_WX_K = {'木':'土','土':'水','水':'火','火':'金','金':'木'};
@@ -463,15 +482,22 @@ function calculateQimen(dateStr, timeStr, question) {
     // 天盘星
     var zfIdx = QM_JIU_XING.indexOf(zf) + 1;
     if (zfIdx === 0) zfIdx = 1;
-    var ns = 10 - zfIdx + gzf;
-    if (ns > 9) ns -= 9;
+    var ns;
+    if (dun === 1) {
+        ns = (gzf - zfIdx + 8) % 9 + 1;
+    } else {
+        ns = (zfIdx + gzf - 2) % 9 + 1;
+    }
     var tianpanXing = _reorder(QM_JIU_XING.slice(), ns, dun);
 
     // 人盘门
     var zsIdx = QM_BA_MEN.indexOf(zsMen) + 1;
     if (zsIdx === 0) zsIdx = 1;
-    ns = 10 - zsIdx + gzs;
-    if (ns > 9) ns -= 9;
+    if (dun === 1) {
+        ns = (gzs - zsIdx + 8) % 9 + 1;
+    } else {
+        ns = (zsIdx + gzs - 2) % 9 + 1;
+    }
     var renpan = _reorder(QM_BA_MEN.slice(), ns, dun);
     for (var ri = 0; ri < renpan.length; ri++) {
       if (renpan[ri] === '中五') renpan[ri] = '';
@@ -494,6 +520,96 @@ function calculateQimen(dateStr, timeStr, question) {
         if (g >= 1 && g <= 9) dipShen[g - 1] = dipShen[g - 1] + '○'; // ○
     }
 
+
+    // ============================
+    // 暗干暗支冲合分析 (鸣法要义)
+    // ============================
+    var anheLines = [];
+    var anheSummary = [];
+    var hz3 = hgz[1];
+    
+    for (var g = 1; g <= 9; g++) {
+        var idx = g - 1;
+        var gn = QM_GONG_SHORT[g] || '';
+        var tg = (tianpan[idx] || '')[0];
+        var dg = (dipan[idx] || '')[0];
+        var ag = (angan[idx] || '  ')[0];
+        var az = (angan[idx] || '  ')[1];
+        var notes = [];
+        
+        // 天盘干+暗干 五合
+        var pair1 = [tg, ag].sort(function(a,b) { return QM_GAN.indexOf(a) - QM_GAN.indexOf(b); }).join('');
+        if (QM_HE_WX[pair1]) {
+            notes.push('暗合化' + QM_HE_WX[pair1] + '(天' + tg + '+暗' + ag + ')');
+        }
+        
+        // 地盘干+暗干 五合
+        var pair2 = [dg, ag].sort(function(a,b) { return QM_GAN.indexOf(a) - QM_GAN.indexOf(b); }).join('');
+        if (QM_HE_WX[pair2]) {
+            notes.push('暗合化' + QM_HE_WX[pair2] + '(地' + dg + '+暗' + ag + ')');
+        }
+        
+        // 天盘干+暗干 七杀冲
+        if (QM_G_CHONG[tg] && QM_G_CHONG[tg] === ag) notes.push('暗冲(天' + tg + '冲暗' + ag + ')');
+        if (QM_G_CHONG[ag] && QM_G_CHONG[ag] === tg) notes.push('暗冲(暗' + ag + '冲天' + tg + ')');
+        if (QM_G_CHONG[dg] && QM_G_CHONG[dg] === ag) notes.push('暗冲(地' + dg + '冲暗' + ag + ')');
+        if (QM_G_CHONG[ag] && QM_G_CHONG[ag] === dg) notes.push('暗冲(暗' + ag + '冲地' + dg + ')');
+        
+        // 暗支与日支冲合
+        var rz = dgz[1];
+        if (QM_ZHI_HE[az] && QM_ZHI_HE[az] === rz) notes.push('暗' + az + '合日' + rz);
+        if (QM_ZHI_CHONG[az] && QM_ZHI_CHONG[az] === rz) notes.push('暗' + az + '冲日' + rz);
+        
+        // 暗支与月支冲合
+        var mz = mgz[1];
+        if (QM_ZHI_HE[az] && QM_ZHI_HE[az] === mz) notes.push('暗' + az + '合月' + mz);
+        if (QM_ZHI_CHONG[az] && QM_ZHI_CHONG[az] === mz) notes.push('暗' + az + '冲月' + mz);
+        
+        // 暗支与时支冲合
+        if (QM_ZHI_HE[az] && QM_ZHI_HE[az] === hz3) notes.push('暗' + az + '合时' + hz3);
+        if (QM_ZHI_CHONG[az] && QM_ZHI_CHONG[az] === hz3) notes.push('暗' + az + '冲时' + hz3);
+        
+        // 三合局检查
+        var allAz = [];
+        for (var azi = 0; azi < 9; azi++) allAz.push((angan[azi] || '  ')[1]);
+        for (var si = 0; si < QM_SAN_HE.length; si++) {
+            var triple = QM_SAN_HE[si];
+            if (triple[0] === az || triple[1] === az || triple[2] === az) {
+                var others = [];
+                for (var oi = 0; oi < 3; oi++) {
+                    if (triple[oi] !== az) others.push(triple[oi]);
+                }
+                var matched = [];
+                for (var oi2 = 0; oi2 < others.length; oi2++) {
+                    for (var ai3 = 0; ai3 < allAz.length; ai3++) {
+                        if (allAz[ai3] === others[oi2]) matched.push(others[oi2]);
+                    }
+                }
+                if (matched.length === 2) notes.push('暗支三合' + triple[3] + '局(' + az + '+' + matched.join('') + ')');
+                else if (matched.length === 1) notes.push('暗支半合' + triple[3] + '(' + az + '+' + matched[0] + ')');
+            }
+        }
+        
+        if (notes.length > 0) {
+            anheLines.push('  ' + gn + g + '宫: 天' + tg + '地' + dg + '暗' + ag + az + ' ' + notes.join('|'));
+        }
+    }
+    
+    // 汇总
+    var totalHe = 0, totalChong = 0;
+    for (var li = 0; li < anheLines.length; li++) {
+        if (anheLines[li].indexOf('暗合化') >= 0) totalHe++;
+        if (anheLines[li].indexOf('暗冲') >= 0) totalChong++;
+    }
+    if (totalHe > 0 || totalChong > 0) {
+        anheSummary.push('  暗合' + totalHe + '处 / 暗冲' + totalChong + '处');
+        for (var li2 = 0; li2 < anheLines.length; li2++) {
+            if (anheLines[li2].indexOf('暗合化') >= 0) anheSummary.push('    ' + anheLines[li2]);
+        }
+        for (var li3 = 0; li3 < anheLines.length; li3++) {
+            if (anheLines[li3].indexOf('暗冲') >= 0) anheSummary.push('    ' + anheLines[li3]);
+        }
+    }
     // 卦气
     var gqSeq = QM_GUA_QI_SEQ[jqIdx] || '';
     var guaqi = [];
@@ -644,6 +760,8 @@ function calculateQimen(dateStr, timeStr, question) {
         rigan_cs: riganCs, shigan_cs: shiganCs,
         zk: zk, jishi: jishi,
         geshi: geshi,
+        anhe_lines: anheLines,
+        anhe_summary: anheSummary,
         question: question || ''
     };
 }
