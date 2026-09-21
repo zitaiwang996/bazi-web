@@ -1169,7 +1169,7 @@ function renderBaziGrid(d) {
     } catch(e) { html += `<div class="card" style="color:var(--redL)">分析引擎错误: ${e.message}<br><pre style="font-size:.75em">${e.stack||''}</pre></div>`; }
 
     // AI Deep Analysis button
-    
+    html += '<div class="card" style="text-align:center"><h3>🤖 AI解读</h3><button id="ds-btn" class="btn-go" onclick="doDeepSeek()">🔮 AI深度解读</button><div id="ds-status" style="margin-top:8px;color:var(--dim)"></div><div id="ds-response" style="display:none"></div></div>';
 
     document.getElementById('bz-results').innerHTML = html;
     scrollTo('bz-results');
@@ -1217,7 +1217,7 @@ function renderBaziSimple(d) {
       '<div class="card"><h3>⚖️ 旺衰 & 胎元</h3><div class="hl">日主' + d.riGan + ' | ' + d.wangshuai.level + '</div><div class="hl">胎元: ' + d.taiyuan + '</div></div>' +
     '</div>');
     try { var aHTML = generateAnalysis(d); var cards = aHTML.split(/(?=<div class="card">)/); for (var ci = 0; ci < cards.length; ci++) { var c = cards[ci]; if (!c.trim()) continue; var h3m = c.match(/<h3>(.*?)<\/h3>/); html += makeAcc(h3m ? h3m[1] : '分析', c.replace(/<h3>.*?<\/h3>/, '')); } } catch(e2) {}
-    html += '<div class="card" style="text-align:center"><h3>🤖 AI解读</h3><button class="btn-go" onclick="doDeepSeek()">🔮 AI深度解读</button></div>';
+    html += '<div class="card" style="text-align:center"><h3>🤖 AI解读</h3><button id="ds-btn" class="btn-go" onclick="doDeepSeek()">🔮 AI深度解读</button><div id="ds-status" style="margin-top:8px;color:var(--dim)"></div><div id="ds-response" style="display:none"></div></div>';
     document.getElementById('bz-results').innerHTML = html;
     scrollTo('bz-results');
     initAccordions();
@@ -2178,27 +2178,56 @@ let lastBaziResult = null;
 const origRenderBazi2 = renderBazi;
 renderBazi = function(d) { lastBaziResult = d; origRenderBazi2(d); };
 
-function doDeepSeek() {
+const API_BASE = 'https://1458464551-c6fqpk4dzk.ap-beijing.tencentscf.com';
+
+function escapeInterpretation(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];
+    });
+}
+
+async function doDeepSeek() {
     if (!lastBaziResult) { alert('请先排盘'); return; }
-    const d = lastBaziResult;
+
     const btn = document.getElementById('ds-btn');
     const status = document.getElementById('ds-status');
     const respDiv = document.getElementById('ds-response');
-    btn.disabled = true; status.textContent = '⏳ 正在生成深度解读...'; respDiv.style.display = 'none';
+    if (!btn || !status || !respDiv) { alert('页面组件尚未加载'); return; }
 
-    setTimeout(function() {
-        try {
-            var text = generateBaziReport(d);
-            respDiv.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 盲派八字深度解读（金镖门老人参体系）</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">'+text+'</div></div>';
-            respDiv.style.display = 'block'; status.textContent = '✅ 解读完成';
-        } catch(e) {
-            status.textContent = '❌ '+e.message;
-            respDiv.innerHTML = '<div class="card" style="color:var(--redL)">生成错误: '+e.message+'</div>';
-            respDiv.style.display = 'block';
+    btn.disabled = true;
+    status.textContent = '⏳ 正在生成深度解读...';
+    respDiv.style.display = 'none';
+
+    try {
+        const response = await fetch(API_BASE + '/api/v1/interpret', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chart: lastBaziResult,
+                question: '请按盲派体系做完整解析'
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || ('HTTP ' + response.status));
         }
+
+        respDiv.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 盲派八字深度解读（金镖门老人参体系）</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">' +
+            escapeInterpretation(data.interpretation || '') + '</div></div>';
+        respDiv.style.display = 'block';
+        status.textContent = '✅ 解读完成';
+    } catch (error) {
+        status.textContent = '❌ 生成失败';
+        respDiv.innerHTML = '<div class="card" style="color:var(--redL)">接口错误: ' +
+            escapeInterpretation(error.message) + '</div>';
+        respDiv.style.display = 'block';
+    } finally {
         btn.disabled = false;
         scrollTo('ds-response');
-    }, 200);
+    }
 }
 
 function generateBaziReport(d) {
