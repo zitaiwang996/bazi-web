@@ -1291,6 +1291,7 @@ function renderZiwei(d) {
 
     // Ziwei Analysis (from SKILL)
     html += zwAnalysis(d);
+    html += '<div class="card" style="text-align:center"><h3>🤖 紫微AI解读</h3><button id="zw-ai-btn" class="btn-go" onclick="doZiweiAI()">🔮 紫微深度解读</button><div id="zw-ai-status" style="margin-top:8px;color:var(--dim)"></div><div id="zw-ai-response" style="display:none"></div></div>';
 
     document.getElementById('zw-results').innerHTML = html;
     scrollTo('zw-results');
@@ -2175,8 +2176,11 @@ function lyAnalysis(d) {
 
 // ========== AI INTERPRETATION (LOCAL SKILL-BASED) ==========
 let lastBaziResult = null;
+let lastZiweiResult = null;
 const origRenderBazi2 = renderBazi;
 renderBazi = function(d) { lastBaziResult = d; origRenderBazi2(d); };
+const origRenderZiwei2 = renderZiwei;
+renderZiwei = function(d) { lastZiweiResult = d; origRenderZiwei2(d); };
 
 const API_BASE = 'https://1458464551-c6fqpk4dzk.ap-beijing.tencentscf.com';
 
@@ -2189,9 +2193,35 @@ function escapeInterpretation(value) {
 async function doDeepSeek() {
     if (!lastBaziResult) { alert('请先排盘'); return; }
 
-    const btn = document.getElementById('ds-btn');
-    const status = document.getElementById('ds-status');
-    const respDiv = document.getElementById('ds-response');
+    await runInterpretation({
+        mode: 'bazi',
+        chart: lastBaziResult,
+        question: '请按盲派体系做完整解析',
+        title: '盲派八字深度解读（金镖门老人参体系）',
+        btnId: 'ds-btn',
+        statusId: 'ds-status',
+        responseId: 'ds-response'
+    });
+}
+
+async function doZiweiAI() {
+    if (!lastZiweiResult) { alert('请先排盘'); return; }
+
+    await runInterpretation({
+        mode: 'ziwei',
+        chart: lastZiweiResult,
+        question: '请按紫微斗数大师体系做完整解析',
+        title: '紫微斗数深度解读',
+        btnId: 'zw-ai-btn',
+        statusId: 'zw-ai-status',
+        responseId: 'zw-ai-response'
+    });
+}
+
+async function runInterpretation(options) {
+    const btn = document.getElementById(options.btnId);
+    const status = document.getElementById(options.statusId);
+    const respDiv = document.getElementById(options.responseId);
     if (!btn || !status || !respDiv) { alert('页面组件尚未加载'); return; }
 
     btn.disabled = true;
@@ -2205,8 +2235,9 @@ async function doDeepSeek() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                chart: lastBaziResult,
-                question: '请按盲派体系做完整解析'
+                mode: options.mode,
+                chart: options.chart,
+                question: options.question
             })
         });
 
@@ -2215,7 +2246,8 @@ async function doDeepSeek() {
             throw new Error(data.error || ('HTTP ' + response.status));
         }
 
-        respDiv.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 盲派八字深度解读（金镖门老人参体系）</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">' +
+        respDiv.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 ' +
+            escapeInterpretation(options.title) + '</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">' +
             escapeInterpretation(data.interpretation || '') + '</div></div>';
         respDiv.style.display = 'block';
         status.textContent = '✅ 解读完成';
@@ -2226,7 +2258,7 @@ async function doDeepSeek() {
         respDiv.style.display = 'block';
     } finally {
         btn.disabled = false;
-        scrollTo('ds-response');
+        scrollTo(options.responseId);
     }
 }
 
