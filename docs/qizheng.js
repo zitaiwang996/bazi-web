@@ -189,6 +189,51 @@
     } catch (e) {}
     return "";
   }
+  var WEEK_CN = ["日", "一", "二", "三", "四", "五", "六"];
+  function weekdayCn(iso) {
+    var d = new Date(iso + "T12:00:00Z");
+    return isNaN(d.getTime()) ? "" : "星期" + WEEK_CN[d.getUTCDay()];
+  }
+  function dayGzOf(iso) {
+    try { if (typeof calcDayPillar === "function") return calcDayPillar(iso); } catch (e) {}
+    return "";
+  }
+  var HOUR_ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+  var HOUR_RANGE = { 子: "23–01", 丑: "01–03", 寅: "03–05", 卯: "05–07", 辰: "07–09", 巳: "09–11", 午: "11–13", 未: "13–15", 申: "15–17", 酉: "17–19", 戌: "19–21", 亥: "21–23" };
+  function hourScore(hz, dayZhi, zodiac) {
+    var s = 0, why = [];
+    if (dayZhi) {
+      if (LIUHE[hz] === dayZhi) { s += 6; why.push("时与日六合"); }
+      else if (LIUCHONG[hz] === dayZhi) { s -= 8; why.push("时冲日"); }
+    }
+    if (zodiac) {
+      if (LIUHE[hz] === zodiac) { s += 8; why.push("时与生肖六合"); }
+      else if (sanHeWith(zodiac).indexOf(hz) >= 0) { s += 5; why.push("时与生肖三合"); }
+      else if (LIUCHONG[hz] === zodiac) { s -= 10; why.push("时冲生肖"); }
+      else if (LIUHAI[hz] === zodiac) { s -= 5; why.push("时害生肖"); }
+    }
+    return { score: s, why: why };
+  }
+  // 给定日期，排出 12 时辰的吉凶并取最佳
+  function bestHours(iso, zodiac) {
+    var dz = (dayGzOf(iso) || "")[1] || "";
+    var arr = HOUR_ZHI.map(function (hz) { var r = hourScore(hz, dz, zodiac); return { hz: hz, score: r.score, why: r.why }; });
+    arr.sort(function (a, b) { return b.score - a.score; });
+    return arr;
+  }
+  // 明确的第一推荐（含日柱、星期、最佳时辰）
+  function topPickHtml(b, zodiac, label) {
+    if (!b) return "";
+    var hs = bestHours(b.date, zodiac) [0];
+    var gz = dayGzOf(b.date);
+    return '<div class="hl" style="border-left-color:var(--gold);font-size:.92em">' +
+      '<b>🎯 ' + (label || "最终推荐") + '：' + b.date + "（" + weekdayCn(b.date) + "）" + (gz ? "　" + gz + "日" : "") + "</b><br>" +
+      "推荐时辰：<b>" + hs.hz + "时（" + HOUR_RANGE[hs.hz] + "）</b>" + (hs.why.length ? "　" + hs.why.join("、") : "") + "<br>" +
+      "用事评分：<b>" + b.score + " / 150（" + b.verdict + "）</b>" + (b.festival ? "　节日：" + b.festival : "") + "<br>" +
+      '<span style="color:var(--dim)">吉因：' + ((b.good || []).join("；") || "—") + "</span>" +
+      ((b.bad || []).length ? '<br><span style="color:var(--redL)">注意：' + b.bad.join("；") + "</span>" : "") +
+      "</div>";
+  }
   function scoreDay(date, shan, purpose, disk, opts) {
     opts = opts || {};
     var jd = jdFromDate(date);
@@ -507,6 +552,7 @@
         '<h4 style="margin-top:14px;color:var(--goldL);font-size:.92em">当日坐山评分（' + esc(cfg.shan) + "山 · " + esc(cfg.disk) + "）</h4>" +
         '<div style="font-size:1.05em;font-weight:700">得分 <span class="' + scClass + '">' + sc.score + " / 150（" + sc.verdict + "）</span></div>" +
         '<div class="qz-note"><span class="qz-good">吉：</span>' + (sc.good.join("；") || "—") + "<br><span class=\"qz-bad\">凶：</span>" + (sc.bad.join("；") || "—") + "</div>" +
+        topPickHtml(sc, cfg.zodiac, "本日推荐时辰") +
         "</div>" +
         '<div class="card" style="text-align:center"><h3>🔮 AI 详批 · 七政四余</h3>' +
         '<button class="btn-go" id="qz-ai-btn">AI 研判</button>' +
@@ -548,6 +594,8 @@
           '<div class="card"><h3>📅 ' + cfg.year + " 年 · " + esc(cfg.shan) + "山天星择日（" + esc(cfg.disk) + "）</h3>" +
           '<div class="qz-note">按太阳到山/到向、太阴、恩难仇用、太岁三煞、季节旺山、二十八宿吉凶评分；分数越高越宜。' +
           (cfg.purpose ? "用事：" + esc(cfg.purpose) + "。" : "") + "</div>" +
+          topPickHtml(best[0], cfg.zodiac, "最终推荐这一日") +
+          '<div class="qz-note" style="margin-top:8px">以下为备选：</div>' +
           '<table class="qz-table"><thead><tr><th>#</th><th>日期</th><th>太阳到山</th><th>太阳躔宿</th><th>节日</th><th>得分</th><th>等级</th><th>主要吉因</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
         var bestCard = document.getElementById("qz-out");
         bestCard.insertAdjacentHTML("beforeend",
@@ -588,6 +636,10 @@
     EVENTS: EVENTS,
     purposeWx: purposeWx,
     zodiacAdjust: zodiacAdjust,
+    topPickHtml: topPickHtml,
+    bestHours: bestHours,
+    weekdayCn: weekdayCn,
+    dayGzOf: dayGzOf,
     festivalMap: function (y) { return (window.QZ_FESTIVALS && window.QZ_FESTIVALS.map(y)) || {}; },
     sunLonTropical: sunLonTropical,
     moonLonTropical: moonLonTropical

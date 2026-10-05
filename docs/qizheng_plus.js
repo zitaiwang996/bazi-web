@@ -174,7 +174,8 @@
           }).join("");
           document.getElementById("qz-n-rec-out").innerHTML =
             '<div class="qz-note">按本命生肖（' + esc(zhi) + '）＋ 坐山 ' + esc(shan) + "山 ＋ 用事「" + esc(purpose) + "」评出（" + y + " 年，越高越宜）。</div>" +
-            (best.length ? '<table class="qz-table"><thead><tr><th>#</th><th>日期</th><th>节日</th><th>得分</th><th>等级</th><th>主要吉因</th></tr></thead><tbody>' + rows + "</tbody></table>" : '<div class="qz-bad">本年无明显吉日，请换年份或坐山。</div>');
+            (eng().topPickHtml ? eng().topPickHtml(best[0], zhi, "最终推荐这一日") : "") +
+            (best.length ? '<div class="qz-note" style="margin-top:8px">以下为备选：</div><table class="qz-table"><thead><tr><th>#</th><th>日期</th><th>节日</th><th>得分</th><th>等级</th><th>主要吉因</th></tr></thead><tbody>' + rows + "</tbody></table>" : '<div class="qz-bad">本年无明显吉日，请换年份或坐山。</div>');
           document.getElementById("qz-n-rec-status").textContent = "推荐 " + best.length + " 天";
         }, 20);
       }

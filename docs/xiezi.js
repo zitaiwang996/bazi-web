@@ -351,6 +351,18 @@
       (res.shanHit ? ' <span class="kx-bad">（坐山落三煞，忌用）</span>' : "") + "</div>";
   }
 
+  // 明确的第一推荐（具体到日 + 时辰 + 四柱）
+  function kxTopPick(it) {
+    if (!it) return "";
+    var d = new Date(it.date + "T12:00:00Z");
+    var wk = isNaN(d.getTime()) ? "" : "星期" + ["日", "一", "二", "三", "四", "五", "六"][d.getUTCDay()];
+    return '<div class="hl" style="border-left-color:var(--gold);font-size:.92em">' +
+      "<b>🎯 最终推荐这一课：" + it.date + "（" + wk + "）　" + it.pillars.join(" ") + "　" + it.hour + "时</b><br>" +
+      "山家 × 日柱：" + it.rel + "　评分：<b>" + it.score + "</b>" +
+      (it.warn && it.warn.length ? '<br><span class="kx-bad">需人工复核：' + esc(it.warn.join("、")) + "</span>" : '<br><span class="kx-good">全课合局</span>') +
+      "</div>";
+  }
+
   function mount(el) {
     injectStyle();
     var shanOpts = SHAN_ORDER.map(function (s) { return '<option value="' + s + '">' + s + "山</option>"; }).join("");
@@ -468,6 +480,8 @@
           }).join("");
           out.innerHTML = '<div class="card"><h3>🧧 些子法选吉课（' + esc(r.zuoGua.name) + " × " + span + " 天）</h3>" +
             '<div class="kx-note">依' + (ym === "main" ? "主流三元九运" : "本门分运法") + "取旺衰；已剔除宫忌、坐山三煞，按山家卦气与日柱成格排序，共 " + r.list.length + " 条候选（备注列出仍需人工复核的项）。</div>" +
+            kxTopPick(r.list[0]) +
+            (r.list.length ? '<div class="kx-note" style="margin-top:8px">以下为备选：</div>' : "") +
             (r.list.length ? '<table class="kx-table"><thead><tr><th>日期</th><th>四柱</th><th>时支</th><th>日柱卦</th><th>山家×日柱</th><th>克入</th><th>评分</th><th>备注</th></tr></thead><tbody>' + rows + "</tbody></table>"
               : '<div class="kx-bad" style="margin-top:10px">该区间无与山家成格的日课，请扩大天数或换坐山卦。</div>') +
             "</div>" +
