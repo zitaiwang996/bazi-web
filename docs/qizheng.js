@@ -132,6 +132,42 @@
   var PURPOSE_WX = (RULES["事由五行"] || {});
   var XIU_JX = (RULES["二十八宿吉凶"] || {});
   var W = (RULES["评分权重"] || {});
+  // 用事（含婚丧嫁娶 / 满月宴等）与事由五行
+  var EVENTS = [
+    { g: "婚嫁喜庆", list: ["嫁娶", "订婚", "订婚宴", "满月宴", "百日宴", "周岁宴", "寿宴", "乔迁宴"] },
+    { g: "营建开张", list: ["入宅", "搬迁", "动土", "修造", "竖柱", "上梁", "开市", "开业", "签约"] },
+    { g: "丧祭", list: ["安葬", "立碑", "祭祀", "谢土", "迁坟"] },
+    { g: "日常", list: ["出行", "入学", "求医", "安床", "开光", "会友"] }
+  ];
+  var EVENT_WX = {
+    嫁娶: "火", 订婚: "火", 订婚宴: "火", 满月宴: "火", 百日宴: "火", 周岁宴: "火", 寿宴: "火", 乔迁宴: "火",
+    入宅: "火", 搬迁: "火", 动土: "土", 修造: "土", 竖柱: "木", 上梁: "木", 开市: "金", 开业: "金", 签约: "金",
+    安葬: "土", 立碑: "土", 祭祀: "火", 谢土: "土", 迁坟: "土",
+    出行: "木", 入学: "木", 求医: "木", 安床: "木", 开光: "火", 会友: "木"
+  };
+  function purposeWx(p) { return EVENT_WX[p] || PURPOSE_WX[p] || null; }
+  // 生肖（主命）与日支的关系
+  var LIUHE = { 子: "丑", 丑: "子", 寅: "亥", 亥: "寅", 卯: "戌", 戌: "卯", 辰: "酉", 酉: "辰", 巳: "申", 申: "巳", 午: "未", 未: "午" };
+  var LIUCHONG = { 子: "午", 午: "子", 丑: "未", 未: "丑", 寅: "申", 申: "寅", 卯: "酉", 酉: "卯", 辰: "戌", 戌: "辰", 巳: "亥", 亥: "巳" };
+  var LIUHAI = { 子: "未", 未: "子", 丑: "午", 午: "丑", 寅: "巳", 巳: "寅", 卯: "辰", 辰: "卯", 申: "亥", 亥: "申", 酉: "戌", 戌: "酉" };
+  var LIUPO = { 子: "酉", 酉: "子", 丑: "辰", 辰: "丑", 寅: "亥", 亥: "寅", 卯: "午", 午: "卯", 巳: "申", 申: "巳", 未: "戌", 戌: "未" };
+  function sanHeWith(b) {
+    var groups = [["申", "子", "辰"], ["亥", "卯", "未"], ["寅", "午", "戌"], ["巳", "酉", "丑"]];
+    for (var i = 0; i < groups.length; i++) if (groups[i].indexOf(b) >= 0) return groups[i].filter(function (x) { return x !== b; });
+    return [];
+  }
+  // 返回 {score, tags[]}：以生肖（主命）看某日地支
+  function zodiacAdjust(dayZhi, zodiac) {
+    if (!dayZhi || !zodiac) return { score: 0, tags: [] };
+    var tags = [], score = 0;
+    if (LIUHE[zodiac] === dayZhi) { score += 8; tags.push({ t: "与主命六合 +8", good: true }); }
+    if (sanHeWith(zodiac).indexOf(dayZhi) >= 0) { score += 6; tags.push({ t: "与主命三合 +6", good: true }); }
+    if (dayZhi === zodiac) { score += 3; tags.push({ t: "与主命同支 +3", good: true }); }
+    if (LIUCHONG[zodiac] === dayZhi) { score -= 15; tags.push({ t: "冲主命生肖 -15", good: false }); }
+    if (LIUHAI[zodiac] === dayZhi) { score -= 6; tags.push({ t: "害主命生肖 -6", good: false }); }
+    if (LIUPO[zodiac] === dayZhi) { score -= 5; tags.push({ t: "破主命生肖 -5", good: false }); }
+    return { score: score, tags: tags };
+  }
   var ZHI = "子丑寅卯辰巳午未申酉戌亥";
   var GROUPS = [["寅", "午", "戌"], ["亥", "卯", "未"], ["巳", "酉", "丑"], ["申", "子", "辰"]];
   function yearZhi(year) { return ZHI[((year - 4) % 12 + 12) % 12]; }
@@ -143,7 +179,18 @@
   function seasonOf(month) {
     return { 3: "春", 4: "春", 5: "夏", 6: "夏", 7: "夏", 8: "秋", 9: "秋", 10: "秋", 11: "冬", 12: "冬", 1: "冬", 2: "春" }[month];
   }
-  function scoreDay(date, shan, purpose, disk) {
+  // 日柱地支（复用站点 bazi.js 的干支引擎；失败则返回空）
+  function dayZhiOf(iso) {
+    try {
+      if (typeof calcDayPillar === "function") {
+        var gz = calcDayPillar(iso);
+        if (gz && gz.length === 2) return gz[1];
+      }
+    } catch (e) {}
+    return "";
+  }
+  function scoreDay(date, shan, purpose, disk, opts) {
+    opts = opts || {};
     var jd = jdFromDate(date);
     var iso = date.toISOString().slice(0, 10);
     var month = date.getUTCMonth() + 1;
@@ -191,21 +238,37 @@
       var rel = wxRel(targetEl, pair[1]);
       if (WX_SCORE[rel]) { score += WX_SCORE[rel]; (WX_SCORE[rel] > 0 ? good : bad).push(pair[0] + rel + (WX_SCORE[rel] > 0 ? "+" : "") + WX_SCORE[rel]); }
     });
-    if (purpose && PURPOSE_WX[purpose]) {
-      var pr = wxRel(PURPOSE_WX[purpose], targetEl);
+    var pwx = purposeWx(purpose);
+    if (pwx) {
+      var pr = wxRel(pwx, targetEl);
       if (WX_SCORE[pr]) { score += WX_SCORE[pr]; (WX_SCORE[pr] > 0 ? good : bad).push(purpose + pr); }
     }
     var sx = xiuOf(bodyLon(jd, "sun"));
     if (XIU_JX[sx] === "吉") { score += 5; good.push("太阳躔" + sx + "(吉) +5"); }
     else if (XIU_JX[sx] === "凶") { score -= 5; bad.push("太阳躔" + sx + "(凶) -5"); }
+    // 主命生肖（冲合刑害破）
+    var dz = dayZhiOf(iso);
+    var zadj = zodiacAdjust(dz, opts.zodiac);
+    if (zadj.score) {
+      score += zadj.score;
+      zadj.tags.forEach(function (t) { (t.good ? good : bad).push(t.t); });
+    }
+    // 节日加成 / 指定吉日（满月、百日等）
+    var festNames = (opts.festivalMap && opts.festivalMap[iso]) || null;
+    if (festNames && festNames.length) {
+      score += 6; good.push("节日：" + festNames.join("、") + " +6");
+    }
+    if (opts.targetDates && opts.targetDates[iso]) {
+      score += 25; good.push(opts.targetDates[iso] + " +25");
+    }
     score = Math.max(0, Math.min(150, Math.round(score)));
     var verdict = score >= 100 ? "大吉" : score >= 75 ? "吉" : score >= 50 ? "平" : score >= 30 ? "凶" : "大凶";
-    return { date: iso, jd: jd, score: score, verdict: verdict, good: good, bad: bad, sun: { mtn: sunM, xiu: sx }, moon: { mtn: moonM } };
+    return { date: iso, jd: jd, dayZhi: dz, zodiac: opts.zodiac || "", festival: (festNames || []).join("、"), score: score, verdict: verdict, good: good, bad: bad, sun: { mtn: sunM, xiu: sx }, moon: { mtn: moonM } };
   }
-  function findBest(shan, year, purpose, disk, topN) {
+  function findBest(shan, year, purpose, disk, topN, opts) {
     var out = [];
     var start = new Date(Date.UTC(year, 0, 1, 12, 0));
-    for (var i = 0; i < 365; i++) out.push(scoreDay(new Date(start.getTime() + i * 86400000), shan, purpose, disk));
+    for (var i = 0; i < 365; i++) out.push(scoreDay(new Date(start.getTime() + i * 86400000), shan, purpose, disk, opts));
     out.sort(function (a, b) { return b.score - a.score; });
     return out.slice(0, topN || 12);
   }
@@ -288,7 +351,17 @@
       "#ky-panel-qizheng .qz-note{color:var(--dim);font-size:.78em;line-height:1.8;margin-top:8px}",
       "#ky-panel-qizheng .qz-body-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}",
       "#ky-panel-qizheng .qz-chip{padding:3px 9px;border-radius:999px;border:1px solid var(--border);font-size:.78em}",
-      "#ky-panel-qizheng .qz-chip.pt{color:var(--goldL);border-color:var(--gold)}"
+      "#ky-panel-qizheng .qz-chip.pt{color:var(--goldL);border-color:var(--gold)}",
+      "#ky-panel-qizheng .qz-subnav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}",
+      "#ky-panel-qizheng .qz-sub{padding:7px 15px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit;font-size:.86em;font-weight:600}",
+      "#ky-panel-qizheng .qz-sub:hover{border-color:var(--gold);color:var(--goldL)}",
+      "#ky-panel-qizheng .qz-sub.active{border-color:var(--gold);background:rgba(200,164,92,.16);color:var(--goldL)}",
+      "#ky-panel-qizheng .qz-pane{display:none}",
+      "#ky-panel-qizheng .qz-pane.active{display:block}",
+      "#ky-panel-qizheng .qz-opt{font-size:.78em;color:var(--dim);line-height:1.7}",
+      "#ky-panel-qizheng .qz-sub-table td:last-child{text-align:left}",
+      "#ky-panel-qizheng .qz-24 td{white-space:nowrap}",
+      "#ky-panel-qizheng .qz-24 .hi{color:var(--goldL);font-weight:600}"
     ].join("\n");
     var st = document.createElement("style");
     st.id = STYLE_ID; st.textContent = css;
@@ -302,26 +375,117 @@
       '<div class="card"><h3>✨ 七政四余 · 星盘与天星择日</h3>' +
       '<p style="color:var(--dim);font-size:.84em;line-height:1.8">七政（日月金木水火土）与四余（罗计孛气）落宫、躔宿；择日按天星派原则评太阳到山、恩难仇用、太岁三煞。' +
       '星历为前端概算（太阳/太阴约 0.1–0.5°，五星约 1–3°），最终定课仍需专业星历复核。</p>' +
+      '<div class="qz-subnav">' +
+      '<button type="button" class="qz-sub active" data-pane="xiezi">📅 择日</button>' +
+      '<button type="button" class="qz-sub" data-pane="natal">🧬 本命盘解读</button>' +
+      '<button type="button" class="qz-sub" data-pane="transit">🔭 星象演算</button>' +
+      '</div>' +
+      '<div class="qz-pane active" id="qz-pane-xiezi">' +
       '<div class="qz-grid">' +
       '<div class="qz-field"><label>坐山（二十四山）</label><select id="qz-shan">' + shanOpts + "</select></div>" +
       '<div class="qz-field"><label>年份</label><input type="number" id="qz-year" value="' + year + '"></div>' +
-      '<div class="qz-field"><label>事由</label><select id="qz-purpose"><option value="">（不限）</option><option>嫁娶</option><option>入宅</option><option>开市</option><option>动土</option><option>安葬</option><option>出行</option><option>祭祀</option><option>竖柱</option><option>入学</option></select></div>' +
+      '<div class="qz-field"><label>用事（事由）</label><select id="qz-purpose"><option value="">（不限）</option>' +
+      EVENTS.map(function (g) { return '<optgroup label="' + g.g + '">' + g.list.map(function (e) { return "<option>" + e + "</option>"; }).join("") + "</optgroup>"; }).join("") +
+      "</select></div>" +
+      '<div class="qz-field"><label>主命生肖（可选）</label><select id="qz-zodiac"><option value="">不限</option>' +
+      [["子", "鼠"], ["丑", "牛"], ["寅", "虎"], ["卯", "兔"], ["辰", "龙"], ["巳", "蛇"], ["午", "马"], ["未", "羊"], ["申", "猴"], ["酉", "鸡"], ["戌", "狗"], ["亥", "猪"]]
+        .map(function (z) { return '<option value="' + z[0] + '">' + z[1] + "（" + z[0] + "）</option>"; }).join("") +
+      "</select></div>" +
+      '<div class="qz-field" id="qz-birth-wrap" style="display:none"><label>宝宝 / 事主出生日期</label><input type="date" id="qz-birth"></div>' +
+      '<div class="qz-field"><label>节日</label><select id="qz-festival"><option value="">不限</option><option value="auto">自动（按用事匹配）</option></select></div>' +
       '<div class="qz-field"><label>盘式</label><select id="qz-disk"><option>地盘</option><option>天盘</option><option>人盘</option></select></div>' +
       '<div class="qz-field"><label>起盘日期</label><input type="date" id="qz-date" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
       "</div>" +
+      '<div class="qz-opt" id="qz-event-hint"></div>' +
       '<div style="margin-top:14px"><button class="btn-go" id="qz-draw">✨ 起星盘</button> ' +
       '<button class="btn-go" id="qz-best" style="background:rgba(200,164,92,.2);color:var(--goldL);border:1px solid var(--gold)">📅 全年择日</button>' +
       '<span id="qz-status" style="margin-left:12px;color:var(--dim);font-size:.84em"></span></div>' +
       "</div>" +
-      '<div id="qz-out"></div>';
+      '<div id="qz-out"></div>' +
+      "</div>" +
+      '<div class="qz-pane" id="qz-pane-natal"></div>' +
+      '<div class="qz-pane" id="qz-pane-transit"></div>';
     document.getElementById("qz-shan").value = "子";
     function readCfg() {
       return {
         shan: document.getElementById("qz-shan").value,
         year: parseInt(document.getElementById("qz-year").value, 10) || new Date().getFullYear(),
         purpose: document.getElementById("qz-purpose").value,
-        disk: document.getElementById("qz-disk").value
+        disk: document.getElementById("qz-disk").value,
+        zodiac: document.getElementById("qz-zodiac").value,
+        birth: (document.getElementById("qz-birth") || {}).value || "",
+        festival: document.getElementById("qz-festival").value
       };
+    }
+    function buildOpts(cfg) {
+      var opts = { zodiac: cfg.zodiac || "", festivalMap: {}, targetDates: {} };
+      var F = window.QZ_FESTIVALS;
+      if (!F) return opts;
+      if (/满月宴|百日宴|周岁宴/.test(cfg.purpose) && cfg.birth) {
+        var b = new Date(cfg.birth + "T12:00:00Z");
+        if (!isNaN(b.getTime())) {
+          var days = { 满月宴: 30, 百日宴: 100, 周岁宴: 365 }[cfg.purpose];
+          var t = new Date(b.getTime() + days * 86400000);
+          if (t.getUTCFullYear() === cfg.year) opts.targetDates[t.toISOString().slice(0, 10)] = cfg.purpose + "正日";
+        }
+      }
+      if (cfg.festival === "auto") {
+        F.forEvent(cfg.purpose || "", cfg.year, cfg.birth || "").forEach(function (f) {
+          (opts.festivalMap[f.date] = opts.festivalMap[f.date] || []).push(f.name);
+        });
+      } else if (cfg.festival) {
+        var map = F.map(cfg.year);
+        Object.keys(map).forEach(function (d) {
+          if (map[d].indexOf(cfg.festival) >= 0) opts.festivalMap[d] = [cfg.festival];
+        });
+      }
+      return opts;
+    }
+    function applyEventUi() {
+      var p = document.getElementById("qz-purpose").value;
+      var wrap = document.getElementById("qz-birth-wrap");
+      var needBirth = /满月宴|百日宴|周岁宴/.test(p);
+      if (wrap) wrap.style.display = needBirth ? "" : "none";
+      var hint = document.getElementById("qz-event-hint");
+      if (hint) hint.textContent = p
+        ? ("用事五行：" + (purposeWx(p) || "—") + (needBirth ? "；填出生日期可自动锁定满月 / 百日 / 周岁正日" : ""))
+        : "可不选用事，仅按坐山评分；选了用事会按事由五行加吉减凶。";
+      var fsel = document.getElementById("qz-festival");
+      if (fsel) {
+        var cur = fsel.value;
+        var html = '<option value="">不限</option><option value="auto">自动（按用事匹配）</option>';
+        if (window.QZ_FESTIVALS) {
+          var yr = parseInt(document.getElementById("qz-year").value, 10) || new Date().getFullYear();
+          var bd = (document.getElementById("qz-birth") || {}).value || "";
+          var seen = {};
+          window.QZ_FESTIVALS.forEvent(p || "", yr, bd).forEach(function (f) {
+            if (!seen[f.name]) { seen[f.name] = 1; html += '<option value="' + f.name + '">' + f.name + " " + f.date + "</option>"; }
+          });
+        }
+        fsel.innerHTML = html;
+        if (cur) fsel.value = cur;
+      }
+    }
+    ["qz-purpose", "qz-year"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) node.addEventListener("change", applyEventUi);
+    });
+    var birthNode = document.getElementById("qz-birth");
+    if (birthNode) birthNode.addEventListener("change", applyEventUi);
+    applyEventUi();
+    // 子页签：择日 / 本命盘 / 星象演算
+    el.querySelectorAll(".qz-sub").forEach(function (b) {
+      b.addEventListener("click", function () {
+        el.querySelectorAll(".qz-sub").forEach(function (x) { x.classList.toggle("active", x === b); });
+        var name = b.getAttribute("data-pane");
+        el.querySelectorAll(".qz-pane").forEach(function (p) { p.classList.toggle("active", p.id === "qz-pane-" + name); });
+      });
+    });
+    if (window.KanyuQizhengPlus && window.KanyuQizhengPlus.mount) {
+      window.KanyuQizhengPlus.mount({
+        natal: document.getElementById("qz-pane-natal"),
+        transit: document.getElementById("qz-pane-transit")
+      });
     }
     document.getElementById("qz-draw").addEventListener("click", function () {
       var cfg = readCfg();
@@ -331,7 +495,7 @@
       var rows = pos.bodies.map(function (b) {
         return "<tr><td>" + b.cn + "</td><td>" + b.el + "</td><td>" + b.lon.toFixed(2) + "°</td><td>" + b.palace + "宫</td><td>" + b.mtn + "山</td><td>" + b.xiu + "</td></tr>";
       }).join("");
-      var sc = scoreDay(date, cfg.shan, cfg.purpose, cfg.disk);
+      var sc = scoreDay(date, cfg.shan, cfg.purpose, cfg.disk, buildOpts(cfg));
       var scClass = sc.score >= 75 ? "qz-good" : sc.score >= 50 ? "qz-mid" : "qz-bad";
       document.getElementById("qz-out").innerHTML =
         '<div class="card"><h3>✨ 七政四余星盘 · ' + esc(ds) + "</h3>" +
@@ -355,6 +519,7 @@
             mode: "qizheng",
             chart: {
               school: "七政四余 · 天星择日", date: ds, zuo_shan: cfg.shan, purpose: cfg.purpose || "不限", disk: cfg.disk,
+              zodiac: cfg.zodiac || "不限", festival: sc.festival || "—", day_zhi: sc.dayZhi,
               bodies: pos.bodies.map(function (b) { return { star: b.cn, element: b.el, lon: Math.round(b.lon * 100) / 100, palace: b.palace + "宫", mountain: b.mtn + "山", xiu: b.xiu }; }),
               score: sc.score, verdict: sc.verdict, good: sc.good, bad: sc.bad
             },
@@ -374,16 +539,16 @@
       var status = document.getElementById("qz-status");
       status.textContent = "全年评分中…";
       setTimeout(function () {
-        var best = findBest(cfg.shan, cfg.year, cfg.purpose, cfg.disk, 15);
+        var best = findBest(cfg.shan, cfg.year, cfg.purpose, cfg.disk, 15, buildOpts(cfg));
         var rows = best.map(function (b, i) {
           var cls = b.score >= 100 ? "qz-good" : b.score >= 75 ? "qz-mid" : "";
-          return "<tr><td>" + (i + 1) + "</td><td>" + b.date + "</td><td>" + b.sun.mtn + "山</td><td>" + b.sun.xiu + "</td><td class=\"" + cls + "\">" + b.score + "</td><td>" + b.verdict + "</td><td style=\"text-align:left\">" + esc(b.good.slice(0, 2).join("；")) + "</td></tr>";
+          return "<tr><td>" + (i + 1) + "</td><td>" + b.date + "</td><td>" + b.sun.mtn + "山</td><td>" + b.sun.xiu + "</td><td>" + (b.festival || "—") + "</td><td class=\"" + cls + "\">" + b.score + "</td><td>" + b.verdict + "</td><td style=\"text-align:left\">" + esc(b.good.slice(0, 2).join("；")) + "</td></tr>";
         }).join("");
         document.getElementById("qz-out").innerHTML =
           '<div class="card"><h3>📅 ' + cfg.year + " 年 · " + esc(cfg.shan) + "山天星择日（" + esc(cfg.disk) + "）</h3>" +
           '<div class="qz-note">按太阳到山/到向、太阴、恩难仇用、太岁三煞、季节旺山、二十八宿吉凶评分；分数越高越宜。' +
           (cfg.purpose ? "用事：" + esc(cfg.purpose) + "。" : "") + "</div>" +
-          '<table class="qz-table"><thead><tr><th>#</th><th>日期</th><th>太阳到山</th><th>太阳躔宿</th><th>得分</th><th>等级</th><th>主要吉因</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+          '<table class="qz-table"><thead><tr><th>#</th><th>日期</th><th>太阳到山</th><th>太阳躔宿</th><th>节日</th><th>得分</th><th>等级</th><th>主要吉因</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
         var bestCard = document.getElementById("qz-out");
         bestCard.insertAdjacentHTML("beforeend",
           '<div class="card" style="text-align:center"><h3>🔮 AI 详批 · 全年择日</h3>' +
@@ -397,6 +562,7 @@
               mode: "qizheng",
               chart: {
                 school: "七政四余 · 全年天星择日", year: cfg.year, zuo_shan: cfg.shan, purpose: cfg.purpose || "不限", disk: cfg.disk,
+                zodiac: cfg.zodiac || "不限", festival_mode: cfg.festival || "不限",
                 candidates: best.map(function (b) { return { date: b.date, score: b.score, verdict: b.verdict, sun_mountain: b.sun.mtn + "山", sun_xiu: b.sun.xiu, good: b.good, bad: b.bad }; })
               },
               question: "请按七政四余天星择日原则复评这些候选吉日",
