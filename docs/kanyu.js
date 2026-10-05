@@ -1,13 +1,12 @@
-// kanyu.js - 堪舆专区：现场采集 + 多流派递进判断
-// 你负责现场测量，这里负责：给什么信息 -> 出什么结论 -> 还缺什么 -> 下一步测什么
+// kanyu.js - 堪舆专区：四派各自采集 + 递进判断
+// 你负责现场测量；这里负责：给什么信息 -> 出什么结论 -> 还缺什么 -> 下一步测什么
 (function () {
   "use strict";
 
   var API = "https://1458464551-c6fqpk4dzk.ap-beijing.tencentscf.com";
-  var STORE_KEY = "kanyu_state_v1";
-
-  var MOUNTAINS = ["未测/不详","壬","子","癸","丑","艮","寅","甲","卯","乙","辰","巽","巳","丙","午","丁","未","坤","申","庚","酉","辛","戌","乾","亥"];
+  var STORE_KEY = "kanyu_state_v2";
   var EMPTY = "未测/不详";
+  var MOUNTAINS = ["未测/不详","壬","子","癸","丑","艮","寅","甲","卯","乙","辰","巽","巳","丙","午","丁","未","坤","申","庚","酉","辛","戌","乾","亥"];
 
   var METHODS = [
     { id: "tianxing", name: "天星风水", sub: "赖布衣天星派" },
@@ -18,139 +17,219 @@
 
   var MEASURE = {
     tianxing: {
-      title: "天星派测量要点（赖布衣）",
+      title: "天星派 · 你要现场量什么",
       lines: [
-        "<b>三盘：</b>地盘正针定坐向、格龙；人盘中针消砂（拨砂）；天盘缝针可参纳水。",
-        "<b>盘制先写明：</b>开禧度 / 时宪度 / 现代修正度，老盘必须换岁差，否则宿度全错。",
-        "<b>坐向：</b>坐山 + 朝向 + 兼左兼右 + 分金；分金未定先不下断。",
-        "<b>来龙：</b>记入首一节、过峡开帐；<b>砂：</b>记尖顶方位与形态（遮挡不算）；<b>水：</b>只论明水，记来水、去水。",
-        "<b>现场先校：</b>水平、磁针自由、远离铁器电塔，记磁偏角。"
+        "<b>三盘：</b>地盘正针定坐向、格龙；<b>人盘中针</b>消砂（量砂尖顶）；天盘缝针可参纳水。",
+        "<b>先记盘制：</b>开禧度 / 时宪度 / 现代修正度。老盘必须换岁差，否则二十八宿度数全错。",
+        "<b>坐向：</b>坐山＋朝向＋兼左兼右＋分金；分金没定，先不下断。",
+        "<b>砂：</b>只量看得见的尖顶（被遮挡的不算），记方位、高低、形态。",
+        "<b>水：</b>只论明水，记来水、去水、水形（弯环/直去/反弓/聚）。",
+        "<b>先校：</b>水平、磁针自由、远离铁器电塔，记磁偏角。"
       ]
     },
     lvshi: {
-      title: "吕氏测量要点（吕文艺）",
+      title: "吕氏 · 你要现场量什么",
       lines: [
-        "<b>不用飞星、不用分金。</b>先定原点：阳宅取床位/办公桌/收银台；阴宅取尸骨（骨灰）中心。",
-        "<b>高为砂、低为水：</b>以原点地平面为基准，量各宫的<b>垂直高度差（米）</b>，不是看方位吉凶。",
-        "<b>胎次定位：</b>男一四七看东方、二五八看北方、三六九看东北；女看对宫。同父异母/同母异父各按各家排。",
-        "<b>对宫同砂同水 = 绝地</b>（东—西、南—北、东北—西南、东南—西北），一律先断凶。",
-        "<b>凡是冲射，无论砂水一律凶；</b>门窗、水龙头、厕所、鱼缸算水；灶、神位、大树、电杆、高大家具算砂。"
+        "<b>不用飞星、不用分金。</b>先定<b>原点</b>：阳宅取床位/办公桌/收银台；阴宅取尸骨（骨灰）中心。",
+        "<b>高为砂、低为水：</b>以原点地平面为基准，量每一宫的<b>垂直高度差（米）</b>。",
+        "<b>八个方向都要量：</b>东、南、西、北、东北、东南、西南、西北，各写“砂/水 + 米数”。",
+        "<b>冲射要记：</b>路冲、水冲、尖角、风口，凡冲射无论砂水一律凶。",
+        "<b>再记地形：</b>山区 / 平洋 / 水乡 / 公墓 / 骨灰堂，能量算法不同。"
       ]
     },
     xuankong: {
-      title: "玄空测量要点（沈氏）",
+      title: "玄空 · 你要现场量什么",
       lines: [
-        "<b>先定元运：</b>按建宅/入住/下葬年份定三元九运（2004-2023 八运，2024-2043 九运）。",
-        "<b>坐向：</b>用<b>地盘正针</b>，最好给实测周天度数；正向取中 9 度内用下卦，兼 3 度以上要用替卦。",
-        "<b>门向：</b>以人最多出入的门为向；同时记门、床、灶、厕的方位。",
-        "<b>外部：</b>前后左右的楼、路、水、桥、树、尖角、反光，落到宫位。",
-        "<b>现场先校：</b>水平、磁针自由、远离铁器电塔；读数宁慢勿快。"
+        "<b>先定元运：</b>按建宅/入住/下葬年份定三元九运（2004–2023 八运，2024–2043 九运）。",
+        "<b>坐向：</b>用<b>地盘正针</b>，最好给实测周天度数；正向（中 9 度内）用下卦，兼 3 度以上用替卦。",
+        "<b>门向：</b>以人最多出入的门为向；再记门、床、灶、厕各在哪个宫。",
+        "<b>外六事：</b>前后左右的楼、路、水、桥、树、尖角、反光，落到宫位。",
+        "<b>先校：</b>水平、磁针自由、远离铁器电塔；读数宁慢勿快。"
       ]
     },
     sanhe: {
-      title: "三合测量要点（杨筠松）",
+      title: "三合 · 你要现场量什么",
       lines: [
-        "<b>三盘三针：</b>地盘正针格龙/定坐山；人盘中针消砂；天盘缝针测来水与水口。",
+        "<b>三盘三针：</b><b>地盘正针</b>格龙、定坐山；<b>人盘中针</b>消砂；<b>天盘缝针</b>测来水与水口。",
         "<b>来龙三处：</b>来龙、入首、束气都要记字位（地盘正针）。",
-        "<b>定局：</b>来龙、来水、去水三者占二才能定金/木/水/火局；水口用关/拦/顺三法。",
+        "<b>水口用三法：</b>关 / 拦 / 顺，定来水、去水，看左右旋。",
         "<b>立向分金：</b>记兼左兼右与周天坐度；48 正格用向上五行法，变格用坐度分金法。",
-        "<b>阴宅：</b>补亡者生年（仙命）；<b>现场先校：</b>水平、磁针自由、远离铁器电塔、记磁偏角。"
+        "<b>阴宅：</b>补亡者生年（仙命）；<b>先校：</b>水平、磁针自由、远离铁器电塔、记磁偏角。"
       ]
     }
   };
 
-  var REQUIRED = {
-    tianxing: ["zuo", "xiang", "panzhi", "lailong", "sha", "laishui", "qushui"],
-    lvshi:    ["lv_origin", "lv_tai", "lv_sex", "lv_shashui"],
-    xuankong: ["zuo", "xiang", "year", "men"],
-    sanhe:    ["zuo", "xiang", "lailong", "laishui", "qushui"]
+  // 各派硬禁忌：方位/条件 -> 会发生什么
+  var TABOOS = {
+    tianxing: [
+      ["八煞方", "坐山八煞方位见尖砂、水路冲射。「坎龙坤兔震山猴，巽鸡乾马兑蛇头，艮虎离猪为八煞」", "血光、官非、凶病，重者损丁"],
+      ["黄泉煞", "向首犯黄泉（庚丁见坤、乙丙见巽、甲癸见艮、辛壬见乾）见水或路", "损丁、败财、官非，重者绝嗣"],
+      ["阴阳差错", "立向兼左兼右兼错、夫妇相配错位", "婚姻不顺、家道不和、人丁不安"],
+      ["空亡线", "坐向落在二十四山交界骑缝线上", "人丁不安、破财、孤独"],
+      ["曜煞/劫煞", "曜煞方、劫煞方高压、尖射、动土", "意外、伤病、破财"],
+      ["砂水反局", "宜砂之宫见水、宜水之宫见砂", "相应房份损丁或败财"]
+    ],
+    lvshi: [
+      ["对宫同砂同水", "东—西、南—北、东北—西南、东南—西北 两宫同为砂或同为水", "绝地，一律凶断；贫穷、损丁、短寿、夭折"],
+      ["对宫同水高度差", "山区对宫同水，按原点垂直高度差分级", "15米内贫穷有儿女；25–35米贫而无儿有女；50–80米寿短；100米以上青少年夭折；150米以上凶二三代"],
+      ["砂水反位", "东/东南/西南/北 宜砂却见水；西/西北/东北/南 宜水却见砂", "相应房份损丁、破财、人丁不旺"],
+      ["冲射", "路冲、水冲、尖角、风口直冲原点", "无论砂水一律凶：血光、破财、官非"],
+      ["孤阳孤阴", "三山中一山单独与另两山相反（敏感位）", "该房人丁或财源出现明显偏枯"]
+    ],
+    xuankong: [
+      ["五黄", "运五黄或年五黄飞到门、床、灶、动土方位", "病灾、意外、破财；宜静不宜动，动则凶速"],
+      ["二黑病符", "二黑飞到门、床、厨房", "疾病、肠胃/妇科、久病不愈"],
+      ["三煞", "年三煞方位动土、修造、开门", "血光、官非、破财"],
+      ["上山下水", "山星到向、向星到坐（坐后无山、向首无水）", "损丁破财，家运衰退"],
+      ["反吟伏吟", "全局反吟或伏吟", "反复、破败、意外、家宅不宁"],
+      ["令星入囚", "向首当运旺星入囚、地运已过", "财源断绝、事业停滞"],
+      ["空亡骑线/兼错", "坐向骑线、兼向超 3 度未用替卦", "人丁不安、吉凶颠倒"],
+      ["火烧天门", "乾宫（西北）见火、红色、炉灶、高塔", "官非、损丁、长辈不利"]
+    ],
+    sanhe: [
+      ["黄泉煞", "向首冲临官、冲冠带（如庚丁见坤、乙丙见巽、甲癸见艮、辛壬见乾）", "损丁、败财、官非，重者绝嗣"],
+      ["八煞", "坐山八煞方位有水路冲射、尖射", "血光、疾病、官非"],
+      ["劫煞", "劫煞方有来水、路冲、低陷", "劫财、破财、被盗"],
+      ["水破天心", "明堂正中直水冲穴、直路冲心", "破财、损丁、家宅不安"],
+      ["牵动土牛", "水直冲墓心、穴前水割脚", "大凶，主损丁、横祸"],
+      ["吉方出水/凶方来水", "生旺冠临方出水，墓绝方来水", "财丁两败"],
+      ["去水不关锁", "去水直去、反弓、无砂关拦", "财来财去、留不住财"]
+    ]
   };
 
-  var GROUPS = [
-    {
-      name: "① 基本与问题",
-      fields: [
+  var SCHEMAS = {
+    tianxing: [
+      { name: "① 基本", fields: [
         { k: "type", label: "宅型", t: "select", o: ["阳宅", "阴宅"] },
-        { k: "topic", label: "断事需求", t: "select", o: ["综合", "财运", "人丁", "事业官贵", "婚姻感情", "健康", "学业", "官非", "化煞调理", "择地立向"] },
-        { k: "year", label: "建宅/入住/下葬年份", t: "number", ph: "如 2008" },
-        { k: "nowyear", label: "当前流年", t: "number", ph: "默认今年" },
-        { k: "question", label: "想问的问题", t: "textarea", full: true, ph: "例如：这坟对二房有什么影响？哪一年应事？怎么调？" }
-      ]
-    },
-    {
-      name: "② 坐向与分金",
-      fields: [
+        { k: "topic", label: "断事需求", t: "select", o: ["综合", "催官", "催财", "催丁", "婚姻", "健康", "化煞"] },
+        { k: "question", label: "想问的问题", t: "textarea", full: true, ph: "例如：这坟哪房发？哪年应事？怎么改？" }
+      ]},
+      { name: "② 定盘（坐向与盘制）", fields: [
         { k: "zuo", label: "坐山", t: "mount" },
         { k: "xiang", label: "朝向", t: "mount" },
         { k: "degree", label: "周天坐度(0-360)", t: "number", ph: "如 315" },
         { k: "jian", label: "兼向", t: "select", o: [EMPTY, "正向", "兼左", "兼右"] },
-        { k: "panzhi", label: "盘制（天星必填）", t: "select", o: [EMPTY, "开禧度", "时宪度", "现代修正度"] },
-        { k: "yun", label: "元运（玄空）", t: "select", o: ["按年份自动", "一运", "二运", "三运", "四运", "五运", "六运", "七运", "八运", "九运"] }
-      ]
-    },
-    {
-      name: "③ 来龙（天星/三合）",
-      fields: [
+        { k: "fenjin", label: "分金", t: "text", ph: "如 丙子分金" },
+        { k: "panzhi", label: "盘制（必填）", t: "select", o: [EMPTY, "开禧度", "时宪度", "现代修正度"] }
+      ]},
+      { name: "③ 格龙（地盘正针）", fields: [
         { k: "lailong", label: "来龙", t: "mount" },
         { k: "rushou", label: "入首", t: "mount" },
         { k: "shuqi", label: "束气", t: "mount" },
-        { k: "guoxia", label: "过峡、开帐、左右旋情况", t: "textarea", full: true, ph: "例如：过峡束气细嫩，开帐三层，左旋入首" }
-      ]
-    },
-    {
-      name: "④ 来水 / 去水（天星/三合）",
-      fields: [
+        { k: "guoxia", label: "过峡、开帐、左右旋", t: "textarea", full: true }
+      ]},
+      { name: "④ 消砂（人盘中针，量尖顶）", fields: [
+        { k: "sha", label: "各方砂位与形态", t: "textarea", full: true, ph: "例如：甲方高峰尖秀、酉方破碎逼压、坤方有塔" },
+        { k: "xiudu", label: "砂的二十八宿线度（若有）", t: "textarea", full: true, ph: "例如：甲砂在角宿X度、酉砂在昂宿X度" }
+      ]},
+      { name: "⑤ 纳水（明水）", fields: [
         { k: "laishui", label: "来水方位", t: "mount" },
-        { k: "qushui", label: "去水 / 水口方位", t: "mount" },
-        { k: "shuixing", label: "水形", t: "select", o: [EMPTY, "弯环抱穴", "直去", "反弓", "聚水/水库", "割脚", "穿心", "无水可见"] },
-        { k: "shuiliang", label: "水量 / 宽窄 / 远近", t: "text", ph: "如：来水宽约20米，去水紧凑关锁" }
-      ]
-    },
-    {
-      name: "⑤ 砂（天星/三合）",
-      fields: [
-        { k: "sha", label: "各方砂位与形态（人盘中针测尖顶）", t: "textarea", full: true, ph: "例如：甲方高峰尖秀、酉方破碎逼压、坤方有塔、艮方有树" },
-        { k: "basha", label: "八煞方 / 劫煞方景象", t: "text", ph: "例如：辰方有尖射、午方高压逼身" }
-      ]
-    },
-    {
-      name: "⑥ 形势（龙虎朝案明堂水口）",
-      fields: [
-        { k: "xingshi", label: "龙虎、朝案、明堂、水口、罗城、乐山鬼星", t: "textarea", full: true, ph: "例如：青龙贴身有情，白虎反背，明堂开阔，水口关锁有罗星" }
-      ]
-    },
-    {
-      name: "⑦ 阳宅内六事 / 外六事",
-      fields: [
+        { k: "qushui", label: "去水方位", t: "mount" },
+        { k: "shuixing", label: "水形", t: "select", o: [EMPTY, "弯环抱穴", "直去", "反弓", "聚水/水库", "割脚", "穿心", "无水可见"] }
+      ]},
+      { name: "⑥ 形势", fields: [
+        { k: "xingshi", label: "龙虎、朝案、明堂、水口、罗城", t: "textarea", full: true }
+      ]},
+      { name: "⑦ 房份与反推", fields: [
+        { k: "fangshu", label: "几房人", t: "text", ph: "如 3房" },
+        { k: "yearming", label: "各房年命", t: "text", ph: "如 长房1980庚申、二房1985乙丑" },
+        { k: "events", label: "已发生的事（反推校验）", t: "textarea", full: true }
+      ]}
+    ],
+    lvshi: [
+      { name: "① 基本与原点", fields: [
+        { k: "type", label: "宅型", t: "select", o: ["阳宅", "阴宅"] },
+        { k: "lv_origin", label: "原点（必填）", t: "select", o: [EMPTY, "床位", "办公桌", "收银台", "尸骨/骨灰中心"] },
+        { k: "lv_dun", label: "断谁", t: "select", o: ["本人", "某房", "某代", "全家族"] },
+        { k: "lv_tai", label: "出生胎次（必填）", t: "number", ph: "1-9" },
+        { k: "lv_sex", label: "胎次性别（必填）", t: "select", o: ["男", "女"] },
+        { k: "lv_dishi", label: "地势类型", t: "select", o: ["山区", "平洋", "水乡", "公墓", "骨灰堂"] }
+      ]},
+      { name: "② 八宫砂水与高度差（必填）", fields: [
+        { k: "lv_shashui", label: "八个方向分别填“砂/水 + 垂直高度差(米)”", t: "textarea", full: true, ph: "例如：东方砂高5米；西方水低3米；北方同砂；南方水低2米；东北砂高1米；东南砂高8米；西南水低4米；西北水低1米" }
+      ]},
+      { name: "③ 对宫与冲射", fields: [
+        { k: "lv_duigong", label: "是否有对宫同砂/同水", t: "select", o: [EMPTY, "无", "有：东—西", "有：南—北", "有：东北—西南", "有：东南—西北"] },
+        { k: "lv_chongshe", label: "冲射情况（路冲/水冲/尖角/风口）", t: "textarea", full: true }
+      ]},
+      { name: "④ 人丁与反推", fields: [
+        { k: "fangshu", label: "几房人", t: "text", ph: "如 3房" },
+        { k: "yearming", label: "各房年命", t: "text" },
+        { k: "topic", label: "断事需求", t: "select", o: ["综合", "财运", "人丁", "事业", "婚姻", "健康"] },
+        { k: "question", label: "想问的问题", t: "textarea", full: true },
+        { k: "events", label: "已发生的事（反推校验）", t: "textarea", full: true }
+      ]}
+    ],
+    xuankong: [
+      { name: "① 元运与坐向", fields: [
+        { k: "type", label: "宅型", t: "select", o: ["阳宅", "阴宅"] },
+        { k: "year", label: "建宅/入住年份（定元运）", t: "number", ph: "如 2008" },
+        { k: "yun", label: "元运", t: "select", o: ["按年份自动", "一运", "二运", "三运", "四运", "五运", "六运", "七运", "八运", "九运"] },
+        { k: "zuo", label: "坐山", t: "mount" },
+        { k: "xiang", label: "朝向", t: "mount" },
+        { k: "degree", label: "周天坐度(0-360)", t: "number", ph: "如 315" },
+        { k: "jian", label: "兼向", t: "select", o: [EMPTY, "正向（中9度内）", "兼左3度以上（需替卦）", "兼右3度以上（需替卦）"] }
+      ]},
+      { name: "② 门与内六事", fields: [
         { k: "men", label: "大门方位", t: "mount" },
+        { k: "men_people", label: "人最多出入的门方位", t: "mount" },
         { k: "chuang", label: "主卧床方位", t: "mount" },
         { k: "zao", label: "灶位", t: "mount" },
         { k: "ce", label: "厕位", t: "mount" },
-        { k: "waishi", label: "外六事（楼、路、水、桥、树、尖角、反光）", t: "textarea", full: true, ph: "例如：坤方有变压器、乾方有反光玻璃幕墙、震方直路冲" }
-      ]
-    },
-    {
-      name: "⑧ 吕氏专用（原点定位）",
-      fields: [
-        { k: "lv_origin", label: "原点", t: "select", o: [EMPTY, "床位", "办公桌", "收银台", "尸骨/骨灰中心"] },
-        { k: "lv_tai", label: "出生胎次", t: "number", ph: "1-9" },
-        { k: "lv_sex", label: "胎次性别", t: "select", o: ["男", "女"] },
-        { k: "lv_shashui", label: "各宫砂水与高度差（米）", t: "textarea", full: true, ph: "例如：东方砂高5米；西方水低3米；北方同砂；南方水低2米" }
-      ]
-    },
-    {
-      name: "⑨ 人丁、仙命与应期",
-      fields: [
-        { k: "fangshu", label: "几房人", t: "text", ph: "如 3房" },
-        { k: "yearming", label: "各房年命", t: "text", ph: "如 长房1980庚申、二房1985乙丑" },
+        { k: "floor", label: "楼层 / 户型中心点", t: "text", ph: "如 12层，户型中心在客厅" }
+      ]},
+      { name: "③ 外六事", fields: [
+        { k: "waishi", label: "前后左右楼、路、水、桥、树、尖角、反光", t: "textarea", full: true, ph: "例如：坤方变压器、乾方反光幕墙、震方直路冲" }
+      ]},
+      { name: "④ 流年与反推", fields: [
+        { k: "nowyear", label: "当前流年", t: "number", ph: "默认今年" },
+        { k: "targetyear", label: "重点关注年份", t: "number", ph: "如 2026" },
+        { k: "topic", label: "断事需求", t: "select", o: ["综合", "财运", "人丁", "事业", "婚姻", "健康", "化煞"] },
+        { k: "question", label: "想问的问题", t: "textarea", full: true },
+        { k: "events", label: "已发生的事（反推校验）", t: "textarea", full: true }
+      ]}
+    ],
+    sanhe: [
+      { name: "① 坐向与分金", fields: [
+        { k: "type", label: "宅型", t: "select", o: ["阳宅", "阴宅"] },
+        { k: "zuo", label: "坐山", t: "mount" },
+        { k: "xiang", label: "朝向", t: "mount" },
+        { k: "jian", label: "兼左兼右", t: "select", o: [EMPTY, "正向", "兼左", "兼右"] },
+        { k: "degree", label: "周天坐度(0-360)", t: "number", ph: "如 315" },
+        { k: "fenjinfa", label: "分金法", t: "select", o: [EMPTY, "杨公线法", "胎骨线法"] },
+        { k: "fenjin", label: "分金", t: "text", ph: "如 丙子分金" }
+      ]},
+      { name: "② 格龙（地盘正针，三处字位）", fields: [
+        { k: "lailong", label: "来龙", t: "mount" },
+        { k: "rushou", label: "入首", t: "mount" },
+        { k: "shuqi", label: "束气", t: "mount" }
+      ]},
+      { name: "③ 测水（天盘缝针：关/拦/顺）", fields: [
+        { k: "laishui", label: "来水方位", t: "mount" },
+        { k: "qushui", label: "去水 / 水口方位", t: "mount" },
+        { k: "shuixing", label: "水形", t: "select", o: [EMPTY, "弯环抱穴", "直去", "反弓", "聚水/水库", "割脚", "穿心", "无水可见"] },
+        { k: "zuoyou", label: "水流方向", t: "select", o: [EMPTY, "左水到右", "右水到左", "顺水朝", "两水夹来"] }
+      ]},
+      { name: "④ 消砂（人盘中针）", fields: [
+        { k: "sha", label: "各方砂位与形态（量尖顶）", t: "textarea", full: true }
+      ]},
+      { name: "⑤ 仙命、人丁与反推", fields: [
         { k: "xianming", label: "亡者生年（仙命，阴宅）", t: "text", ph: "如 1940庚辰" },
-        { k: "events", label: "已发生的事（用于反推校验）", t: "textarea", full: true, ph: "例如：2018年二房破财、2021年长房添丁、2023年长房手术" }
-      ]
-    }
-  ];
+        { k: "fangshu", label: "几房人", t: "text", ph: "如 3房" },
+        { k: "yearming", label: "各房年命", t: "text" },
+        { k: "topic", label: "断事需求", t: "select", o: ["综合", "财运", "人丁", "事业", "婚姻", "健康", "择地立向"] },
+        { k: "question", label: "想问的问题", t: "textarea", full: true },
+        { k: "events", label: "已发生的事（反推校验）", t: "textarea", full: true }
+      ]}
+    ]
+  };
 
-  var ALL_FIELDS = [];
-  GROUPS.forEach(function (g) { g.fields.forEach(function (f) { ALL_FIELDS.push(f); }); });
+  var REQUIRED = {
+    tianxing: ["zuo", "xiang", "panzhi", "lailong", "sha", "laishui", "qushui"],
+    lvshi:    ["lv_origin", "lv_tai", "lv_sex", "lv_shashui", "lv_duigong"],
+    xuankong: ["year", "zuo", "xiang", "men"],
+    sanhe:    ["zuo", "xiang", "lailong", "laishui", "qushui"]
+  };
 
   var state = { method: "xuankong" };
 
@@ -160,10 +239,18 @@
     });
   }
 
+  function currentFields() {
+    var out = [];
+    (SCHEMAS[state.method] || []).forEach(function (group) {
+      group.fields.forEach(function (field) { out.push(field); });
+    });
+    return out;
+  }
+
   function fieldHtml(field) {
     var id = "ky_" + field.k;
     var cls = "ky-field" + (field.full ? " ky-full" : "");
-    var inner = "";
+    var inner;
     if (field.t === "select") {
       inner = '<select id="' + id + '">' + field.o.map(function (o) {
         return '<option value="' + esc(o) + '">' + esc(o) + "</option>";
@@ -182,61 +269,74 @@
   }
 
   function buildUi() {
-    var methodButtons = METHODS.map(function (m) {
-      return '<button type="button" class="ky-method" data-method="' + m.id + '">' +
-        esc(m.name) + '<span>' + esc(m.sub) + "</span></button>";
-    }).join("");
-
-    var groupsHtml = GROUPS.map(function (g) {
-      return '<section class="ky-group"><h4>' + esc(g.name) + "</h4><div class=\"ky-grid\">" +
-        g.fields.map(fieldHtml).join("") + "</div></section>";
-    }).join("");
-
     var el = document.getElementById("tab-kanyu");
     if (!el) return;
     el.innerHTML =
       '<div class="card ky-hero"><h3>🧭 堪舆 · 风水现场研判</h3>' +
-      '<p>你负责现场测量，我负责按不同流派做递进判断：先看已给信息能定什么，再告诉你还缺什么、下一步回现场测什么，数据齐了才落最终预测。</p>' +
-      '<div class="ky-methods">' + methodButtons + "</div>" +
+      '<p>你负责现场测量，系统按你选的流派做递进判断：先看已给信息能定什么，再告诉你还缺什么、下一步回现场测什么，数据齐了才落最终预测。</p>' +
+      '<div class="ky-methods">' + METHODS.map(function (m) {
+        return '<button type="button" class="ky-method" data-method="' + m.id + '">' + esc(m.name) +
+          "<span>" + esc(m.sub) + "</span></button>";
+      }).join("") + "</div>" +
       '<div class="ky-measure" id="ky-measure"></div></div>' +
       '<div class="card"><div class="ky-progress"><span id="ky-progress-text"></span><span id="ky-progress-list"></span></div>' +
-      groupsHtml +
+      '<div id="ky-fields"></div>' +
       '<div class="ky-actions"><button type="button" class="btn-go" id="ky-run">✨ 开始分析</button>' +
-      '<button type="button" class="ky-ghost" id="ky-clear">清空</button>' +
+      '<button type="button" class="ky-ghost" id="ky-clear">清空本派</button>' +
       '<span class="ky-status" id="ky-status"></span></div></div>' +
+      '<div class="card ky-taboo-card"><h3>⛔ 本派硬禁忌（犯了一票否决）</h3><div id="ky-taboos"></div></div>' +
       '<div id="ky-result"></div>';
 
     METHODS.forEach(function (m) {
-      var btn = el.querySelector('.ky-method[data-method="' + m.id + '"]');
-      btn.addEventListener("click", function () { selectMethod(m.id); });
+      el.querySelector('.ky-method[data-method="' + m.id + '"]').addEventListener("click", function () {
+        selectMethod(m.id);
+      });
     });
     document.getElementById("ky-run").addEventListener("click", analyze);
     document.getElementById("ky-clear").addEventListener("click", clearAll);
-    ALL_FIELDS.forEach(function (f) {
-      var input = document.getElementById("ky_" + f.k);
-      if (input) {
-        input.addEventListener("input", function () { saveLocal(); refreshProgress(); });
-        input.addEventListener("change", function () { saveLocal(); refreshProgress(); });
-      }
-    });
   }
 
-  function selectMethod(id) {
-    state.method = id;
-    document.querySelectorAll("#tab-kanyu .ky-method").forEach(function (btn) {
-      btn.classList.toggle("active", btn.getAttribute("data-method") === id);
+  function buildFields() {
+    var container = document.getElementById("ky-fields");
+    container.innerHTML = (SCHEMAS[state.method] || []).map(function (group) {
+      return '<section class="ky-group"><h4>' + esc(group.name) + '</h4><div class="ky-grid">' +
+        group.fields.map(fieldHtml).join("") + "</div></section>";
+    }).join("");
+    currentFields().forEach(function (f) {
+      var input = document.getElementById("ky_" + f.k);
+      if (!input) return;
+      input.addEventListener("input", function () { saveLocal(); refreshProgress(); });
+      input.addEventListener("change", function () { saveLocal(); refreshProgress(); });
     });
-    renderMeasure();
-    refreshProgress();
-    saveLocal();
   }
 
   function renderMeasure() {
     var m = MEASURE[state.method];
     document.getElementById("ky-measure").innerHTML =
-      "<h4>" + esc(m.title) + "</h4><ul>" + m.lines.map(function (line) {
-        return "<li>" + line + "</li>";
-      }).join("") + "</ul>";
+      "<h4>" + esc(m.title) + "</h4><ul>" + m.lines.map(function (l) { return "<li>" + l + "</li>"; }).join("") + "</ul>";
+  }
+
+  function renderTaboos() {
+    var rows = (TABOOS[state.method] || []).map(function (t) {
+      return "<tr><td><b>" + esc(t[0]) + "</b></td><td>" + esc(t[1]) + '</td><td class="ky-凶">' + esc(t[2]) + "</td></tr>";
+    }).join("");
+    document.getElementById("ky-taboos").innerHTML =
+      '<table class="ky-taboo"><thead><tr><th>禁忌</th><th>方位 / 条件</th><th>会发生什么</th></tr></thead><tbody>' + rows + "</tbody></table>";
+  }
+
+  function selectMethod(id) {
+    saveLocal();
+    state.method = id;
+    document.querySelectorAll("#tab-kanyu .ky-method").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-method") === id);
+    });
+    renderMeasure();
+    buildFields();
+    renderTaboos();
+    loadLocal();
+    refreshProgress();
+    document.getElementById("ky-result").innerHTML = "";
+    document.getElementById("ky-status").textContent = "";
   }
 
   function value(key) {
@@ -250,6 +350,7 @@
   }
 
   function refreshProgress() {
+    var fields = currentFields();
     var required = REQUIRED[state.method] || [];
     var done = required.filter(isFilled).length;
     var text = document.getElementById("ky-progress-text");
@@ -257,31 +358,31 @@
     if (text) text.textContent = "本派关键项：" + done + " / " + required.length + " 已填";
     if (list) {
       list.innerHTML = required.map(function (key) {
-        var field = ALL_FIELDS.filter(function (f) { return f.k === key; })[0] || { label: key };
+        var field = fields.filter(function (f) { return f.k === key; })[0] || { label: key };
         var ok = isFilled(key);
         return '<span class="ky-chip ' + (ok ? "ok" : "") + '">' + (ok ? "✓ " : "○ ") + esc(field.label) + "</span>";
       }).join("");
     }
-    ALL_FIELDS.forEach(function (f) {
+    fields.forEach(function (f) {
       var badge = document.querySelector('#tab-kanyu .ky-req[data-req="' + f.k + '"]');
-      if (badge) {
-        var need = required.indexOf(f.k) >= 0;
-        badge.textContent = need ? (isFilled(f.k) ? " 必填 ✓" : " 必填") : "";
-        badge.className = "ky-req" + (need ? " needed" : "");
-      }
+      if (!badge) return;
+      var need = required.indexOf(f.k) >= 0;
+      badge.textContent = need ? (isFilled(f.k) ? " 必填 ✓" : " 必填") : "";
+      badge.className = "ky-req" + (need ? " needed" : "");
     });
   }
 
   function collect() {
     var out = {};
-    ALL_FIELDS.forEach(function (f) {
+    currentFields().forEach(function (f) {
       var v = value(f.k);
       if (v) out[f.k] = v;
     });
+    var fields = currentFields();
     var required = REQUIRED[state.method] || [];
     out._method = state.method;
     out._missing = required.filter(function (k) { return !isFilled(k); }).map(function (k) {
-      var field = ALL_FIELDS.filter(function (f) { return f.k === k; })[0];
+      var field = fields.filter(function (f) { return f.k === k; })[0];
       return field ? field.label : k;
     });
     return out;
@@ -301,15 +402,15 @@
       var store = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
       saved = store[state.method] || null;
     } catch (e) {}
-    ALL_FIELDS.forEach(function (f) {
+    if (!saved) return;
+    currentFields().forEach(function (f) {
       var input = document.getElementById("ky_" + f.k);
-      if (!input || !saved || saved[f.k] == null) return;
-      input.value = saved[f.k];
+      if (input && saved[f.k] != null) input.value = saved[f.k];
     });
   }
 
   function clearAll() {
-    ALL_FIELDS.forEach(function (f) {
+    currentFields().forEach(function (f) {
       var input = document.getElementById("ky_" + f.k);
       if (!input) return;
       if (input.tagName === "SELECT") input.selectedIndex = 0;
@@ -326,9 +427,10 @@
     var result = document.getElementById("ky-result");
     var btn = document.getElementById("ky-run");
     var data = collect();
-    var question = data.question || "请按该体系做完整解析";
+    var question = data.question || "请按该体系做完整解析，并告诉我还缺什么、下一步现场测什么";
+    var methodName = METHODS.filter(function (m) { return m.id === state.method; })[0].name;
 
-    status.textContent = "⏳ 正在按" + METHODS.filter(function (m) { return m.id === state.method; })[0].name + "研判…";
+    status.textContent = "⏳ 正在按" + methodName + "研判…";
     btn.disabled = true;
     result.innerHTML = "";
 
@@ -340,7 +442,7 @@
       return resp.json().then(function (body) { return { ok: resp.ok, body: body }; });
     }).then(function (out) {
       if (!out.ok) throw new Error(out.body.error || "HTTP_ERROR");
-      renderResult(data, out.body);
+      renderResult(data, out.body, methodName);
       status.textContent = "✅ 分析完成";
     }).catch(function (err) {
       status.textContent = "❌ 生成失败";
@@ -351,23 +453,20 @@
     });
   }
 
-  function filledSummary(data) {
-    return ALL_FIELDS.filter(function (f) { return data[f.k]; }).map(function (f) {
+  function renderResult(data, body, methodName) {
+    var fields = currentFields();
+    var missing = data._missing || [];
+    var filled = fields.filter(function (f) { return data[f.k]; }).map(function (f) {
       return "<div><b>" + esc(f.label) + "：</b>" + esc(data[f.k]) + "</div>";
     }).join("");
-  }
-
-  function renderResult(data, body) {
-    var missing = data._missing || [];
     var missingHtml = missing.length
       ? '<div class="ky-missing"><b>本派还缺这些关键项（回现场补测后再点分析）：</b><ul>' +
         missing.map(function (m) { return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></div>"
       : '<div class="ky-ok">本派关键项已齐，可直接看下面的正式判断。</div>';
 
     document.getElementById("ky-result").innerHTML =
-      '<div class="card ky-sub"><h3>📋 本次已填信息</h3>' + (filledSummary(data) || "（未填）") + missingHtml + "</div>" +
-      '<div class="card" style="border-color:var(--gold)"><h3>📜 堪舆研判（' +
-        esc(METHODS.filter(function (m) { return m.id === state.method; })[0].name) + "）</h3>" +
+      '<div class="card ky-sub"><h3>📋 本次已填信息</h3>' + (filled || "（未填）") + missingHtml + "</div>" +
+      '<div class="card" style="border-color:var(--gold)"><h3>📜 堪舆研判（' + esc(methodName) + "）</h3>" +
       '<div class="ky-answer">' + esc(body.interpretation || "") + "</div></div>";
   }
 
@@ -396,6 +495,11 @@
       "#tab-kanyu .ky-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}",
       "#tab-kanyu .ky-ghost{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit}",
       "#tab-kanyu .ky-status{color:var(--dim);font-size:.84em}",
+      "#tab-kanyu .ky-taboo-card h3{margin-bottom:10px}",
+      "#tab-kanyu .ky-taboo{width:100%;border-collapse:collapse;font-size:.8em}",
+      "#tab-kanyu .ky-taboo th,#tab-kanyu .ky-taboo td{border:1px solid var(--border);padding:7px 8px;text-align:left;vertical-align:top;line-height:1.6}",
+      "#tab-kanyu .ky-taboo th{color:var(--goldL);background:rgba(200,164,92,.08)}",
+      "#tab-kanyu .ky-taboo .ky-凶{color:var(--redL)}",
       "#tab-kanyu .ky-sub div{font-size:.85em;line-height:1.9;color:var(--text)}",
       "#tab-kanyu .ky-missing{margin-top:10px;padding:10px;border-radius:6px;background:rgba(192,57,43,.12);font-size:.84em}",
       "#tab-kanyu .ky-missing ul{margin:6px 0 0;padding-left:18px}",
@@ -411,6 +515,4 @@
   injectStyle();
   buildUi();
   selectMethod("xuankong");
-  loadLocal();
-  refreshProgress();
 })();
