@@ -8,6 +8,7 @@ recent geomagnetic map, but this is far better than guessing.
 
 import json
 import os
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -56,49 +57,70 @@ CITIES = [
 ]
 
 
-def declination(lat, lon):
+def declination(lat, lon, date=DATE):
     query = urllib.parse.urlencode({
-        "latitude": lat, "longitude": lon, "date": DATE, "format": "json",
+        "latitude": lat, "longitude": lon, "date": date, "format": "json",
     })
     with urllib.request.urlopen(MODEL + "?" + query, timeout=20) as resp:
         data = json.load(resp)
     return data["geomagnetic-field-model-result"]["field-value"]["declination"]["value"]
 
 
+def load_existing():
+    """Read values already computed by a previous run, so we only query the extra year."""
+    if not os.path.exists(OUT):
+        return {}
+    text = open(OUT, "r", encoding="utf-8").read()
+    block = text.split("KANYU_REGION_DECL =", 1)
+    if len(block) < 2:
+        return {}
+    body = block[1].split("};", 1)[0]
+    found = {}
+    for name, value in re.findall(r'"([^"]+)"\s*:\s*(-?\d+(?:\.\d+)?)', body):
+        found[name] = float(value)
+    return found
+
+
 def main():
-    values = {}
-    geo = {}
+    geo = {name: [lat, lon] for name, lat, lon in CITIES}
+    baseline = load_existing()
 
     def one(item):
         name, lat, lon = item
-        for attempt in range(2):
+        if name not in baseline:
+            return name, None, None
+        for attempt in range(3):
             try:
-                return name, lat, lon, declination(lat, lon), None
-            except Exception as exc:
-                last = exc
-                time.sleep(0.5)
-        return name, lat, lon, None, last
+                future = declination(lat, lon, "2030-07-01")
+                return name, baseline[name], future
+            except Exception:
+                time.sleep(1.0 + attempt)
+        return name, baseline[name], None
 
-    with ThreadPoolExecutor(max_workers=10) as pool:
-        for name, lat, lon, value, error in pool.map(one, CITIES):
-            if value is None:
-                print("SKIP %-8s %s" % (name, error))
+    values = {}
+    rates = {}
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        for name, v2025, v2030 in pool.map(one, CITIES):
+            if v2025 is None:
+                print("SKIP %-8s (no baseline)" % name)
                 continue
-            values[name] = round(value, 2)
-            geo[name] = [lat, lon]
-            print("%-8s %7.2f" % (name, value))
+            values[name] = round(v2025, 2)
+            if v2030 is not None:
+                rates[name] = round((v2030 - v2025) / 5.0, 4)
+            print("%-8s 2025=%7.2f  2030=%s" % (name, v2025, ("%.2f" % v2030) if v2030 is not None else "n/a"))
 
     lines = [
         "// declination.js - 中国主要城市磁偏角（WMM2025 / BGS，2025-07-01，海平面）",
-        "// 值=磁偏角度；东偏为正、西偏为负。真北 = 罗盘读数 + 磁偏角。",
-        "// 近似模型值，精确作业请再对当地最新地磁图核一次。",
+        "// DECL = 2025 年磁偏角度；RATE = 每年变化（度/年，WMM2025 外推）。",
+        "// 东偏为正、西偏为负；任意年份 真北修正 = 罗盘读数 + DECL + RATE*(年份-2025)。",
         "window.KANYU_REGION_DECL = " + json.dumps(values, ensure_ascii=False, indent=2) + ";",
+        "window.KANYU_REGION_RATE = " + json.dumps(rates, ensure_ascii=False, indent=2) + ";",
         "window.KANYU_REGION_GEO = " + json.dumps(geo, ensure_ascii=False, indent=2) + ";",
         "",
     ]
     with open(OUT, "w", encoding="utf-8") as handle:
         handle.write("\n".join(lines))
-    print("wrote %s (%d cities)" % (os.path.normpath(OUT), len(values)))
+    print("wrote %s (%d cities, %d rates)" % (os.path.normpath(OUT), len(values), len(rates)))
 
 
 if __name__ == "__main__":

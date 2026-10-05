@@ -310,12 +310,15 @@
           "<span>" + esc(m.sub) + "</span></button>";
       }).join("") + "</div>" +
       '<div class="ky-measure" id="ky-measure"></div></div>' +
-      '<div class="card"><h3>🧭 测量修正 · 磁偏角</h3><div class="ky-grid">' +
-      '<div class="ky-field"><label>1. 地区（自动带出磁偏角）</label><input id="ky_region" list="ky-region-list" placeholder="如 北京"><datalist id="ky-region-list">' +
+      '<div class="card"><h3>🧭 测量修正 · 磁偏角（WMM2025 自动计算）</h3><div class="ky-grid">' +
+      '<div class="ky-field"><label>1. 城市 / 地区</label><input id="ky_region" list="ky-region-list" placeholder="如 北京"><datalist id="ky-region-list">' +
       Object.keys(REGION_DECL).map(function (k) { return '<option value="' + esc(k) + '"></option>'; }).join("") + "</datalist></div>" +
-      '<div class="ky-field"><label>2. 磁偏角（度，东偏 + / 西偏 −）</label><input type="number" id="ky_decl" step="0.1" placeholder="如 -6.9"></div>' +
-      '<div class="ky-field"><label>3. 是否启用修正</label><select id="ky_use_decl"><option value="启用">启用</option><option value="不启用">不启用</option></select></div>' +
-      '</div><div class="ky-meta">修正后（真北）= 罗盘读数 + 磁偏角。启用后，下面所有方位与度数都按修正值排盘，结果里会显示「原始→修正」对照。地区值是近似值，精确以当地地磁图为准。</div></div>' +
+      '<div class="ky-field"><label>2. 纬度（北纬 +）</label><input type="number" id="ky_lat" step="0.0001" placeholder="如 39.9042"></div>' +
+      '<div class="ky-field"><label>3. 经度（东经 +）</label><input type="number" id="ky_lon" step="0.0001" placeholder="如 116.4074"></div>' +
+      '<div class="ky-field"><label>4. 测量年份</label><input type="number" id="ky_meas_year" step="1" placeholder="如 2026"></div>' +
+      '<div class="ky-field"><label>5. 磁偏角（自动，可手改）</label><input type="number" id="ky_decl" step="0.01"></div>' +
+      '<div class="ky-field"><label>6. 是否启用修正</label><select id="ky_use_decl"><option value="启用">启用</option><option value="不启用">不启用</option></select></div>' +
+      '</div><div class="ky-meta" id="ky_decl_note">选城市会自动填经纬度，并按 WMM2025 模型算出该年磁偏角；也可以手填经纬度或磁偏角。修正后（真北）= 罗盘读数 + 磁偏角，启用后所有方位/度数都按修正值计算。</div></div>' +
       '<div class="card"><div class="ky-progress"><span id="ky-progress-text"></span><span id="ky-progress-list"></span></div>' +
       '<div id="ky-fields"></div>' +
       '<div class="ky-actions"><button type="button" class="btn-go" id="ky-run">✨ 开始分析</button>' +
@@ -333,12 +336,47 @@
     document.getElementById("ky-clear").addEventListener("click", clearAll);
 
     var regionInput = document.getElementById("ky_region");
-    function fillDecl() {
-      var v = REGION_DECL[String(regionInput.value || "").trim()];
-      if (v != null) document.getElementById("ky_decl").value = v;
+    var note = document.getElementById("ky_decl_note");
+    var measYear = document.getElementById("ky_meas_year");
+    if (!measYear.value) measYear.value = new Date().getFullYear();
+
+    function computeDecl() {
+      var lat = parseFloat(value("lat"));
+      var lon = parseFloat(value("lon"));
+      var yr = parseFloat(value("meas_year")) || new Date().getFullYear();
+      var out = document.getElementById("ky_decl");
+      if (window.Magvar && !isNaN(lat) && !isNaN(lon)) {
+        var d = window.Magvar.magvar(lat, lon, 0, yr);
+        out.value = d.toFixed(2);
+        note.textContent = "WMM2025 计算：" + yr + " 年，" + lat + "°N " + lon + "°E → 磁偏角 " + d.toFixed(2) +
+          "°（东偏+ / 西偏−）。修正后（真北）= 罗盘读数 + 磁偏角。";
+      } else {
+        var city = String(regionInput.value || "").trim();
+        var base = REGION_DECL[city];
+        var rate = (window.KANYU_REGION_RATE || {})[city] || 0;
+        if (base != null) {
+          out.value = (base + rate * (yr - 2025)).toFixed(2);
+          note.textContent = "近似表：" + city + " " + yr + " 年磁偏角约 " + out.value + "°。";
+        }
+      }
+      saveLocal();
     }
-    regionInput.addEventListener("input", function () { fillDecl(); saveLocal(); });
-    regionInput.addEventListener("change", function () { fillDecl(); saveLocal(); });
+
+    function fillCity() {
+      var city = String(regionInput.value || "").trim();
+      var geo = (window.KANYU_REGION_GEO || {})[city];
+      if (geo) {
+        document.getElementById("ky_lat").value = geo[0];
+        document.getElementById("ky_lon").value = geo[1];
+      }
+      computeDecl();
+    }
+
+    regionInput.addEventListener("input", fillCity);
+    regionInput.addEventListener("change", fillCity);
+    ["ky_lat", "ky_lon", "ky_meas_year"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", computeDecl);
+    });
     document.getElementById("ky_decl").addEventListener("change", saveLocal);
     document.getElementById("ky_use_decl").addEventListener("change", saveLocal);
   }
@@ -454,7 +492,10 @@
     try {
       var store = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
       store[state.method] = collect();
-      store.__decl = { region: value("region"), decl: value("decl"), use: value("use_decl") };
+      store.__decl = {
+        region: value("region"), lat: value("lat"), lon: value("lon"),
+        year: value("meas_year"), decl: value("decl"), use: value("use_decl")
+      };
       localStorage.setItem(STORE_KEY, JSON.stringify(store));
     } catch (e) {}
   }
@@ -474,6 +515,9 @@
     var g = store.__decl;
     if (g) {
       if (g.region != null) document.getElementById("ky_region").value = g.region;
+      if (g.lat != null) document.getElementById("ky_lat").value = g.lat;
+      if (g.lon != null) document.getElementById("ky_lon").value = g.lon;
+      if (g.year != null) document.getElementById("ky_meas_year").value = g.year;
       if (g.decl != null) document.getElementById("ky_decl").value = g.decl;
       if (g.use != null) document.getElementById("ky_use_decl").value = g.use;
     }
