@@ -429,10 +429,12 @@
     var data = collect();
     var question = data.question || "请按该体系做完整解析，并告诉我还缺什么、下一步现场测什么";
     var methodName = METHODS.filter(function (m) { return m.id === state.method; })[0].name;
+    var pan = window.KANYU_PAN ? window.KANYU_PAN.compute(state.method, data) : { html: "", summary: null };
+    data._computed = pan.summary;
 
     status.textContent = "⏳ 正在按" + methodName + "研判…";
     btn.disabled = true;
-    result.innerHTML = "";
+    result.innerHTML = (pan.html || "") + '<div class="card ky-pending">🤖 正在生成 AI 研判…</div>';
 
     fetch(API + "/api/v1/interpret", {
       method: "POST",
@@ -442,18 +444,18 @@
       return resp.json().then(function (body) { return { ok: resp.ok, body: body }; });
     }).then(function (out) {
       if (!out.ok) throw new Error(out.body.error || "HTTP_ERROR");
-      renderResult(data, out.body, methodName);
+      renderResult(data, out.body, methodName, pan.html);
       status.textContent = "✅ 分析完成";
     }).catch(function (err) {
       status.textContent = "❌ 生成失败";
-      result.innerHTML = '<div class="card ky-error">接口错误：' + esc(err.message) + "</div>";
+      result.innerHTML = (pan.html || "") + '<div class="card ky-error">接口错误：' + esc(err.message) + "</div>";
     }).finally(function () {
       btn.disabled = false;
       result.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
-  function renderResult(data, body, methodName) {
+  function renderResult(data, body, methodName, panHtml) {
     var fields = currentFields();
     var missing = data._missing || [];
     var filled = fields.filter(function (f) { return data[f.k]; }).map(function (f) {
@@ -465,6 +467,7 @@
       : '<div class="ky-ok">本派关键项已齐，可直接看下面的正式判断。</div>';
 
     document.getElementById("ky-result").innerHTML =
+      (panHtml || "") +
       '<div class="card ky-sub"><h3>📋 本次已填信息</h3>' + (filled || "（未填）") + missingHtml + "</div>" +
       '<div class="card" style="border-color:var(--gold)"><h3>📜 堪舆研判（' + esc(methodName) + "）</h3>" +
       '<div class="ky-answer">' + esc(body.interpretation || "") + "</div></div>";
@@ -505,7 +508,30 @@
       "#tab-kanyu .ky-missing ul{margin:6px 0 0;padding-left:18px}",
       "#tab-kanyu .ky-ok{margin-top:10px;color:var(--goldL);font-size:.84em}",
       "#tab-kanyu .ky-answer{white-space:pre-wrap;line-height:2;font-size:.88em}",
-      "#tab-kanyu .ky-error{color:var(--redL)}"
+      "#tab-kanyu .ky-error{color:var(--redL)}",
+      "#tab-kanyu .ky-pending{color:var(--dim);text-align:center;padding:14px}",
+      "#tab-kanyu .kp-block{margin-bottom:10px}",
+      "#tab-kanyu .kp-block h4{margin:0 0 10px;color:var(--goldL);font-size:.92em}",
+      "#tab-kanyu .kp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}",
+      "#tab-kanyu .kp-cell{border:1px solid var(--border);border-radius:6px;padding:6px;text-align:center;background:var(--input)}",
+      "#tab-kanyu .kp-cell.kp-zuo{border-color:var(--gold);background:rgba(200,164,92,.12)}",
+      "#tab-kanyu .kp-cell.kp-xiang{border-color:#6ea8fe;background:rgba(110,168,254,.12)}",
+      "#tab-kanyu .kp-palace{font-size:.75em;color:var(--dim);margin-bottom:4px}",
+      "#tab-kanyu .kp-star{font-size:1.05em;line-height:1.5}",
+      "#tab-kanyu .kp-star i{font-style:normal;font-size:.7em;color:var(--dim);margin-right:3px}",
+      "#tab-kanyu .kp-meta{font-size:.8em;color:var(--dim);line-height:1.7;margin-top:6px}",
+      "#tab-kanyu .kp-hl{margin-top:8px;padding:8px 10px;border-radius:6px;background:rgba(200,164,92,.1);font-size:.85em;color:var(--goldL)}",
+      "#tab-kanyu .kp-note{font-size:.84em;color:var(--dim)}",
+      "#tab-kanyu .kp-list{margin:0;padding-left:18px;font-size:.84em;line-height:1.9}",
+      "#tab-kanyu .kp-shuang{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}",
+      "#tab-kanyu .kp-shuang-cell{border:1px solid var(--border);border-radius:5px;padding:5px 4px;text-align:center;font-size:.76em;background:var(--input)}",
+      "#tab-kanyu .kp-shuang-cell b{display:block;color:var(--text)}",
+      "#tab-kanyu .kp-shuang-cell span{color:var(--goldL)}",
+      "#tab-kanyu .kp-table{width:100%;border-collapse:collapse;font-size:.78em}",
+      "#tab-kanyu .kp-table th,#tab-kanyu .kp-table td{border:1px solid var(--border);padding:5px 6px;text-align:left}",
+      "#tab-kanyu .kp-table th{color:var(--goldL);background:rgba(200,164,92,.08)}",
+      "#tab-kanyu .kp-good{color:var(--goldL)}",
+      "#tab-kanyu .kp-bad{color:var(--redL)}"
     ].join("");
     var style = document.createElement("style");
     style.textContent = css;
