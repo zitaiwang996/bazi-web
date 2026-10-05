@@ -847,7 +847,24 @@ function switchTab(name) {
     }
     var btn = document.querySelector('.tab-btn[onclick*="' + name + '"]');
     if (btn) btn.classList.add('active');
+    // 支持 #kanyu / #qimen 等直达链接，方便分享某一页
+    try {
+        if (history && history.replaceState) history.replaceState(null, '', '#' + name);
+        else location.hash = name;
+    } catch (e) {}
 }
+
+// 打开页面时按 hash 直达对应 tab（如 #kanyu）
+(function () {
+    function openHashTab() {
+        var name = String(location.hash || '').replace(/^#/, '');
+        if (!name) return;
+        if (document.getElementById('tab-' + name)) switchTab(name);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', openHashTab);
+    else openHashTab();
+    window.addEventListener('hashchange', openHashTab);
+})();
 
 // ========== QIMEN MODE SWITCHING ==========
 var _qmMode = 'mingfa'; // 默认鸣法奇门
