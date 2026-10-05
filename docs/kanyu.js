@@ -7,6 +7,37 @@
   var STORE_KEY = "kanyu_state_v2";
   var EMPTY = "未测/不详";
   var MOUNTAINS = ["未测/不详","壬","子","癸","丑","艮","寅","甲","卯","乙","辰","巽","巳","丙","午","丁","未","坤","申","庚","酉","辛","戌","乾","亥"];
+  var SHAN_ORDER = ["壬","子","癸","丑","艮","寅","甲","卯","乙","辰","巽","巳","丙","午","丁","未","坤","申","庚","酉","辛","戌","乾","亥"];
+
+  // 城市磁偏角表：优先用 declination.js 里的 WMM2025 计算值（103 个中国城市），
+  // 加载失败时退回下面这张近似表（度，东偏为正 / 西偏为负）。
+  var FALLBACK_DECL = {
+    "北京": -7.5, "上海": -6.5, "广州": -3.3, "深圳": -3.3, "成都": -2.4, "重庆": -2.9,
+    "西安": -4.2, "武汉": -4.9, "南京": -6.2, "杭州": -6.1, "长沙": -4.1, "郑州": -5.6,
+    "济南": -6.9, "青岛": -7.5, "沈阳": -9.7, "哈尔滨": -11.3, "乌鲁木齐": 2.5, "拉萨": -0.1,
+    "昆明": -1.7, "海口": -2.3, "福州": -4.9, "厦门": -4.4, "三亚": -2.1
+  };
+  var REGION_DECL = (typeof window !== "undefined" && window.KANYU_REGION_DECL) ? window.KANYU_REGION_DECL : FALLBACK_DECL;
+
+  function declShiftDeg(deg, decl) {
+    var v = parseFloat(deg);
+    if (isNaN(v)) return deg;
+    return ((v + decl) % 360 + 360) % 360;
+  }
+  function declShiftMount(mtn, decl) {
+    var i = SHAN_ORDER.indexOf(mtn);
+    if (i < 0) return mtn;
+    var center = (345 + i * 15) % 360;
+    var nd = ((center + decl) % 360 + 360) % 360;
+    var best = mtn, bestD = 999;
+    SHAN_ORDER.forEach(function (s, j) {
+      var c = (345 + j * 15) % 360;
+      var diff = Math.abs(((nd - c + 540) % 360) - 180);
+      if (diff < bestD) { bestD = diff; best = s; }
+    });
+    return best;
+  }
+  var ANGULAR_FIELDS = ["zuo", "xiang", "lailong", "rushou", "shuqi", "laishui", "qushui", "men", "men_people", "chuang", "zao", "ce"];
 
   var METHODS = [
     { id: "tianxing", name: "天星风水", sub: "赖布衣天星派" },
@@ -279,6 +310,12 @@
           "<span>" + esc(m.sub) + "</span></button>";
       }).join("") + "</div>" +
       '<div class="ky-measure" id="ky-measure"></div></div>' +
+      '<div class="card"><h3>🧭 测量修正 · 磁偏角</h3><div class="ky-grid">' +
+      '<div class="ky-field"><label>1. 地区（自动带出磁偏角）</label><input id="ky_region" list="ky-region-list" placeholder="如 北京"><datalist id="ky-region-list">' +
+      Object.keys(REGION_DECL).map(function (k) { return '<option value="' + esc(k) + '"></option>'; }).join("") + "</datalist></div>" +
+      '<div class="ky-field"><label>2. 磁偏角（度，东偏 + / 西偏 −）</label><input type="number" id="ky_decl" step="0.1" placeholder="如 -6.9"></div>' +
+      '<div class="ky-field"><label>3. 是否启用修正</label><select id="ky_use_decl"><option value="启用">启用</option><option value="不启用">不启用</option></select></div>' +
+      '</div><div class="ky-meta">修正后（真北）= 罗盘读数 + 磁偏角。启用后，下面所有方位与度数都按修正值排盘，结果里会显示「原始→修正」对照。地区值是近似值，精确以当地地磁图为准。</div></div>' +
       '<div class="card"><div class="ky-progress"><span id="ky-progress-text"></span><span id="ky-progress-list"></span></div>' +
       '<div id="ky-fields"></div>' +
       '<div class="ky-actions"><button type="button" class="btn-go" id="ky-run">✨ 开始分析</button>' +
@@ -294,6 +331,16 @@
     });
     document.getElementById("ky-run").addEventListener("click", analyze);
     document.getElementById("ky-clear").addEventListener("click", clearAll);
+
+    var regionInput = document.getElementById("ky_region");
+    function fillDecl() {
+      var v = REGION_DECL[String(regionInput.value || "").trim()];
+      if (v != null) document.getElementById("ky_decl").value = v;
+    }
+    regionInput.addEventListener("input", function () { fillDecl(); saveLocal(); });
+    regionInput.addEventListener("change", function () { fillDecl(); saveLocal(); });
+    document.getElementById("ky_decl").addEventListener("change", saveLocal);
+    document.getElementById("ky_use_decl").addEventListener("change", saveLocal);
   }
 
   function buildFields() {
@@ -385,6 +432,21 @@
       var field = fields.filter(function (f) { return f.k === k; })[0];
       return field ? field.label : k;
     });
+
+    // 磁偏角修正：启用后，所有方位/度数改用修正后的真北值
+    var decl = parseFloat(value("decl"));
+    out._decl = {
+      region: value("region"),
+      decl: isNaN(decl) ? null : decl,
+      applied: value("use_decl") === "启用" && !isNaN(decl)
+    };
+    if (out._decl.applied) {
+      out._corrected = {};
+      ANGULAR_FIELDS.forEach(function (k) {
+        if (out[k]) out._corrected[k] = declShiftMount(out[k], decl);
+      });
+      if (out.degree) out._corrected.degree = declShiftDeg(out.degree, decl);
+    }
     return out;
   }
 
@@ -392,21 +454,29 @@
     try {
       var store = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
       store[state.method] = collect();
+      store.__decl = { region: value("region"), decl: value("decl"), use: value("use_decl") };
       localStorage.setItem(STORE_KEY, JSON.stringify(store));
     } catch (e) {}
   }
 
   function loadLocal() {
-    var saved = null;
+    var store = {};
     try {
-      var store = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
-      saved = store[state.method] || null;
-    } catch (e) {}
-    if (!saved) return;
-    currentFields().forEach(function (f) {
-      var input = document.getElementById("ky_" + f.k);
-      if (input && saved[f.k] != null) input.value = saved[f.k];
-    });
+      store = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    } catch (e) { store = {}; }
+    var saved = store[state.method] || null;
+    if (saved) {
+      currentFields().forEach(function (f) {
+        var input = document.getElementById("ky_" + f.k);
+        if (input && saved[f.k] != null) input.value = saved[f.k];
+      });
+    }
+    var g = store.__decl;
+    if (g) {
+      if (g.region != null) document.getElementById("ky_region").value = g.region;
+      if (g.decl != null) document.getElementById("ky_decl").value = g.decl;
+      if (g.use != null) document.getElementById("ky_use_decl").value = g.use;
+    }
   }
 
   function clearAll() {
@@ -466,8 +536,31 @@
         missing.map(function (m) { return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></div>"
       : '<div class="ky-ok">本派关键项已齐，可直接看下面的正式判断。</div>';
 
+    var declHtml = "";
+    if (data._decl) {
+      if (data._decl.applied) {
+        var rows = ANGULAR_FIELDS.filter(function (k) { return data[k]; }).map(function (k) {
+          var f = fields.filter(function (x) { return x.k === k; })[0] || { label: k };
+          var corr = data._corrected && data._corrected[k];
+          return "<tr><td>" + esc(f.label) + "</td><td>" + esc(data[k]) + "</td><td>" + esc(corr || "") + "</td></tr>";
+        }).join("");
+        if (data.degree) {
+          rows = "<tr><td>周天坐度</td><td>" + esc(data.degree) + "°</td><td>" +
+            esc(data._corrected && data._corrected.degree) + "°</td></tr>" + rows;
+        }
+        declHtml = '<div class="card"><h3>🧭 磁偏角修正（已启用）</h3>' +
+          '<div class="ky-meta">地区：' + esc(data._decl.region || "未填") + "；磁偏角：" + esc(data._decl.decl) +
+          "°（东偏+ / 西偏−）；修正后（真北）= 罗盘读数 + 磁偏角。</div>" +
+          '<table class="kp-table"><thead><tr><th>项</th><th>原始（罗盘）</th><th>修正（真北）</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+      } else if (data._decl.decl != null) {
+        declHtml = '<div class="card"><h3>🧭 磁偏角修正</h3><div class="ky-meta">已填磁偏角 ' +
+          esc(data._decl.decl) + "° 但未启用修正，本次按原始罗盘读数计算。</div></div>";
+      }
+    }
+
     document.getElementById("ky-result").innerHTML =
       (panHtml || "") +
+      declHtml +
       '<div class="card ky-sub"><h3>📋 本次已填信息</h3>' + (filled || "（未填）") + missingHtml + "</div>" +
       '<div class="card" style="border-color:var(--gold)"><h3>📜 堪舆研判（' + esc(methodName) + "）</h3>" +
       '<div class="ky-answer">' + esc(body.interpretation || "") + "</div></div>";
@@ -541,4 +634,7 @@
   injectStyle();
   buildUi();
   selectMethod("xuankong");
+
+  // 供自检/调试：磁偏角修正函数与地区表
+  window.KANYU_DECL = { regions: REGION_DECL, shiftDeg: declShiftDeg, shiftMount: declShiftMount };
 })();
