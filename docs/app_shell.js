@@ -62,7 +62,11 @@
       ".app-card .ac-name{font-family:'Noto Serif SC',serif;font-size:1.35em;font-weight:900;color:#f0d9a0;letter-spacing:.08em}",
       ".app-card .ac-sub{color:var(--dim);font-size:.82em;margin-top:4px}",
       ".app-card .ac-go{margin-top:10px;font-size:.78em;color:var(--goldL);letter-spacing:.08em}",
-      ".mod-hero{position:relative;overflow:hidden;height:180px;margin-bottom:14px;border:1px solid var(--borderL);border-radius:12px;background:linear-gradient(150deg,#0b1016,#16110e)}",
+      ".mod-bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .5s ease}",
+      ".mod-bg.on{opacity:.55}",
+      ".mod-bg canvas{width:100%;height:100%;display:block}",
+      ".mod-bg .mb-veil{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(10,8,6,.10),rgba(10,8,6,.55) 60%,rgba(10,8,6,.82)),linear-gradient(180deg,rgba(10,8,6,.30),rgba(10,8,6,.62))}",
+      ".mod-hero{position:relative;overflow:hidden;height:120px;margin-bottom:16px;border:1px solid var(--borderL);border-radius:12px;background:linear-gradient(150deg,rgba(11,16,22,.55),rgba(22,17,14,.30))}",
       ".mod-hero canvas{position:absolute;inset:0;width:100%;height:100%}",
       ".mod-hero .mh-text{position:absolute;left:20px;bottom:16px;z-index:2}",
       ".mod-hero .mh-text h2{margin:0;font-family:'Noto Serif SC',serif;font-size:1.5em;color:#f0d9a0;letter-spacing:.14em}",
@@ -127,26 +131,40 @@
     if (existing) return existing;
     var hero = el("div", "mod-hero");
     hero.setAttribute("data-theme", m.theme);
-    hero.innerHTML = '<canvas data-theme="' + m.theme + '"></canvas>' +
-      '<div class="mh-text"><h2>' + m.name + "</h2><p>" + m.sub + "</p></div>";
+    hero.innerHTML = '<div class="mh-text"><h2>' + m.name + "</h2><p>" + m.sub + "</p></div>";
     tab.insertBefore(hero, tab.firstChild);
     return hero;
+  }
+
+  // 全屏背景层：固定铺满视口，内容浮在其上
+  function ensureBg() {
+    var wrap = document.getElementById("mod-bg");
+    if (wrap) return wrap;
+    wrap = el("div", "mod-bg");
+    wrap.id = "mod-bg";
+    wrap.setAttribute("aria-hidden", "true");
+    wrap.innerHTML = '<canvas></canvas><div class="mb-veil"></div>';
+    document.body.appendChild(wrap);
+    return wrap;
   }
 
   function stopAll() {
     if (activeFx && activeFx.stop) activeFx.stop();
     activeFx = null;
+    var wrap = document.getElementById("mod-bg");
+    if (wrap) wrap.classList.remove("on");
     homeFx.forEach(function (f) { if (f && f.stop) f.stop(); });
     homeFx = [];
   }
 
-  function startHero(m) {
-    // 堪舆有自己的 SVG 罗盘背景，不覆盖；其余模块挂专属 Canvas
-    if (m.id === "kanyu") return;
-    var hero = ensureHero(m);
-    if (!hero) return;
-    var cv = hero.querySelector("canvas");
-    if (cv && window.BgFx) activeFx = window.BgFx.mount(cv, m.theme);
+  function startModuleBg(m) {
+    ensureHero(m);           // 只留标题条，动画交给全屏背景
+    var wrap = ensureBg();
+    var cv = wrap.querySelector("canvas");
+    if (!cv || !window.BgFx) return;
+    if (activeFx && activeFx.stop) activeFx.stop();
+    activeFx = window.BgFx.mount(cv, m.theme, { maxDpr: 1.25 });
+    wrap.classList.add("on");
   }
 
   function startHomeFx() {
@@ -186,7 +204,7 @@
     document.body.classList.add("app-module-mode");
     if (origSwitch) origSwitch(id);
     syncBar(id);
-    startHero(m);
+    startModuleBg(m);
     toTop();
   }
 
@@ -218,7 +236,7 @@
         document.body.classList.add("app-module-mode");
         syncBar(name);
         stopAll();
-        startHero(byId[name]);
+        startModuleBg(byId[name]);
       }
     };
     window.AppShell = { go: go, goHome: goHome, modules: MODULES };

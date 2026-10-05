@@ -221,8 +221,10 @@
     }
   };
 
-  function mount(canvas, themeName) {
+  function mount(canvas, themeName, opts) {
     if (!canvas) return null;
+    opts = opts || {};
+    var dpr = Math.min(window.devicePixelRatio || 1, opts.maxDpr || DPR);
     var draw = THEMES[themeName] || THEMES.kanyu;
     var ctx = canvas.getContext("2d");
     var mem = {};
@@ -231,9 +233,9 @@
       var rect = canvas.getBoundingClientRect();
       w = Math.max(1, Math.round(rect.width));
       h = Math.max(1, Math.round(rect.height));
-      canvas.width = Math.round(w * DPR);
-      canvas.height = Math.round(h * DPR);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     function frame(t) {
       if (!alive) return;
@@ -243,15 +245,22 @@
       }
       raf = requestAnimationFrame(frame);
     }
+    var ro = null, io = null;
     resize();
-    if ("ResizeObserver" in window) new ResizeObserver(resize).observe(canvas);
+    if ("ResizeObserver" in window) { ro = new ResizeObserver(resize); ro.observe(canvas); }
     if ("IntersectionObserver" in window) {
       visible = false;
-      new IntersectionObserver(function (e) { visible = e[0] && e[0].isIntersecting; }, { threshold: 0.01 }).observe(canvas);
+      io = new IntersectionObserver(function (e) { visible = e[0] && e[0].isIntersecting; }, { threshold: 0.01 });
+      io.observe(canvas);
     }
     raf = requestAnimationFrame(frame);
     return {
-      stop: function () { alive = false; if (raf) cancelAnimationFrame(raf); },
+      stop: function () {
+        alive = false;
+        if (raf) cancelAnimationFrame(raf);
+        if (ro && ro.disconnect) ro.disconnect();
+        if (io && io.disconnect) io.disconnect();
+      },
       resize: resize
     };
   }
