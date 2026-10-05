@@ -636,7 +636,20 @@ button:active { transform: scale(0.97); }
 .qm-modal .qm-m-footer { margin-top: 12px; text-align: center; color: var(--mute); font-size: 0.72em; }
 .qm-modal::-webkit-scrollbar { width: 4px; }
 .qm-modal::-webkit-scrollbar-thumb { background: var(--borderL); border-radius: 2px; }
-*{box-sizing:border-box;word-break:break-word;overflow-wrap:break-word}.container,.tab-content.card{width:100%;max-width:100%;word-break:break-word}.header,img,table,pre{max-width:100%!important;height:auto}</style>
+*{box-sizing:border-box;word-break:break-word;overflow-wrap:break-word}.container,.tab-content.card{width:100%;max-width:100%;word-break:break-word}.header,img,table,pre{max-width:100%!important;height:auto}
+/* ===== 山渊策 · 视觉基调 ===== */
+.header{position:relative;padding-top:6px}
+.header::before{content:'';display:block;width:1px;height:30px;margin:0 auto 14px;background:linear-gradient(180deg,transparent,var(--gold))}
+.header h1{background:linear-gradient(180deg,#f2dfae 0%,var(--gold) 62%,#9a7a34 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;letter-spacing:.18em}
+.header .sub{letter-spacing:.14em;margin-top:2px}
+.header > p{margin-left:auto!important;margin-right:auto!important}
+.tabs{backdrop-filter:blur(6px)}
+.tab-btn{font-family:'Noto Serif SC','SimSun',serif}
+.tab-btn:hover{color:var(--goldL)}
+.card{border-color:rgba(74,64,52,.9)}
+#tab-kanyu.active{max-width:980px}
+@media(max-width:640px){.header::before{height:20px;margin-bottom:10px}.header h1{letter-spacing:.12em}}
+</style>
 </head>
 <body>
 <div class="container">
@@ -802,11 +815,17 @@ button:active { transform: scale(0.97); }
 <script src="lunar.min.js?v=3456789"></script>
 <script src="slider.js?v=3456789"></script>
 <script src="qimen.js?v=1782341397"></script>
+<script src="qimen_lfrs.js?v=20261005g"></script>
 <script src="magvar.js?v=20261005f"></script>
 <script src="declination.js?v=20261005f"></script>
 <script src="fenjin.js?v=20261005f"></script>
+<script src="luopan.js?v=20261005g"></script>
+<script src="xiezi_data.js?v=20261005g"></script>
+<script src="qizheng_data.js?v=20261005g"></script>
+<script src="xiezi.js?v=20261005g"></script>
+<script src="qizheng.js?v=20261005g"></script>
 <script src="kanyu_pan.js?v=20261005f"></script>
-<script src="kanyu.js?v=20261005f"></script>
+<script src="kanyu.js?v=20261005g"></script>
 
 <script>
 // ========== TAB SWITCHING ==========
@@ -1561,8 +1580,15 @@ function renderQimen(d) {
         ' &nbsp;|&nbsp; ' +
         '<strong>时干' + d.shigan + '</strong>落' + (gongNames[d.shigong] || '?') + '宫 (' + (d.shigan_cs || '?') + ')' +
       '</div>' +
-    '</div>';
+    '</div>' +
 
+    '<div class="card" style="text-align:center"><h3>🐉 龙伏山人 · 飞盘奇门解断</h3>' +
+      '<p style="color:var(--dim);font-size:.8em;margin:0 0 10px">以龙伏山人《鸣法》飞盘奇门体系解断本局：值符值使为先，门星神仪次之，再看五行生克、时干与飞支穿壬、格局真假。</p>' +
+      '<button class="btn-go" id="qm-ai-btn" onclick="doQimenAI()">🔮 AI 解断</button>' +
+      '<div id="qm-ai-status" style="margin-top:8px;color:var(--dim)"></div>' +
+      '<div id="qm-ai-response" style="display:none"></div></div>';
+
+    window._lastQimenData = d;
     document.getElementById('qm-results').innerHTML = html;
     scrollTo('qm-results');
 }
@@ -2226,6 +2252,69 @@ async function doZiweiAI() {
         statusId: 'zw-ai-status',
         responseId: 'zw-ai-response'
     });
+}
+
+// 龙伏山人鸣法飞盘奇门解断
+function buildQimenChartForAI(d) {
+    if (!d) return null;
+    var chart = {};
+    ['year_gz','month_gz','day_gz','hour_gz','st_name','yuan_name','dun_name','ju_num_str',
+     'zf','gz','zs_men','gzs','xunshou','xunkong','yima','rigan','rigong','rigan_cs',
+     'shigan','shigong','shigan_cs','jishi','zk'].forEach(function (k) {
+        if (d[k] !== undefined && d[k] !== null && d[k] !== '') chart[k] = d[k];
+    });
+    ['tianpan','dipan','renpan','tianpan_xing','shen'].forEach(function (k) {
+        if (d[k]) chart[k] = d[k];
+    });
+    if (d.geshi && d.geshi.length) chart.geshi = d.geshi;
+    if (d.anhe_lines && d.anhe_lines.length) chart.anhe_lines = d.anhe_lines;
+    if (d.anhe_summary && d.anhe_summary.length) chart.anhe_summary = d.anhe_summary;
+    chart.pan_system = '鸣法飞盘奇门（龙伏山人）';
+    chart.dingju = '拆补法';
+    return chart;
+}
+
+async function doQimenAI() {
+    var d = window._lastQimenData || window.__qmData;
+    if (!d) { alert('请先起局'); return; }
+    var btn = document.getElementById('qm-ai-btn');
+    var status = document.getElementById('qm-ai-status');
+    var resp = document.getElementById('qm-ai-response');
+    if (!resp) { alert('页面组件尚未加载'); return; }
+
+    // 先用本地龙伏山人规则解断，保证功能立即可用
+    if (window.QimenLFRS) {
+        resp.innerHTML = window.QimenLFRS.render(d);
+        resp.style.display = 'block';
+    }
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = '⏳ 本地解断已出，正在请求 AI 详批…';
+
+    var questionEl = document.getElementById('qm-question');
+    var question = (questionEl && questionEl.value) ? questionEl.value : '请按龙伏山人鸣法飞盘奇门体系解断此局';
+
+    try {
+        var response = await fetch(API_BASE + '/api/v1/interpret', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'longfushanren', chart: buildQimenChartForAI(d), question: question })
+        });
+        var data = await response.json();
+        if (!response.ok) throw new Error(data.error || ('HTTP ' + response.status));
+        if (data.mode && data.mode !== 'longfushanren') throw new Error('BACKEND_SKILL_MISSING');
+        resp.innerHTML += '<div class="card" style="border-color:var(--gold)"><h3>📜 AI 详批（龙伏山人体系）</h3>' +
+            '<div style="white-space:pre-wrap;line-height:2;font-size:.88em">' + escapeInterpretation(data.interpretation || '') + '</div></div>';
+        if (status) status.textContent = '✅ 解断完成';
+    } catch (error) {
+        var msg = error.message === 'BACKEND_SKILL_MISSING'
+            ? '云端 AI 尚未载入「龙伏山人」技能包（需把最新的 bazi-scf-api.zip 部署到腾讯云函数），当前展示的是本地规则解断。'
+            : 'AI 详批暂不可用（' + error.message + '），已给出本地规则解断。';
+        resp.innerHTML += '<div class="card" style="color:var(--dim)">' + escapeInterpretation(msg) + '</div>';
+        if (status) status.textContent = '本地解断已出';
+    } finally {
+        if (btn) btn.disabled = false;
+        scrollTo('qm-ai-response');
+    }
 }
 
 async function runInterpretation(options) {

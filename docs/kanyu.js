@@ -262,7 +262,11 @@
     sanhe:    ["zuo", "xiang", "lailong", "laishui", "qushui"]
   };
 
-  var state = { method: "xuankong" };
+  var state = { method: "xuankong", zuo: "子", xiang: "午", degree: 180 };
+
+  // 二十四山（地平顺时针，子山在正上）
+  var SHAN_CW = ["子", "癸", "丑", "艮", "寅", "甲", "卯", "乙", "辰", "巽", "巳", "丙", "午", "丁", "未", "坤", "申", "庚", "酉", "辛", "戌", "乾", "亥", "壬"];
+  function SHAN_ORDER_UI() { return SHAN_CW; }
 
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
@@ -303,29 +307,149 @@
     var el = document.getElementById("tab-kanyu");
     if (!el) return;
     el.innerHTML =
-      '<div class="card ky-hero"><h3>🧭 堪舆 · 风水现场研判</h3>' +
-      '<p>你负责现场测量，系统按你选的流派做递进判断：先看已给信息能定什么，再告诉你还缺什么、下一步回现场测什么，数据齐了才落最终预测。</p>' +
-      '<div class="ky-methods">' + METHODS.map(function (m) {
-        return '<button type="button" class="ky-method" data-method="' + m.id + '">' + esc(m.name) +
-          "<span>" + esc(m.sub) + "</span></button>";
-      }).join("") + "</div>" +
-      '<div class="ky-measure" id="ky-measure"></div></div>' +
-      '<div class="card"><h3>🧭 测量修正 · 磁偏角（WMM2025 自动计算）</h3><div class="ky-grid">' +
-      '<div class="ky-field"><label>1. 城市 / 地区</label><input id="ky_region" list="ky-region-list" placeholder="如 北京"><datalist id="ky-region-list">' +
-      Object.keys(REGION_DECL).map(function (k) { return '<option value="' + esc(k) + '"></option>'; }).join("") + "</datalist></div>" +
-      '<div class="ky-field"><label>2. 纬度（北纬 +）</label><input type="number" id="ky_lat" step="0.0001" placeholder="如 39.9042"></div>' +
-      '<div class="ky-field"><label>3. 经度（东经 +）</label><input type="number" id="ky_lon" step="0.0001" placeholder="如 116.4074"></div>' +
-      '<div class="ky-field"><label>4. 测量年份</label><input type="number" id="ky_meas_year" step="1" placeholder="如 2026"></div>' +
-      '<div class="ky-field"><label>5. 磁偏角（自动，可手改）</label><input type="number" id="ky_decl" step="0.01"></div>' +
-      '<div class="ky-field"><label>6. 是否启用修正</label><select id="ky_use_decl"><option value="启用">启用</option><option value="不启用">不启用</option></select></div>' +
-      '</div><div class="ky-meta" id="ky_decl_note">选城市会自动填经纬度，并按 WMM2025 模型算出该年磁偏角；也可以手填经纬度或磁偏角。修正后（真北）= 罗盘读数 + 磁偏角，启用后所有方位/度数都按修正值计算。</div></div>' +
-      '<div class="card"><div class="ky-progress"><span id="ky-progress-text"></span><span id="ky-progress-list"></span></div>' +
-      '<div id="ky-fields"></div>' +
-      '<div class="ky-actions"><button type="button" class="btn-go" id="ky-run">✨ 开始分析</button>' +
-      '<button type="button" class="ky-ghost" id="ky-clear">清空本派</button>' +
-      '<span class="ky-status" id="ky-status"></span></div></div>' +
-      '<div class="card ky-taboo-card"><h3>⛔ 本派硬禁忌（犯了一票否决）</h3><div id="ky-taboos"></div></div>' +
-      '<div id="ky-result"></div>';
+      '<div class="card ky-hero">' +
+        '<div class="ky-hero-luopan" id="ky-hero-luopan" aria-hidden="true"></div>' +
+        '<svg class="ky-hero-mountains" viewBox="0 0 1200 320" preserveAspectRatio="none" aria-hidden="true">' +
+          '<path d="M0,320 L0,238 L92,196 L168,232 L262,166 L352,224 L438,182 L540,246 L628,204 L726,252 L820,196 L918,240 L1030,188 L1120,236 L1200,210 L1200,320 Z" fill="rgba(90,110,122,.20)"/>' +
+          '<path d="M0,320 L0,272 L120,246 L214,278 L318,238 L420,286 L520,250 L640,292 L746,254 L862,296 L968,258 L1080,292 L1200,262 L1200,320 Z" fill="rgba(58,74,88,.34)"/>' +
+          '<path d="M0,320 L0,300 L140,286 L262,306 L392,284 L520,308 L660,288 L800,310 L940,290 L1080,308 L1200,294 L1200,320 Z" fill="rgba(26,34,42,.7)"/>' +
+        '</svg>' +
+        '<div class="ky-hero-water" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>' +
+        '<div class="ky-hero-fore">' +
+          '<div class="ky-brand"><b>山渊</b>策<span>· 堪舆</span></div>' +
+          '<h3>山藏形势 · 渊纳天机</h3>' +
+          '<p>以罗盘定来龙坐向，以四派察地理形势，以些子法择日、七政四余择时。数据由你现场采集，判断按体系分层给出。</p>' +
+          '<div class="ky-nav">' +
+            '<button type="button" class="ky-nav-btn active" data-panel="luopan">🧭 罗盘量山</button>' +
+            '<button type="button" class="ky-nav-btn" data-panel="sipai">🏔️ 四派研判</button>' +
+            '<button type="button" class="ky-nav-btn" data-panel="xiezi">🧧 些子法择日</button>' +
+            '<button type="button" class="ky-nav-btn" data-panel="qizheng">✨ 七政四余</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ky-panel active" id="ky-panel-luopan">' +
+        '<div class="card"><h3>🧭 罗盘 · 量山定向</h3>' +
+        '<div class="ky-lp-wrap"><div class="ky-lp-stage" id="ky-luopan-main"></div>' +
+        '<div class="ky-lp-side"><div class="ky-grid">' +
+        '<div class="ky-field"><label>坐山（后靠）</label><select id="ky-lp-zuo">' + SHAN_ORDER_UI().map(function (s) { return '<option value="' + s + '">' + s + "山</option>"; }).join("") + "</select></div>" +
+        '<div class="ky-field"><label>朝向（前朝）</label><select id="ky-lp-xiang">' + SHAN_ORDER_UI().map(function (s) { return '<option value="' + s + '">' + s + "山</option>"; }).join("") + "</select></div>" +
+        '<div class="ky-field"><label>向首周天度数（0=北，顺时针）</label><input type="number" id="ky-lp-degree" step="0.1" value="180"></div>' +
+        '<div class="ky-field"><label>盘式</label><select id="ky-lp-disk"><option>地盘正针</option><option>人盘中针</option><option>天盘缝针</option></select></div>' +
+        '</div>' +
+        '<div class="ky-lp-readout" id="ky-lp-readout"></div>' +
+        '<div class="ky-meta">拖动/输入坐向后，罗盘指针与高亮会同步跟随；此盘另作为本页背景动效。</div>' +
+        '</div></div></div>' +
+      '</div>' +
+      '<div class="ky-panel" id="ky-panel-sipai">' +
+        '<div class="card ky-hero-sub"><h3>🏔️ 堪舆 · 风水现场研判</h3>' +
+        '<p>你负责现场测量，系统按你选的流派做递进判断：先看已给信息能定什么，再告诉你还缺什么、下一步回现场测什么，数据齐了才落最终预测。</p>' +
+        '<div class="ky-methods">' + METHODS.map(function (m) {
+          return '<button type="button" class="ky-method" data-method="' + m.id + '">' + esc(m.name) +
+            "<span>" + esc(m.sub) + "</span></button>";
+        }).join("") + "</div>" +
+        '<div class="ky-measure" id="ky-measure"></div></div>' +
+        '<div class="card"><h3>🧭 测量修正 · 磁偏角（WMM2025 自动计算）</h3><div class="ky-grid">' +
+        '<div class="ky-field"><label>1. 城市 / 地区</label><input id="ky_region" list="ky-region-list" placeholder="如 北京"><datalist id="ky-region-list">' +
+        Object.keys(REGION_DECL).map(function (k) { return '<option value="' + esc(k) + '"></option>'; }).join("") + "</datalist></div>" +
+        '<div class="ky-field"><label>2. 纬度（北纬 +）</label><input type="number" id="ky_lat" step="0.0001" placeholder="如 39.9042"></div>' +
+        '<div class="ky-field"><label>3. 经度（东经 +）</label><input type="number" id="ky_lon" step="0.0001" placeholder="如 116.4074"></div>' +
+        '<div class="ky-field"><label>4. 测量年份</label><input type="number" id="ky_meas_year" step="1" placeholder="如 2026"></div>' +
+        '<div class="ky-field"><label>5. 磁偏角（自动，可手改）</label><input type="number" id="ky_decl" step="0.01"></div>' +
+        '<div class="ky-field"><label>6. 是否启用修正</label><select id="ky_use_decl"><option value="启用">启用</option><option value="不启用">不启用</option></select></div>' +
+        '</div><div class="ky-meta" id="ky_decl_note">选城市会自动填经纬度，并按 WMM2025 模型算出该年磁偏角；也可以手填经纬度或磁偏角。修正后（真北）= 罗盘读数 + 磁偏角，启用后所有方位/度数都按修正值计算。</div></div>' +
+        '<div class="card"><div class="ky-progress"><span id="ky-progress-text"></span><span id="ky-progress-list"></span></div>' +
+        '<div id="ky-fields"></div>' +
+        '<div class="ky-actions"><button type="button" class="btn-go" id="ky-run">✨ 开始分析</button>' +
+        '<button type="button" class="ky-ghost" id="ky-clear">清空本派</button>' +
+        '<span class="ky-status" id="ky-status"></span></div></div>' +
+        '<div class="card ky-taboo-card"><h3>⛔ 本派硬禁忌（犯了一票否决）</h3><div id="ky-taboos"></div></div>' +
+        '<div id="ky-result"></div>' +
+      '</div>' +
+      '<div class="ky-panel" id="ky-panel-xiezi"></div>' +
+      '<div class="ky-panel" id="ky-panel-qizheng"></div>';
+
+    // 顶部导航
+    var navBtns = el.querySelectorAll(".ky-nav-btn");
+    function showPanel(name) {
+      el.querySelectorAll(".ky-panel").forEach(function (p) { p.classList.toggle("active", p.id === "ky-panel-" + name); });
+      navBtns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-panel") === name); });
+      if (name === "qizheng") {
+        var cv = document.getElementById("qz-canvas");
+        if (cv && window.KanyuQizheng) window.KanyuQizheng.drawChart(cv, new Date(), document.getElementById("qz-shan") && document.getElementById("qz-shan").value);
+      }
+    }
+    navBtns.forEach(function (b) {
+      b.addEventListener("click", function () { showPanel(b.getAttribute("data-panel")); });
+    });
+
+    // 罗盘量山：主盘 + 背景盘联动
+    var heroLp = null, mainLp = null;
+    if (window.Luopan) {
+      heroLp = window.Luopan.background(document.getElementById("ky-hero-luopan"), { size: 1000 });
+      mainLp = window.Luopan.create(document.getElementById("ky-luopan-main"), { size: 1000 });
+    }
+    function updateLuopan() {
+      var zuo = document.getElementById("ky-lp-zuo").value;
+      var xiang = document.getElementById("ky-lp-xiang").value;
+      var deg = parseFloat(document.getElementById("ky-lp-degree").value);
+      var disk = document.getElementById("ky-lp-disk").value;
+      if (heroLp) heroLp.setOrientation({ zuo: zuo, xiang: xiang, degree: deg });
+      if (mainLp) mainLp.setOrientation({ zuo: zuo, xiang: xiang, degree: deg });
+      var gi = (window.Luopan ? window.Luopan.shanIndex(zuo) : -1);
+      var out = document.getElementById("ky-lp-readout");
+      if (out) {
+        var gua = (window.KanyuXiezi && window.KanyuXiezi.mountainGua) ? window.KanyuXiezi.mountainGua(zuo) : null;
+        out.innerHTML = "<b>" + esc(zuo) + "山 " + esc(xiang) + "向</b>　向首 " +
+          (isNaN(deg) ? "—" : deg + "°") + "　盘式 " + esc(disk) +
+          (gua ? "<br>坐山正针卦：<b>" + esc(gua) + "</b>" : "");
+      }
+      if (state) { state.zuo = zuo; state.xiang = xiang; state.degree = deg; }
+    }
+    var lpXiang = document.getElementById("ky-lp-xiang");
+    var lpDegree = document.getElementById("ky-lp-degree");
+    function nearestShan(deg) {
+      var list = SHAN_ORDER_UI();
+      var best = list[0], bestD = 999;
+      list.forEach(function (s, i) {
+        var c = i * 15, diff = Math.abs(((norm180(deg - c)) + 360) % 360);
+        if (diff < bestD) { bestD = diff; best = s; }
+      });
+      return best;
+    }
+    function norm180(d) { while (d > 180) d -= 360; while (d < -180) d += 360; return d; }
+    ["ky-lp-zuo", "ky-lp-disk"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) { node.addEventListener("input", updateLuopan); node.addEventListener("change", updateLuopan); }
+    });
+    // 改向山 → 自动同步度数；改度数 → 自动同步向山（保持两者一致）
+    lpXiang.addEventListener("change", function () {
+      var i = SHAN_ORDER_UI().indexOf(lpXiang.value);
+      if (i >= 0) lpDegree.value = String(i * 15);
+      updateLuopan();
+    });
+    lpXiang.addEventListener("input", function () {
+      var i = SHAN_ORDER_UI().indexOf(lpXiang.value);
+      if (i >= 0) lpDegree.value = String(i * 15);
+      updateLuopan();
+    });
+    lpDegree.addEventListener("input", function () {
+      var d = parseFloat(lpDegree.value);
+      if (!isNaN(d)) lpXiang.value = nearestShan(((d % 360) + 360) % 360);
+      updateLuopan();
+    });
+    lpDegree.addEventListener("change", function () {
+      var d = parseFloat(lpDegree.value);
+      if (!isNaN(d)) lpXiang.value = nearestShan(((d % 360) + 360) % 360);
+      updateLuopan();
+    });
+    document.getElementById("ky-lp-zuo").value = "子";
+    document.getElementById("ky-lp-xiang").value = "午";
+    document.getElementById("ky-lp-degree").value = "180";
+    updateLuopan();
+
+    // 子模块挂载
+    if (window.KanyuXiezi) window.KanyuXiezi.mount(document.getElementById("ky-panel-xiezi"));
+    if (window.KanyuQizheng) window.KanyuQizheng.mount(document.getElementById("ky-panel-qizheng"));
 
     METHODS.forEach(function (m) {
       el.querySelector('.ky-method[data-method="' + m.id + '"]').addEventListener("click", function () {
@@ -668,12 +792,77 @@
       "#tab-kanyu .kp-table th,#tab-kanyu .kp-table td{border:1px solid var(--border);padding:5px 6px;text-align:left}",
       "#tab-kanyu .kp-table th{color:var(--goldL);background:rgba(200,164,92,.08)}",
       "#tab-kanyu .kp-good{color:var(--goldL)}",
-      "#tab-kanyu .kp-bad{color:var(--redL)}"
+      "#tab-kanyu .kp-bad{color:var(--redL)}",
+      "#tab-kanyu .lp-svg{width:100%;height:auto;display:block}",
+      "#tab-kanyu .lp-txt{font-family:'Noto Serif SC','SimSun',serif;user-select:none}",
+      "#tab-kanyu .ky-panel{display:none}",
+      "#tab-kanyu .ky-panel.active{display:block}",
+      "#tab-kanyu .ky-hero{position:relative;overflow:hidden;min-height:340px;padding:0;background:linear-gradient(160deg,#0b1016 0%,#141018 46%,#1d1610 100%);border:1px solid var(--borderL);border-radius:var(--r-lg)}",
+      "#tab-kanyu .ky-hero-luopan{position:absolute;right:-6%;top:-34%;width:min(560px,68%);opacity:.20;pointer-events:none;z-index:0;filter:saturate(.9)}",
+      "#tab-kanyu .ky-hero-mountains{position:absolute;left:0;right:0;bottom:0;width:100%;height:62%;z-index:1;pointer-events:none}",
+      "#tab-kanyu .ky-hero-water{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:1;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(8,14,22,.72))}",
+      "#tab-kanyu .ky-hero-water i{position:absolute;left:-10%;width:120%;height:1px;background:linear-gradient(90deg,transparent,rgba(150,190,220,.35),transparent);animation:kyripple 9s linear infinite}",
+      "#tab-kanyu .ky-hero-water i:nth-child(1){bottom:12px;animation-duration:11s}",
+      "#tab-kanyu .ky-hero-water i:nth-child(2){bottom:26px;animation-duration:14s;animation-delay:-3s}",
+      "#tab-kanyu .ky-hero-water i:nth-child(3){bottom:40px;animation-duration:17s;animation-delay:-6s}",
+      "#tab-kanyu .ky-hero-water i:nth-child(4){bottom:54px;animation-duration:21s;animation-delay:-9s}",
+      "#tab-kanyu .ky-hero-water i:nth-child(5){bottom:66px;animation-duration:25s;animation-delay:-12s}",
+      "@keyframes kyripple{0%{transform:translateX(-6%) scaleX(.9);opacity:.15}50%{opacity:.5}100%{transform:translateX(6%) scaleX(1.05);opacity:.15}}",
+      "#tab-kanyu .ky-hero-fore{position:relative;z-index:2;padding:34px 28px 30px;max-width:640px}",
+      "#tab-kanyu .ky-brand{font-family:'Noto Serif SC','SimSun',serif;font-size:1.5em;letter-spacing:.16em;color:var(--goldL)}",
+      "#tab-kanyu .ky-brand b{font-weight:900;color:#f0d9a0;text-shadow:0 2px 18px rgba(200,164,92,.35)}",
+      "#tab-kanyu .ky-brand span{font-size:.55em;color:var(--dim);letter-spacing:.24em;margin-left:8px}",
+      "#tab-kanyu .ky-hero-fore h3{margin:14px 0 10px;font-size:1.35em;color:var(--text);letter-spacing:.1em;border:none;padding:0}",
+      "#tab-kanyu .ky-hero-fore p{color:#a99b86;font-size:.85em;line-height:1.9;margin:0 0 18px;max-width:560px}",
+      "#tab-kanyu .ky-nav{display:flex;flex-wrap:wrap;gap:8px}",
+      "#tab-kanyu .ky-nav-btn{padding:8px 14px;border-radius:999px;border:1px solid rgba(200,164,92,.35);background:rgba(12,16,22,.5);color:#cbbc9f;cursor:pointer;font-family:inherit;font-size:.84em;font-weight:600;transition:all .2s}",
+      "#tab-kanyu .ky-nav-btn:hover{border-color:var(--gold);color:var(--goldL)}",
+      "#tab-kanyu .ky-nav-btn.active{border-color:var(--gold);background:linear-gradient(180deg,rgba(200,164,92,.3),rgba(200,164,92,.12));color:#f4e2b6;box-shadow:0 0 18px rgba(200,164,92,.18)}",
+      "#tab-kanyu .ky-lp-wrap{display:grid;grid-template-columns:minmax(260px,1fr) minmax(240px,1fr);gap:22px;align-items:center}",
+      "#tab-kanyu .ky-lp-stage{position:relative;width:100%;max-width:440px;margin:0 auto;aspect-ratio:1/1}",
+      "#tab-kanyu .ky-lp-readout{margin-top:12px;padding:10px 12px;border-radius:8px;background:rgba(200,164,92,.08);border:1px solid var(--border);font-size:.86em;line-height:1.8}",
+      "#tab-kanyu .ky-hero-sub p{color:var(--dim);font-size:.86em;line-height:1.8;margin:8px 0 14px}",
+      "@media(max-width:720px){#tab-kanyu .ky-hero-luopan{right:-24%;top:-16%;width:96%;opacity:.14}#tab-kanyu .ky-hero-fore{padding:26px 18px 24px}#tab-kanyu .ky-lp-wrap{grid-template-columns:1fr}}"
     ].join("");
     var style = document.createElement("style");
     style.textContent = css;
     document.head.appendChild(style);
   }
+
+  // 通用 AI 研判入口：先由调用方给出可见的盘，再把盘交给云端技能详批
+  window.KanyuAI = {
+    api: API,
+    esc: esc,
+    run: async function (opt) {
+      var resp = opt.responseEl, status = opt.statusEl, btn = opt.btnEl;
+      if (btn) btn.disabled = true;
+      if (status) status.textContent = "⏳ 正在请求 AI 详批…";
+      if (resp) resp.style.display = "block";
+      try {
+        var r = await fetch(API + "/api/v1/interpret", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: opt.mode, chart: opt.chart, question: opt.question || "请按该体系做完整解析" })
+        });
+        var body = await r.json();
+        if (!r.ok) throw new Error(body.error || ("HTTP " + r.status));
+        if (body.mode && body.mode !== opt.mode) throw new Error("BACKEND_SKILL_MISSING");
+        if (resp) {
+          resp.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 ' + esc(opt.title || "AI 详批") +
+            '</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">' + esc(body.interpretation || "") + "</div></div>";
+        }
+        if (status) status.textContent = "✅ 详批完成";
+      } catch (e) {
+        var msg = e.message === "BACKEND_SKILL_MISSING"
+          ? "云端 AI 尚未载入该技能包（需把最新的 bazi-scf-api.zip 部署到腾讯云函数）；上面的盘与规则判断不受影响。"
+          : "AI 详批暂不可用（" + e.message + "）；上面的盘与规则判断不受影响。";
+        if (resp) resp.innerHTML = '<div class="card" style="color:var(--dim)">' + esc(msg) + "</div>";
+        if (status) status.textContent = "已给出本地判断";
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+  };
 
   injectStyle();
   buildUi();
