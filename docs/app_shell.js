@@ -47,12 +47,14 @@
       ".app-bar .ab-brand:hover{color:#f2dfae}",
       ".app-bar .ab-nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}",
       ".app-bar .ab-chip{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit;font-size:.8em}",
+      "a.ab-chip{display:inline-block;text-decoration:none}",
       ".app-bar .ab-chip:hover{border-color:var(--gold);color:var(--goldL)}",
       ".app-bar .ab-chip.active{border-color:var(--gold);background:rgba(200,164,92,.16);color:var(--goldL)}",
       ".app-home{display:none;max-width:980px;margin:0 auto}",
       "body.app-home-mode .app-home{display:block}",
       ".app-home-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:6px}",
       ".app-card{position:relative;overflow:hidden;min-height:190px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(160deg,#0d1219 0%,#181310 100%);cursor:pointer;text-align:left;padding:0;color:var(--text);font-family:inherit;transition:transform .22s cubic-bezier(.4,0,.2,1),border-color .22s,box-shadow .22s}",
+      "a.app-card{display:block;text-decoration:none}",
       ".app-card:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.35)}",
       ".app-card canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.5}",
       ".app-card .ac-body{position:relative;z-index:2;padding:18px 16px;display:flex;flex-direction:column;height:100%;justify-content:flex-end}",
@@ -79,15 +81,15 @@
     wrap.id = "app-home";
     var grid = el("div", "app-home-grid");
     MODULES.forEach(function (m) {
-      var card = el("button", "app-card");
-      card.type = "button";
+      // 用真链接：即使脚本事件没绑上，点一下也会改 hash 触发路由，不会"没反应"
+      var card = el("a", "app-card");
+      card.setAttribute("href", "#" + m.id);
       card.setAttribute("data-module", m.id);
       card.innerHTML = '<canvas data-theme="' + m.theme + '"></canvas>' +
         '<span class="ac-icon">' + m.icon + "</span>" +
         '<span class="ac-body"><span class="ac-name">' + m.name + "</span>" +
         '<span class="ac-sub">' + m.sub + "</span>" +
         '<span class="ac-go">进入 →</span></span>';
-      card.addEventListener("click", function () { go(m.id); });
       grid.appendChild(card);
     });
     wrap.appendChild(grid);
@@ -101,16 +103,14 @@
     if (document.getElementById("app-bar")) return document.getElementById("app-bar");
     var bar = el("div", "app-bar");
     bar.id = "app-bar";
-    var brand = el("button", "ab-brand", "山渊策");
-    brand.type = "button";
-    brand.addEventListener("click", function () { goHome(); });
+    var brand = el("a", "ab-brand", "山渊策");
+    brand.setAttribute("href", "#home");
     bar.appendChild(brand);
     var nav = el("div", "ab-nav");
     MODULES.forEach(function (m) {
-      var chip = el("button", "ab-chip", m.icon + " " + m.name);
-      chip.type = "button";
+      var chip = el("a", "ab-chip", m.icon + " " + m.name);
+      chip.setAttribute("href", "#" + m.id);
       chip.setAttribute("data-module", m.id);
-      chip.addEventListener("click", function () { go(m.id); });
       nav.appendChild(chip);
     });
     bar.appendChild(nav);
