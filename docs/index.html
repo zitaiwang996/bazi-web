@@ -816,6 +816,7 @@ button:active { transform: scale(0.97); }
 <script src="slider.js?v=3456789"></script>
 <script src="qimen.js?v=1782341397"></script>
 <script src="qimen_lfrs.js?v=20261005g"></script>
+<script src="bgfx.js?v=20261006a"></script>
 <script src="magvar.js?v=20261005f"></script>
 <script src="declination.js?v=20261005f"></script>
 <script src="fenjin.js?v=20261005f"></script>
@@ -853,18 +854,6 @@ function switchTab(name) {
         else location.hash = name;
     } catch (e) {}
 }
-
-// 打开页面时按 hash 直达对应 tab（如 #kanyu）
-(function () {
-    function openHashTab() {
-        var name = String(location.hash || '').replace(/^#/, '');
-        if (!name) return;
-        if (document.getElementById('tab-' + name)) switchTab(name);
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', openHashTab);
-    else openHashTab();
-    window.addEventListener('hashchange', openHashTab);
-})();
 
 // ========== QIMEN MODE SWITCHING ==========
 var _qmMode = 'mingfa'; // 默认鸣法奇门
@@ -2644,6 +2633,7 @@ if (typeof switchTab !== "function") {
   </div>
 </div>
 
+<script src="app_shell.js?v=20261006a"></script>
 </body>
 </html>
 

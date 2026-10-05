@@ -211,8 +211,15 @@
     var axis = svg.querySelector('[data-axis="1"]');
     var hlZuo = svg.querySelector('[data-hl="zuo"]');
     var hlXiang = svg.querySelector('[data-hl="xiang"]');
+    var xiuGroup = svg.querySelector('[data-ring="xiu"]');
     var S = opts.size || 1000, cx = S / 2, cy = S / 2, R = S * 0.47;
     var state = { zuo: null, xiang: null, degree: null, spin: 0 };
+    if (xiuGroup) {
+      // 用 CSS transform 走合成层，避免每帧改 SVG 属性导致整组重绘
+      xiuGroup.style.transformBox = "view-box";
+      xiuGroup.style.transformOrigin = "50% 50%";
+      xiuGroup.style.willChange = "transform";
+    }
 
     var api = {
       svg: svg,
@@ -238,9 +245,7 @@
       // 背景慢转：amount 为角度
       setSpin: function (deg) {
         state.spin = deg || 0;
-        [".lp-xiu-wrap"].forEach(function () {});
-        var g = svg.querySelector('[data-ring="xiu"]');
-        if (g) g.setAttribute("transform", "rotate(" + n(state.spin) + " " + cx + " " + cy + ")");
+        if (xiuGroup) xiuGroup.style.transform = "rotate(" + n(state.spin) + "deg)";
         return api;
       },
       highlight: function (names) {
@@ -261,15 +266,22 @@
     var api = create(container, opts || {});
     if (!api) return null;
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduce) {
-      var t0 = performance.now();
-      (function loop(t) {
-        var el = container.querySelector("svg");
-        if (!el || !el.isConnected) return;
-        api.setSpin(((t - t0) / 1000 * 1.6) % 360);
-        requestAnimationFrame(loop);
-      })(t0);
+    if (reduce) return api;
+    var svg = container.querySelector("svg");
+    var visible = true;
+    // 只在可见时跑 rAF，切走/滚出就停，避免无谓耗电与掉帧
+    if ("IntersectionObserver" in window) {
+      visible = false;
+      new IntersectionObserver(function (entries) {
+        visible = entries[0] && entries[0].isIntersecting;
+      }, { threshold: 0.01 }).observe(container);
     }
+    var t0 = performance.now();
+    (function loop(t) {
+      if (!svg || !svg.isConnected) return;
+      if (visible && !document.hidden) api.setSpin(((t - t0) / 1000 * 1.6) % 360);
+      requestAnimationFrame(loop);
+    })(t0);
     return api;
   }
 

@@ -827,7 +827,7 @@
       "#tab-kanyu .ky-panel{display:none}",
       "#tab-kanyu .ky-panel.active{display:block}",
       "#tab-kanyu .ky-hero{position:relative;overflow:hidden;min-height:340px;padding:0;background:linear-gradient(160deg,#0b1016 0%,#141018 46%,#1d1610 100%);border:1px solid var(--borderL);border-radius:var(--r-lg)}",
-      "#tab-kanyu .ky-hero-luopan{position:absolute;right:-6%;top:-34%;width:min(560px,68%);opacity:.20;pointer-events:none;z-index:0;filter:saturate(.9);animation:kyDrift 30s ease-in-out infinite alternate}",
+      "#tab-kanyu .ky-hero-luopan{position:absolute;right:-6%;top:-34%;width:min(560px,68%);opacity:.20;pointer-events:none;z-index:0;will-change:transform;backface-visibility:hidden;transform:translateZ(0);animation:kyDrift 30s ease-in-out infinite alternate}",
       "@keyframes kyDrift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-1.4%,1.6%,0) scale(1.02)}100%{transform:translate3d(1.2%,-1.2%,0) scale(1.035)}}",
       "@media(prefers-reduced-motion:reduce){#tab-kanyu .ky-hero-luopan{animation:none}#tab-kanyu .ky-hero-water i{animation:none;opacity:.3}}",
       "#tab-kanyu .ky-hero-mountains{position:absolute;left:0;right:0;bottom:0;width:100%;height:62%;z-index:1;pointer-events:none}",
