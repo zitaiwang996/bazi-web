@@ -268,6 +268,33 @@
   var SHAN_CW = ["子", "癸", "丑", "艮", "寅", "甲", "卯", "乙", "辰", "巽", "巳", "丙", "午", "丁", "未", "坤", "申", "庚", "酉", "辛", "戌", "乾", "亥", "壬"];
   function SHAN_ORDER_UI() { return SHAN_CW; }
 
+  // 罗盘联动：首页背景盘与"罗盘量山"主盘共用 state.zuo/xiang/degree
+  function applyRings() {
+    [state._heroLp, state._mainLp].forEach(function (lp) {
+      if (lp) lp.setOrientation({ zuo: state.zuo, xiang: state.xiang, degree: state.degree });
+    });
+  }
+  // 四派表单里的坐向/度数，也驱动背景罗盘"跟着走"
+  function syncRingsFromFields() {
+    var changed = false;
+    var zuoEl = document.getElementById("ky_zuo");
+    var xiangEl = document.getElementById("ky_xiang");
+    if (zuoEl) {
+      var z = String(zuoEl.value || "").trim();
+      if (window.Luopan && window.Luopan.shanIndex(z) >= 0 && z !== state.zuo) { state.zuo = z; changed = true; }
+    }
+    if (xiangEl) {
+      var x = String(xiangEl.value || "").trim();
+      if (window.Luopan && window.Luopan.shanIndex(x) >= 0 && x !== state.xiang) { state.xiang = x; changed = true; }
+    }
+    var degEl = document.getElementById("ky_degree");
+    if (degEl) {
+      var d = parseFloat(degEl.value);
+      if (!isNaN(d) && d !== state.degree) { state.degree = d; changed = true; }
+    }
+    if (changed) applyRings();
+  }
+
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
@@ -388,13 +415,16 @@
       heroLp = window.Luopan.background(document.getElementById("ky-hero-luopan"), { size: 1000 });
       mainLp = window.Luopan.create(document.getElementById("ky-luopan-main"), { size: 1000 });
     }
+    state._heroLp = heroLp;
+    state._mainLp = mainLp;
     function updateLuopan() {
       var zuo = document.getElementById("ky-lp-zuo").value;
       var xiang = document.getElementById("ky-lp-xiang").value;
       var deg = parseFloat(document.getElementById("ky-lp-degree").value);
       var disk = document.getElementById("ky-lp-disk").value;
-      if (heroLp) heroLp.setOrientation({ zuo: zuo, xiang: xiang, degree: deg });
-      if (mainLp) mainLp.setOrientation({ zuo: zuo, xiang: xiang, degree: deg });
+      state.zuo = zuo; state.xiang = xiang;
+      if (!isNaN(deg)) state.degree = deg;
+      applyRings();
       var gi = (window.Luopan ? window.Luopan.shanIndex(zuo) : -1);
       var out = document.getElementById("ky-lp-readout");
       if (out) {
@@ -403,7 +433,6 @@
           (isNaN(deg) ? "—" : deg + "°") + "　盘式 " + esc(disk) +
           (gua ? "<br>坐山正针卦：<b>" + esc(gua) + "</b>" : "");
       }
-      if (state) { state.zuo = zuo; state.xiang = xiang; state.degree = deg; }
     }
     var lpXiang = document.getElementById("ky-lp-xiang");
     var lpDegree = document.getElementById("ky-lp-degree");
@@ -514,8 +543,8 @@
     currentFields().forEach(function (f) {
       var input = document.getElementById("ky_" + f.k);
       if (!input) return;
-      input.addEventListener("input", function () { saveLocal(); refreshProgress(); });
-      input.addEventListener("change", function () { saveLocal(); refreshProgress(); });
+      input.addEventListener("input", function () { saveLocal(); refreshProgress(); syncRingsFromFields(); });
+      input.addEventListener("change", function () { saveLocal(); refreshProgress(); syncRingsFromFields(); });
     });
   }
 
@@ -798,7 +827,9 @@
       "#tab-kanyu .ky-panel{display:none}",
       "#tab-kanyu .ky-panel.active{display:block}",
       "#tab-kanyu .ky-hero{position:relative;overflow:hidden;min-height:340px;padding:0;background:linear-gradient(160deg,#0b1016 0%,#141018 46%,#1d1610 100%);border:1px solid var(--borderL);border-radius:var(--r-lg)}",
-      "#tab-kanyu .ky-hero-luopan{position:absolute;right:-6%;top:-34%;width:min(560px,68%);opacity:.20;pointer-events:none;z-index:0;filter:saturate(.9)}",
+      "#tab-kanyu .ky-hero-luopan{position:absolute;right:-6%;top:-34%;width:min(560px,68%);opacity:.20;pointer-events:none;z-index:0;filter:saturate(.9);animation:kyDrift 30s ease-in-out infinite alternate}",
+      "@keyframes kyDrift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-1.4%,1.6%,0) scale(1.02)}100%{transform:translate3d(1.2%,-1.2%,0) scale(1.035)}}",
+      "@media(prefers-reduced-motion:reduce){#tab-kanyu .ky-hero-luopan{animation:none}#tab-kanyu .ky-hero-water i{animation:none;opacity:.3}}",
       "#tab-kanyu .ky-hero-mountains{position:absolute;left:0;right:0;bottom:0;width:100%;height:62%;z-index:1;pointer-events:none}",
       "#tab-kanyu .ky-hero-water{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:1;overflow:hidden;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(8,14,22,.72))}",
       "#tab-kanyu .ky-hero-water i{position:absolute;left:-10%;width:120%;height:1px;background:linear-gradient(90deg,transparent,rgba(150,190,220,.35),transparent);animation:kyripple 9s linear infinite}",
