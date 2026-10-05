@@ -585,6 +585,10 @@
     drawChart: drawChart,
     bodyLon: bodyLon,
     QZ_MTN: QZ_MTN,
+    EVENTS: EVENTS,
+    purposeWx: purposeWx,
+    zodiacAdjust: zodiacAdjust,
+    festivalMap: function (y) { return (window.QZ_FESTIVALS && window.QZ_FESTIVALS.map(y)) || {}; },
     sunLonTropical: sunLonTropical,
     moonLonTropical: moonLonTropical
   };

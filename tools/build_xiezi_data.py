@@ -47,9 +47,12 @@ def main():
             continue
         payload[key] = load(filename)
 
+    dumped = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    # 站主要求：对外显示统一用「王大师」，不出现原作者名（源数据保持不动）
+    dumped = dumped.replace("陈昭有", "王大师")
     text = (
         "// 些子法择日 · 数据表（由 tools/build_xiezi_data.py 从 xiezi-fa skill 生成，勿手改）\n"
-        "window.XIEZI_DATA = " + json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + ";\n"
+        "window.XIEZI_DATA = " + dumped + ";\n"
     )
     with io.open(OUT, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)

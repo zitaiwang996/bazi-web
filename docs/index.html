@@ -803,7 +803,7 @@ button:active { transform: scale(0.97); }
 <!-- ==================== KANYU TAB ==================== -->
 <div id="tab-kanyu" class="tab-content"></div>
 
-<div class="footer">山渊策 · 盲派八字 · 紫微斗数 · 大六壬 · 六爻 · 鸣法奇门 · 堪舆四派 · <span style="color:var(--mute)">2026.10.07b</span></div>
+<div class="footer">山渊策 · 盲派八字 · 紫微斗数 · 大六壬 · 六爻 · 鸣法奇门 · 堪舆四派 · <span style="color:var(--mute)">2026.10.07c</span></div>
 </div>
 
 <script src="terms_data.js?v=8658970"></script>
@@ -815,18 +815,18 @@ button:active { transform: scale(0.97); }
 <script src="lunar.min.js?v=3456789"></script>
 <script src="aimd.js?v=20261007b"></script>
 <script src="slider.js?v=3456789"></script>
-<script src="qimen.js?v=20261007b"></script>
+<script src="qimen.js?v=20261007c"></script>
 <script src="qimen_lfrs.js?v=20261007b"></script>
 <script src="bgfx.js?v=20261006c"></script>
 <script src="magvar.js?v=20261005f"></script>
 <script src="declination.js?v=20261005f"></script>
 <script src="fenjin.js?v=20261005f"></script>
 <script src="luopan.js?v=20261005g"></script>
-<script src="xiezi_data.js?v=20261005g"></script>
+<script src="xiezi_data.js?v=20261007c"></script>
 <script src="qizheng_data.js?v=20261005g"></script>
-<script src="xiezi.js?v=20261005g"></script>
-<script src="qizheng.js?v=20261007b"></script>
-<script src="qizheng_plus.js?v=20261007b"></script>
+<script src="xiezi.js?v=20261007c"></script>
+<script src="qizheng.js?v=20261007c"></script>
+<script src="qizheng_plus.js?v=20261007c"></script>
 <script src="kanyu_pan.js?v=20261005f"></script>
 <script src="kanyu.js?v=20261007b"></script>
 
@@ -2293,12 +2293,29 @@ function qmAiForm() {
     var asks = ["综合判断", "爱情婚姻", "求财", "事业官运", "身体健康", "官司是非", "出行", "寻人寻物", "考试学业", "合作合伙", "家宅"];
     var st = "padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:var(--input);color:var(--text);font-family:inherit;font-size:.85em";
     return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:0 0 12px">' +
-        '<label style="font-size:.8em;color:var(--dim)">年命<input id="qm-ai-birth" placeholder="如1990" style="' + st + ';width:88px;margin-left:4px"></label>' +
+        '<label style="font-size:.8em;color:var(--dim)">年命<input id="qm-ai-birth" placeholder="如1990" oninput="qmYearInfo()" style="' + st + ';width:88px;margin-left:4px"></label>' +
+        '<span id="qm-ai-birth-info" style="font-size:.82em;color:var(--goldL);font-weight:600;align-self:center"></span>' +
         '<label style="font-size:.8em;color:var(--dim)">生肖<select id="qm-ai-zodiac" style="' + st + ';margin-left:4px">' +
         z.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("") + "</select></label>" +
         '<label style="font-size:.8em;color:var(--dim)">问事<select id="qm-ai-ask" style="' + st + ';margin-left:4px">' +
         asks.map(function (a) { return "<option>" + a + "</option>"; }).join("") + "</select></label>" +
         "</div>";
+}
+
+// 输入年份 → 自动排该年干支 + 生肖
+function qmYearInfo() {
+    var el = document.getElementById('qm-ai-birth');
+    var info = document.getElementById('qm-ai-birth-info');
+    var sel = document.getElementById('qm-ai-zodiac');
+    if (!el || !info) return '';
+    var y = parseInt(String(el.value || '').replace(/[^0-9]/g, ''), 10);
+    if (!y || y < 1900 || y > 2100) { info.textContent = ''; return ''; }
+    var gz = (typeof getYearPillar === 'function') ? getYearPillar(y) : '';
+    var zhi = gz ? gz[1] : '';
+    var zodiac = {子:'鼠',丑:'牛',寅:'虎',卯:'兔',辰:'龙',巳:'蛇',午:'马',未:'羊',申:'猴',酉:'鸡',戌:'狗',亥:'猪'}[zhi] || '';
+    info.textContent = '→ ' + gz + '年 · ' + zodiac;
+    if (sel && zhi) sel.value = zhi;
+    return gz;
 }
 
 function buildQimenChartForAI(d) {
@@ -2340,15 +2357,16 @@ async function doQimenAI() {
     var zEl = document.getElementById('qm-ai-zodiac');
     var askEl = document.getElementById('qm-ai-ask');
     var yearMing = birthEl ? String(birthEl.value || '').trim() : '';
+    var yearGz = qmYearInfo();
     var zodiacZhi = zEl ? zEl.value : '';
     var zodiacTxt = (zEl && zEl.selectedIndex > 0) ? zEl.options[zEl.selectedIndex].text : '';
     var ask = askEl ? askEl.value : '综合判断';
     var chart = buildQimenChartForAI(d);
-    if (chart) { chart.year_ming = yearMing || '未填'; chart.zodiac = zodiacZhi ? (zodiacTxt + "（" + zodiacZhi + "）") : '不限'; chart.ask = ask; }
+    if (chart) { chart.year_ming = yearMing ? (yearMing + (yearGz ? "（" + yearGz + "年）" : "")) : '未填'; chart.zodiac = zodiacZhi ? (zodiacTxt + "（" + zodiacZhi + "）") : '不限'; chart.ask = ask; }
     var questionEl = document.getElementById('qm-question');
     var extra = (questionEl && questionEl.value) ? ('；补充：' + questionEl.value) : '';
     var question = '请以龙伏山人鸣法飞盘奇门解断此局。求测事项：' + ask +
-        (yearMing ? '；求测人年命：' + yearMing : '') +
+        (yearMing ? '；求测人年命：' + yearMing + (yearGz ? '（' + yearGz + '年）' : '') : '') +
         (zodiacTxt ? '；生肖：' + zodiacTxt + '（' + zodiacZhi + '）' : '') + extra +
         '。请先复核盘面（值符值使/门星神仪/五行生克），再针对求测事项给出吉凶、成因与应期。';
 

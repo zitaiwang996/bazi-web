@@ -118,6 +118,23 @@
     return '<table class="qz-table"><thead><tr><th>星曜</th><th>五行</th><th>黄经</th><th>宫</th><th>山</th><th>躔宿</th></tr></thead><tbody>' + rows + "</tbody></table>";
   }
 
+  function recCardHtml() {
+    var E = eng().EVENTS || [];
+    var purposeOpts = E.map(function (g) {
+      return '<optgroup label="' + g.g + '">' + g.list.map(function (e) { return "<option>" + e + "</option>"; }).join("") + "</optgroup>";
+    }).join("");
+    var shanOpts = eng().QZ_MTN.map(function (s) { return '<option value="' + s + '">' + s + "山</option>"; }).join("");
+    return '<div class="card"><h3>📅 本命推荐吉日</h3>' +
+      '<div class="qz-grid">' +
+      '<div class="qz-field"><label>用事</label><select id="qz-n-rec-purpose">' + purposeOpts + "</select></div>" +
+      '<div class="qz-field"><label>坐山</label><select id="qz-n-rec-shan">' + shanOpts + "</select></div>" +
+      '<div class="qz-field"><label>年份</label><input type="number" id="qz-n-rec-year" value="' + new Date().getFullYear() + '"></div>' +
+      "</div>" +
+      '<div style="margin-top:10px"><button class="btn-go" id="qz-n-rec">推荐吉日</button>' +
+      '<span id="qz-n-rec-status" style="margin-left:12px;color:var(--dim);font-size:.84em"></span></div>' +
+      '<div id="qz-n-rec-out"></div></div>';
+  }
+
   function mountNatal(host) {
     if (!host) return;
     host.innerHTML = natalHtml();
@@ -139,23 +156,46 @@
         '<div class="card" style="text-align:center"><h3>🔮 AI 本命解读（婚姻·事业·健康）</h3>' +
         '<button class="btn-go" id="qz-n-ai">AI 解读</button>' +
         '<div id="qz-n-ai-status" style="margin-top:8px;color:var(--dim)"></div>' +
-        '<div id="qz-n-ai-resp" style="display:none"></div></div>';
+        '<div id="qz-n-ai-resp" style="display:none"></div></div>' +
+        recCardHtml();
       requestAnimationFrame(function () { eng().drawChart(document.getElementById("qz-n-canvas"), date, ""); });
+      var birthYear = parseInt(ds.slice(0, 4), 10) || new Date().getFullYear();
+      function runRec() {
+        var y = parseInt(document.getElementById("qz-n-rec-year").value, 10) || new Date().getFullYear();
+        var purpose = document.getElementById("qz-n-rec-purpose").value;
+        var shan = document.getElementById("qz-n-rec-shan").value;
+        var zhi = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"][((birthYear - 4) % 12 + 12) % 12];
+        document.getElementById("qz-n-rec-status").textContent = "评分中…";
+        setTimeout(function () {
+          var best = eng().findBest(shan, y, purpose, "地盘", 12, { zodiac: zhi });
+          var rows = best.map(function (b, i) {
+            var cls = b.score >= 100 ? "qz-good" : b.score >= 75 ? "qz-mid" : "";
+            return "<tr><td>" + (i + 1) + "</td><td>" + b.date + "</td><td>" + (b.festival || "—") + "</td><td>" + b.score + "</td><td>" + b.verdict + "</td><td style=\"text-align:left\">" + esc(b.good.slice(0, 2).join("；")) + "</td></tr>";
+          }).join("");
+          document.getElementById("qz-n-rec-out").innerHTML =
+            '<div class="qz-note">按本命生肖（' + esc(zhi) + '）＋ 坐山 ' + esc(shan) + "山 ＋ 用事「" + esc(purpose) + "」评出（" + y + " 年，越高越宜）。</div>" +
+            (best.length ? '<table class="qz-table"><thead><tr><th>#</th><th>日期</th><th>节日</th><th>得分</th><th>等级</th><th>主要吉因</th></tr></thead><tbody>' + rows + "</tbody></table>" : '<div class="qz-bad">本年无明显吉日，请换年份或坐山。</div>');
+          document.getElementById("qz-n-rec-status").textContent = "推荐 " + best.length + " 天";
+        }, 20);
+      }
+      var recBtn = document.getElementById("qz-n-rec");
+      if (recBtn) recBtn.addEventListener("click", runRec);
       var btn = document.getElementById("qz-n-ai");
       if (btn && window.KanyuAI) {
-        btn.addEventListener("click", function () {
-          window.KanyuAI.run({
+        btn.addEventListener("click", async function () {
+          await window.KanyuAI.run({
             mode: "qizheng",
             chart: {
               school: "七政四余 · 本命盘", birth: ds + " " + ts, sex: sex, disk: disk,
               bodies: pos.bodies.map(function (b) { return { star: b.cn, element: b.el, lon: Math.round(b.lon * 100) / 100, palace: b.palace + "宫", mountain: b.mtn + "山", xiu: b.xiu }; })
             },
-            question: "请以七政四余本命盘解读此人：婚姻感情、事业财运、身体健康、性格禀赋，并指出吉凶星曜与化解方向",
+            question: "请以七政四余本命盘解读此人：婚姻感情、事业财运、身体健康、性格禀赋，并指出吉凶星曜与化解方向；文末请给出对求测人有利的择日方向（宜什么五行、避什么日子）",
             title: "七政四余本命盘 · AI 解读",
             responseEl: document.getElementById("qz-n-ai-resp"),
             statusEl: document.getElementById("qz-n-ai-status"),
             btnEl: btn
           });
+          runRec(); // 分析完自动给出推荐日子
         });
       }
       document.getElementById("qz-n-status").textContent = "本命盘已排";

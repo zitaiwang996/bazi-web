@@ -364,7 +364,7 @@
       '<div class="kx-field"><label>坐山（二十四山）</label><select id="kx-shan">' + shanOpts + "</select></div>" +
       '<div class="kx-field"><label>坐山卦（可指定替卦，留空按坐山正针）</label><select id="kx-gua"><option value="">按坐山正针卦</option>' + guaOpts + "</select></div>" +
       '<div class="kx-field"><label>用事年</label><input type="number" id="kx-year" value="' + new Date().getFullYear() + '"></div>' +
-      '<div class="kx-field"><label>分运法</label><select id="kx-yunmode"><option value="ben">本门（陈昭有）</option><option value="main">主流三元九运</option></select></div>' +
+      '<div class="kx-field"><label>分运法</label><select id="kx-yunmode"><option value="ben">本门（王大师）</option><option value="main">主流三元九运</option></select></div>' +
       "</div>" +
       '<div class="kx-modes"><button type="button" class="kx-mode active" data-m="eval">评课（已定四柱）</button><button type="button" class="kx-mode" data-m="pick">选吉课（扫日期）</button></div>' +
       '<div id="kx-eval">' +
