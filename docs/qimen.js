@@ -1143,6 +1143,7 @@ function renderQimenTraditional(d) {
     // 龙伏山人 AI 解断入口（鸣法飞盘奇门体系）
     html += '<div class="card" style="text-align:center"><h3>🐉 龙伏山人 · 飞盘奇门解断</h3>' +
       '<p style="color:var(--dim);font-size:.8em;margin:0 0 10px">以龙伏山人《鸣法》飞盘奇门体系解断本局：值符值使为先，门星神仪次之，再看五行生克、时干与飞支穿壬、格局真假。</p>' +
+      (typeof qmAiForm === "function" ? qmAiForm() : "") +
       '<button class="btn-go" id="qm-ai-btn" onclick="doQimenAI()">🔮 AI 解断</button>' +
       '<div id="qm-ai-status" style="margin-top:8px;color:var(--dim)"></div>' +
       '<div id="qm-ai-response" style="display:none"></div></div>';

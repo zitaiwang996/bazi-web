@@ -879,8 +879,9 @@
         if (!r.ok) throw new Error(body.error || ("HTTP " + r.status));
         if (body.mode && body.mode !== opt.mode) throw new Error("BACKEND_SKILL_MISSING");
         if (resp) {
+          var mdHtml = window.AIMD ? window.AIMD(body.interpretation || "") : esc(body.interpretation || "");
           resp.innerHTML = '<div class="card" style="border-color:var(--gold)"><h3>📜 ' + esc(opt.title || "AI 详批") +
-            '</h3><div style="white-space:pre-wrap;line-height:2;font-size:.88em">' + esc(body.interpretation || "") + "</div></div>";
+            '</h3><div class="ai-md">' + mdHtml + "</div></div>";
         }
         if (status) status.textContent = "✅ 详批完成";
       } catch (e) {
