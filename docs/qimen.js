@@ -590,6 +590,55 @@ function calculateQimen(dateStr, timeStr, question) {
                 else if (matched.length === 1) notes.push('暗支半合' + triple[3] + '(' + az + '+' + matched[0] + ')');
             }
         }
+
+        // 跨宫暗干+天盘干
+        for (var gx = 1; gx <= 9; gx++) {
+            if (gx === g) continue;
+            var tgx = (tianpan[gx-1] || '')[0];
+            if (!tgx || tgx === '') continue;
+            var pairX = [ag, tgx].sort(function(a,b) { return QM_GAN.indexOf(a) - QM_GAN.indexOf(b); }).join('');
+            if (QM_HE_WX[pairX]) notes.push('跨宫暗合化' + QM_HE_WX[pairX] + '(暗' + ag + '+天' + tgx + QM_GONG_SHORT[gx] + gx + ')');
+        }
+        // 跨宫暗干+暗干
+        for (var gx2 = g + 1; gx2 <= 9; gx2++) {
+            var ag2 = (angan[gx2-1] || '  ')[0];
+            if (!ag2 || ag2 === '') continue;
+            var pairY = [ag, ag2].sort(function(a,b) { return QM_GAN.indexOf(a) - QM_GAN.indexOf(b); }).join('');
+            if (QM_HE_WX[pairY]) notes.push('暗干暗合化' + QM_HE_WX[pairY] + '(暗' + ag + '+暗' + ag2 + QM_GONG_SHORT[gx2] + gx2 + ')');
+        }
+        // 跨宫暗干+地盘干
+        for (var gx3 = 1; gx3 <= 9; gx3++) {
+            if (gx3 === g) continue;
+            var dgx = (dipan[gx3-1] || '')[0];
+            if (!dgx || dgx === '') continue;
+            var pairZ = [ag, dgx].sort(function(a,b) { return QM_GAN.indexOf(a) - QM_GAN.indexOf(b); }).join('');
+            if (QM_HE_WX[pairZ]) notes.push('跨宫暗合化' + QM_HE_WX[pairZ] + '(暗' + ag + '+地' + dgx + QM_GONG_SHORT[gx3] + gx3 + ')');
+        }
+        // 暗干与日干/月干
+        var rg = dgz[0], mg = mgz[0];
+        if (QM_HE_WX[ag+rg]) notes.push('暗' + ag + '合日' + rg);
+        if (QM_HE_WX[ag+mg]) notes.push('暗' + ag + '合月' + mg);
+        // 暗支六合对冲跨宫
+        for (var gx4 = g + 1; gx4 <= 9; gx4++) {
+            var az2 = (angan[gx4-1] || '  ')[1];
+            if (!az2) continue;
+            if (QM_ZHI_HE[az] && QM_ZHI_HE[az] === az2) notes.push('暗支六合(' + az + '+' + az2 + QM_GONG_SHORT[gx4] + gx4 + ')');
+            if (QM_ZHI_CHONG[az] && QM_ZHI_CHONG[az] === az2) notes.push('暗支对冲(' + az + '+' + az2 + QM_GONG_SHORT[gx4] + gx4 + ')');
+        }
+        // 空亡宫暗合标记为虚合
+        var xkGongs2 = QM_XK_GONG[xk] || [];
+        if (xkGongs2.length > 0) {
+            for (var ni = 0; ni < notes.length; ni++) {
+                if (notes[ni].indexOf('暗合') >= 0 || notes[ni].indexOf('暗干暗合') >= 0) {
+                    for (var xkgi = 0; xkgi < xkGongs2.length; xkgi++) {
+                        if (notes[ni].indexOf(QM_GONG_SHORT[xkGongs2[xkgi]]) >= 0 && notes[ni].indexOf('[虚合]') < 0) {
+                            notes[ni] += '[虚合]';
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         
         if (notes.length > 0) {
             anheLines.push('  ' + gn + g + '宫: 天' + tg + '地' + dg + '暗' + ag + az + ' ' + notes.join('|'));
