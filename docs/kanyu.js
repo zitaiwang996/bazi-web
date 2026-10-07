@@ -138,7 +138,7 @@
       { name: "② 定盘（坐向与盘制）", fields: [
         { k: "zuo", label: "坐山", t: "mount" },
         { k: "xiang", label: "朝向", t: "mount" },
-        { k: "degree", label: "周天坐度(0-360)", t: "number", ph: "如 315" },
+        { k: "degree", label: "周天坐度（0=北，地盘正针）", t: "number", ph: "癸山正中=15，艮山=45" },
         { k: "jian", label: "兼向", t: "select", o: [EMPTY, "正向", "兼左", "兼右"] },
         { k: "fenjin", label: "分金", t: "text", ph: "如 丙子分金" },
         { k: "panzhi", label: "盘制（必填）", t: "select", o: [EMPTY, "开禧度", "时宪度", "现代修正度"] }
@@ -198,7 +198,7 @@
         { k: "yun", label: "元运", t: "select", o: ["按年份自动", "一运", "二运", "三运", "四运", "五运", "六运", "七运", "八运", "九运"] },
         { k: "zuo", label: "坐山", t: "mount" },
         { k: "xiang", label: "朝向", t: "mount" },
-        { k: "degree", label: "周天坐度(0-360)", t: "number", ph: "如 315" },
+        { k: "degree", label: "周天坐度（0=北，地盘正针）", t: "number", ph: "癸山正中=15，乾山=315" },
         { k: "jian", label: "兼向", t: "select", o: [EMPTY, "正向（中9度内）", "兼左3度以上（需替卦）", "兼右3度以上（需替卦）"] }
       ]},
       { name: "② 门与内六事", fields: [
@@ -226,7 +226,7 @@
         { k: "zuo", label: "坐山", t: "mount" },
         { k: "xiang", label: "朝向", t: "mount" },
         { k: "jian", label: "兼左兼右", t: "select", o: [EMPTY, "正向", "兼左", "兼右"] },
-        { k: "degree", label: "周天坐度(0-360)", t: "number", ph: "如 315" },
+        { k: "degree", label: "周天坐度（0=北，地盘正针）", t: "number", ph: "癸山正中=15，乾山=315" },
         { k: "fenjinfa", label: "分金法", t: "select", o: [EMPTY, "杨公线法", "胎骨线法"] },
         { k: "fenjin", label: "分金", t: "text", ph: "如 丙子分金" }
       ]},
@@ -262,7 +262,9 @@
     sanhe:    ["zuo", "xiang", "lailong", "laishui", "qushui"]
   };
 
-  var state = { method: "xuankong", zuo: "子", xiang: "午", degree: 180 };
+  // zuo/xiang：山名；zuoDegree/xiangDegree：真实周天度数（0=北，顺时针）。
+  // 坐度与向度分开存，避免把表单里的「周天坐度」当成罗盘的「向首度数」用错。
+  var state = { method: "xuankong", zuo: "子", xiang: "午", zuoDegree: 0, xiangDegree: 180 };
 
   // 二十四山（地平顺时针，子山在正上）
   var SHAN_CW = ["子", "癸", "丑", "艮", "寅", "甲", "卯", "乙", "辰", "巽", "巳", "丙", "午", "丁", "未", "坤", "申", "庚", "酉", "辛", "戌", "乾", "亥", "壬"];
@@ -271,26 +273,90 @@
   // 罗盘联动：首页背景盘与"罗盘量山"主盘共用 state.zuo/xiang/degree
   function applyRings() {
     [state._heroLp, state._mainLp].forEach(function (lp) {
-      if (lp) lp.setOrientation({ zuo: state.zuo, xiang: state.xiang, degree: state.degree });
+      if (lp) lp.setOrientation({
+        zuo: state.zuo, xiang: state.xiang,
+        zuoDegree: state.zuoDegree, xiangDegree: state.xiangDegree
+      });
     });
+    renderLiveZuoxiang();
+  }
+  // 四派页的「本坐向已触发硬忌」即时提示：选好坐向就出，不必等 AI
+  function renderLiveZuoxiang() {
+    var el = document.getElementById("ky-zuoxiang-live");
+    if (!el || !window.KANYU_ZUOXIANG) return;
+    var qz = window.KANYU_ZUOXIANG.quick(state.zuo, state.xiang, state.zuoDegree, state.method, null);
+    if (!qz || !qz.summary) { el.innerHTML = ""; return; }
+    var s = qz.summary;
+    el.innerHTML = '<div class="kp-hl">当前坐向：<b>' + esc(s.zuo) + "山" + esc(s.xiang) + "向</b>　已触发硬忌：" +
+      esc(s.checks.length ? s.checks.join("、") : "无") + "　黄泉 " + esc(s.huangquan || "—") +
+      "｜八煞 " + esc(s.bash || "—") + "｜劫煞 " + esc(s.jiesha || "—") + "</div>" +
+      '<div class="kp-meta">点“开始分析”会按该坐向给出完整硬忌与宜忌摆放表。</div>';
+  }
+  function centerDeg(shan) {
+    var i = SHAN_ORDER_UI().indexOf(shan);
+    return i < 0 ? null : i * 15;
+  }
+  function oppositeShan(shan) {
+    if (window.KANYU_ZUOXIANG) return window.KANYU_ZUOXIANG.opposite(shan);
+    var i = SHAN_ORDER_UI().indexOf(shan);
+    return i < 0 ? null : SHAN_ORDER_UI()[(i + 12) % 24];
+  }
+  function norm360(d) { return ((d % 360) + 360) % 360; }
+  function nearestShanName(deg) {
+    var list = SHAN_ORDER_UI(), best = null, bestD = 999;
+    var d = norm360(deg);
+    list.forEach(function (s, i) {
+      var c = i * 15, diff = Math.abs(((d - c + 540) % 360) - 180);
+      if (diff < bestD) { bestD = diff; best = s; }
+    });
+    return best;
   }
   // 四派表单里的坐向/度数，也驱动背景罗盘"跟着走"
-  function syncRingsFromFields() {
-    var changed = false;
+  // changedKey：刚被改动的字段。改哪个字段，就以哪个为准，另一个自动补对宫，坐向永远相反。
+  function syncRingsFromFields(changedKey) {
     var zuoEl = document.getElementById("ky_zuo");
     var xiangEl = document.getElementById("ky_xiang");
-    if (zuoEl) {
-      var z = String(zuoEl.value || "").trim();
-      if (window.Luopan && window.Luopan.shanIndex(z) >= 0 && z !== state.zuo) { state.zuo = z; changed = true; }
-    }
-    if (xiangEl) {
-      var x = String(xiangEl.value || "").trim();
-      if (window.Luopan && window.Luopan.shanIndex(x) >= 0 && x !== state.xiang) { state.xiang = x; changed = true; }
-    }
     var degEl = document.getElementById("ky_degree");
-    if (degEl) {
-      var d = parseFloat(degEl.value);
-      if (!isNaN(d) && d !== state.degree) { state.degree = d; changed = true; }
+    var z = zuoEl ? String(zuoEl.value || "").trim() : "";
+    var x = xiangEl ? String(xiangEl.value || "").trim() : "";
+    var d = degEl ? parseFloat(degEl.value) : NaN;
+    var zOk = window.Luopan && window.Luopan.shanIndex(z) >= 0;
+    var xOk = window.Luopan && window.Luopan.shanIndex(x) >= 0;
+    var dOk = !isNaN(d);
+    var changed = false;
+    function setDegField(v) { if (degEl) degEl.value = String(v); }
+
+    if (changedKey === "zuo" && zOk) {
+      state.zuo = z; state.xiang = oppositeShan(z);
+      var zc = centerDeg(z);
+      if (zc != null) { state.zuoDegree = zc; state.xiangDegree = norm360(zc + 180); setDegField(zc); }
+      if (xiangEl && state.xiang) xiangEl.value = state.xiang;
+      changed = true;
+    } else if (changedKey === "xiang" && xOk) {
+      state.xiang = x; state.zuo = oppositeShan(x);
+      var xc = centerDeg(x);
+      if (xc != null) { state.xiangDegree = xc; state.zuoDegree = norm360(xc + 180); if (degEl) setDegField(state.zuoDegree); }
+      if (zuoEl && state.zuo) zuoEl.value = state.zuo;
+      changed = true;
+    } else if (changedKey === "degree" && dOk) {
+      // 表单 degree = 周天坐度；向度恒为坐度 + 180
+      state.zuoDegree = norm360(d);
+      state.xiangDegree = norm360(state.zuoDegree + 180);
+      var zFromDeg = nearestShanName(state.zuoDegree);
+      if (zFromDeg) {
+        state.zuo = zFromDeg; state.xiang = oppositeShan(zFromDeg);
+        if (zuoEl) zuoEl.value = state.zuo;
+        if (xiangEl) xiangEl.value = state.xiang;
+      }
+      changed = true;
+    } else {
+      if (zOk) { state.zuo = z; state.xiang = oppositeShan(z); changed = true; }
+      else if (xOk) { state.xiang = x; state.zuo = oppositeShan(x); changed = true; }
+      if (dOk) { state.zuoDegree = norm360(d); state.xiangDegree = norm360(state.zuoDegree + 180); changed = true; }
+      else {
+        var zc2 = centerDeg(state.zuo);
+        if (zc2 != null) { state.zuoDegree = zc2; state.xiangDegree = norm360(zc2 + 180); changed = true; }
+      }
     }
     if (changed) applyRings();
   }
@@ -360,7 +426,7 @@
         '<div class="ky-lp-side"><div class="ky-grid">' +
         '<div class="ky-field"><label>坐山（后靠）</label><select id="ky-lp-zuo">' + SHAN_ORDER_UI().map(function (s) { return '<option value="' + s + '">' + s + "山</option>"; }).join("") + "</select></div>" +
         '<div class="ky-field"><label>朝向（前朝）</label><select id="ky-lp-xiang">' + SHAN_ORDER_UI().map(function (s) { return '<option value="' + s + '">' + s + "山</option>"; }).join("") + "</select></div>" +
-        '<div class="ky-field"><label>向首周天度数（0=北，顺时针）</label><input type="number" id="ky-lp-degree" step="0.1" value="180"></div>' +
+        '<div class="ky-field"><label>向首周天度数（0=北，顺时针；坐度＝向度−180）</label><input type="number" id="ky-lp-degree" step="0.1" value="180"></div>' +
         '<div class="ky-field"><label>盘式</label><select id="ky-lp-disk"><option>地盘正针</option><option>人盘中针</option><option>天盘缝针</option></select></div>' +
         '</div>' +
         '<div class="ky-lp-readout" id="ky-lp-readout"></div>' +
@@ -389,7 +455,7 @@
         '<div class="ky-actions"><button type="button" class="btn-go" id="ky-run">✨ 开始分析</button>' +
         '<button type="button" class="ky-ghost" id="ky-clear">清空本派</button>' +
         '<span class="ky-status" id="ky-status"></span></div></div>' +
-        '<div class="card ky-taboo-card"><h3>⛔ 本派硬禁忌（犯了一票否决）</h3><div id="ky-taboos"></div></div>' +
+        '<div class="card ky-taboo-card"><h3>⛔ 本派硬禁忌（犯了一票否决）</h3><div id="ky-taboos"></div><div id="ky-zuoxiang-live" class="ky-live-zx"></div></div>' +
         '<div id="ky-result"></div>' +
       '</div>' +
       '<div class="ky-panel" id="ky-panel-xiezi"></div>' +
@@ -420,18 +486,26 @@
     function updateLuopan() {
       var zuo = document.getElementById("ky-lp-zuo").value;
       var xiang = document.getElementById("ky-lp-xiang").value;
-      var deg = parseFloat(document.getElementById("ky-lp-degree").value);
+      var degRaw = document.getElementById("ky-lp-degree").value;
+      var deg = parseFloat(degRaw);
       var disk = document.getElementById("ky-lp-disk").value;
       state.zuo = zuo; state.xiang = xiang;
-      if (!isNaN(deg)) state.degree = deg;
+      // 面板里的度数 = 向首周天度数；坐度 = 向度 − 180，二者始终相反
+      state.xiangDegree = !isNaN(deg) ? norm360(deg) : centerDeg(xiang);
+      state.zuoDegree = state.xiangDegree != null ? norm360(state.xiangDegree + 180) : centerDeg(zuo);
       applyRings();
-      var gi = (window.Luopan ? window.Luopan.shanIndex(zuo) : -1);
       var out = document.getElementById("ky-lp-readout");
       if (out) {
         var gua = (window.KanyuXiezi && window.KanyuXiezi.mountainGua) ? window.KanyuXiezi.mountainGua(zuo) : null;
+        var qz = (window.KANYU_ZUOXIANG && state.xiangDegree != null)
+          ? window.KANYU_ZUOXIANG.quick(zuo, xiang, state.xiangDegree, state.method, null) : null;
+        var ex = qz && qz.summary
+          ? "　黄泉 " + (qz.summary.huangquan || "—") + "　八煞 " + (qz.summary.bash || "—") + "　劫煞 " + (qz.summary.jiesha || "—")
+          : "";
         out.innerHTML = "<b>" + esc(zuo) + "山 " + esc(xiang) + "向</b>　向首 " +
-          (isNaN(deg) ? "—" : deg + "°") + "　盘式 " + esc(disk) +
-          (gua ? "<br>坐山正针卦：<b>" + esc(gua) + "</b>" : "");
+          (state.xiangDegree == null ? "—" : state.xiangDegree.toFixed(1) + "°") + "／坐度 " +
+          (state.zuoDegree == null ? "—" : state.zuoDegree.toFixed(1) + "°") + "　盘式 " + esc(disk) +
+          (gua ? "<br>坐山正针卦：<b>" + esc(gua) + "</b>" : "") + ex;
       }
     }
     var lpXiang = document.getElementById("ky-lp-xiang");
@@ -446,29 +520,52 @@
       return best;
     }
     function norm180(d) { while (d > 180) d -= 360; while (d < -180) d += 360; return d; }
-    ["ky-lp-zuo", "ky-lp-disk"].forEach(function (id) {
-      var node = document.getElementById(id);
-      if (node) { node.addEventListener("input", updateLuopan); node.addEventListener("change", updateLuopan); }
+    var lpZuo = document.getElementById("ky-lp-zuo");
+    var lpDisk = document.getElementById("ky-lp-disk");
+    if (lpDisk) { lpDisk.addEventListener("input", updateLuopan); lpDisk.addEventListener("change", updateLuopan); }
+    // 改坐山 → 自动补对宫朝向与度数，避免出现“坐向不相反”的歪盘
+    lpZuo.addEventListener("change", function () {
+      var opp = oppositeShan(lpZuo.value);
+      if (opp) {
+        lpXiang.value = opp;
+        var c = centerDeg(opp);
+        if (c != null) lpDegree.value = String(c);
+      }
+      updateLuopan();
     });
     // 改向山 → 自动同步度数；改度数 → 自动同步向山（保持两者一致）
     lpXiang.addEventListener("change", function () {
       var i = SHAN_ORDER_UI().indexOf(lpXiang.value);
       if (i >= 0) lpDegree.value = String(i * 15);
+      var opp = oppositeShan(lpXiang.value);
+      if (opp) lpZuo.value = opp;
       updateLuopan();
     });
     lpXiang.addEventListener("input", function () {
       var i = SHAN_ORDER_UI().indexOf(lpXiang.value);
       if (i >= 0) lpDegree.value = String(i * 15);
+      var opp = oppositeShan(lpXiang.value);
+      if (opp) lpZuo.value = opp;
       updateLuopan();
     });
     lpDegree.addEventListener("input", function () {
       var d = parseFloat(lpDegree.value);
-      if (!isNaN(d)) lpXiang.value = nearestShan(((d % 360) + 360) % 360);
+      if (!isNaN(d)) {
+        var s = nearestShan(norm360(d));
+        lpXiang.value = s;
+        var opp = oppositeShan(s);
+        if (opp) lpZuo.value = opp;
+      }
       updateLuopan();
     });
     lpDegree.addEventListener("change", function () {
       var d = parseFloat(lpDegree.value);
-      if (!isNaN(d)) lpXiang.value = nearestShan(((d % 360) + 360) % 360);
+      if (!isNaN(d)) {
+        var s = nearestShan(norm360(d));
+        lpXiang.value = s;
+        var opp = oppositeShan(s);
+        if (opp) lpZuo.value = opp;
+      }
       updateLuopan();
     });
     document.getElementById("ky-lp-zuo").value = "子";
@@ -543,8 +640,8 @@
     currentFields().forEach(function (f) {
       var input = document.getElementById("ky_" + f.k);
       if (!input) return;
-      input.addEventListener("input", function () { saveLocal(); refreshProgress(); syncRingsFromFields(); });
-      input.addEventListener("change", function () { saveLocal(); refreshProgress(); syncRingsFromFields(); });
+      input.addEventListener("input", function () { saveLocal(); refreshProgress(); syncRingsFromFields(f.k); });
+      input.addEventListener("change", function () { saveLocal(); refreshProgress(); syncRingsFromFields(f.k); });
     });
   }
 
@@ -573,6 +670,7 @@
     renderTaboos();
     loadLocal();
     refreshProgress();
+    syncRingsFromFields();
     document.getElementById("ky-result").innerHTML = "";
     document.getElementById("ky-status").textContent = "";
   }
@@ -623,6 +721,19 @@
       var field = fields.filter(function (f) { return f.k === k; })[0];
       return field ? field.label : k;
     });
+    // 把坐向归一成一块，避免 AI 把「坐度/向度」用反
+    if (state.zuo || state.xiang) {
+      out._orientation = {
+        zuo: state.zuo, xiang: state.xiang,
+        zuoDegree: state.zuoDegree == null ? null : Math.round(state.zuoDegree * 10) / 10,
+        xiangDegree: state.xiangDegree == null ? null : Math.round(state.xiangDegree * 10) / 10,
+        note: "zuoDegree/xiangDegree 为真北周天度数（0=北，顺时针），坐向恒相差180度"
+      };
+      // 表单里的 degree 是「周天坐度」，以罗盘联动后的值为准
+      if (fields.some(function (f) { return f.k === "degree"; }) && state.zuoDegree != null) {
+        out.degree = String(Math.round(state.zuoDegree * 10) / 10);
+      }
+    }
 
     // 磁偏角修正：启用后，所有方位/度数改用修正后的真北值
     var decl = parseFloat(value("decl"));
@@ -698,10 +809,17 @@
     var methodName = METHODS.filter(function (m) { return m.id === state.method; })[0].name;
     var pan = window.KANYU_PAN ? window.KANYU_PAN.compute(state.method, data) : { html: "", summary: null };
     data._computed = pan.summary;
+    // 坐向速断（确定性查表）：先算硬忌与摆放，再把结果同时给人看、给 AI 当事实
+    var qz = window.KANYU_ZUOXIANG
+      ? window.KANYU_ZUOXIANG.quick(data.zuo, data.xiang, data.degree, state.method, pan.summary)
+      : { html: "", summary: null, aiText: "" };
+    if (qz && qz.summary) { data._zuoxiang = qz.summary; data._zuoxiangText = qz.aiText; }
 
     status.textContent = "⏳ 正在按" + methodName + "研判…";
     btn.disabled = true;
-    result.innerHTML = (pan.html || "") + '<div class="card ky-pending">🤖 正在生成 AI 研判…</div>';
+    result.innerHTML = (pan.html || "") +
+      (qz.html ? '<div class="card kp-card">' + qz.html + "</div>" : "") +
+      '<div class="card ky-pending">🤖 正在生成 AI 研判…</div>';
 
     fetch(API + "/api/v1/interpret", {
       method: "POST",
@@ -711,18 +829,19 @@
       return resp.json().then(function (body) { return { ok: resp.ok, body: body }; });
     }).then(function (out) {
       if (!out.ok) throw new Error(out.body.error || "HTTP_ERROR");
-      renderResult(data, out.body, methodName, pan.html);
+      renderResult(data, out.body, methodName, pan.html, qz.html);
       status.textContent = "✅ 分析完成";
     }).catch(function (err) {
       status.textContent = "❌ 生成失败";
-      result.innerHTML = (pan.html || "") + '<div class="card ky-error">接口错误：' + esc(err.message) + "</div>";
+      result.innerHTML = (pan.html || "") + (qz.html ? '<div class="card kp-card">' + qz.html + "</div>" : "") +
+        '<div class="card ky-error">接口错误：' + esc(err.message) + "</div>";
     }).finally(function () {
       btn.disabled = false;
       result.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
-  function renderResult(data, body, methodName, panHtml) {
+  function renderResult(data, body, methodName, panHtml, qzHtml) {
     var fields = currentFields();
     var missing = data._missing || [];
     var filled = fields.filter(function (f) { return data[f.k]; }).map(function (f) {
@@ -755,12 +874,16 @@
       }
     }
 
+    var aiHtml = window.AIMD
+      ? window.AIMD(body.interpretation || "")
+      : "<p>" + esc(body.interpretation || "") + "</p>";
     document.getElementById("ky-result").innerHTML =
+      (qzHtml ? '<div class="card kp-card">' + qzHtml + "</div>" : "") +
       (panHtml || "") +
       declHtml +
-      '<div class="card ky-sub"><h3>📋 本次已填信息</h3>' + (filled || "（未填）") + missingHtml + "</div>" +
-      '<div class="card" style="border-color:var(--gold)"><h3>📜 堪舆研判（' + esc(methodName) + "）</h3>" +
-      '<div class="ky-answer">' + esc(body.interpretation || "") + "</div></div>";
+      '<div class="card" style="border-color:var(--gold)"><h3>📜 AI 研判（' + esc(methodName) + "）</h3>" +
+      '<div class="ai-md">' + aiHtml + "</div></div>" +
+      '<div class="card ky-sub"><h3>📋 本次已填信息</h3>' + (filled || "（未填）") + missingHtml + "</div>";
   }
 
   function injectStyle() {
@@ -789,6 +912,7 @@
       "#tab-kanyu .ky-ghost{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit}",
       "#tab-kanyu .ky-status{color:var(--dim);font-size:.84em}",
       "#tab-kanyu .ky-taboo-card h3{margin-bottom:10px}",
+      "#tab-kanyu .ky-live-zx{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}",
       "#tab-kanyu .ky-taboo{width:100%;border-collapse:collapse;font-size:.8em}",
       "#tab-kanyu .ky-taboo th,#tab-kanyu .ky-taboo td{border:1px solid var(--border);padding:7px 8px;text-align:left;vertical-align:top;line-height:1.6}",
       "#tab-kanyu .ky-taboo th{color:var(--goldL);background:rgba(200,164,92,.08)}",
@@ -818,6 +942,8 @@
       "#tab-kanyu .kp-shuang-cell b{display:block;color:var(--text)}",
       "#tab-kanyu .kp-shuang-cell span{color:var(--goldL)}",
       "#tab-kanyu .kp-table{width:100%;border-collapse:collapse;font-size:.78em}",
+      "#tab-kanyu .kp-tablewrap{overflow-x:auto;margin:8px 0;-webkit-overflow-scrolling:touch}",
+      "#tab-kanyu .kp-table.kp-wide{min-width:660px}",
       "#tab-kanyu .kp-table th,#tab-kanyu .kp-table td{border:1px solid var(--border);padding:5px 6px;text-align:left}",
       "#tab-kanyu .kp-table th{color:var(--goldL);background:rgba(200,164,92,.08)}",
       "#tab-kanyu .kp-good{color:var(--goldL)}",

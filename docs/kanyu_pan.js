@@ -288,11 +288,22 @@
     return { html: html, summary: { eightSha: bs, huangquan: hg, checks: rows.map(function (r) { return r[0]; }) } };
   }
 
+  // 磁偏角修正后的真北值覆盖原始罗盘读数
+  function effective(data) {
+    var out = {};
+    for (var k in data) out[k] = data[k];
+    if (data && data._corrected) {
+      for (var c in data._corrected) out[c] = data._corrected[c];
+    }
+    return out;
+  }
+
   function compute(method, data) {
-    if (method === "xuankong") return xuankong(data);
-    if (method === "sanhe") return sanhe(data);
-    if (method === "lvshi") return lvshi(data);
-    if (method === "tianxing") return tianxing(data);
+    var d = effective(data);
+    if (method === "xuankong") return xuankong(d);
+    if (method === "sanhe") return sanhe(d);
+    if (method === "lvshi") return lvshi(d);
+    if (method === "tianxing") return tianxing(d);
     return { html: "", summary: null };
   }
 

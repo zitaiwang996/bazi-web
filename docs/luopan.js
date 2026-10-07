@@ -27,6 +27,12 @@
     return [cx + r * Math.cos(t), cy + r * Math.sin(t)];
   }
   function n(v) { return Math.round(v * 100) / 100; }
+  function numOrNull(v) {
+    if (v === null || v === undefined || v === "") return null;
+    var x = parseFloat(v);
+    return isNaN(x) ? null : x;
+  }
+  function norm360(v) { return ((v % 360) + 360) % 360; }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -213,7 +219,9 @@
     var hlXiang = svg.querySelector('[data-hl="xiang"]');
     var xiuGroup = svg.querySelector('[data-ring="xiu"]');
     var S = opts.size || 1000, cx = S / 2, cy = S / 2, R = S * 0.47;
-    var state = { zuo: null, xiang: null, degree: null, spin: 0 };
+    // zuo/xiang 为山名；zuoDegree/xiangDegree 为真实周天度数（0=北，顺时针）。
+    // 24 山名只用来定“落在哪一山”，指针/轴线/高亮一律用真实度数，避免兼向被吸附到山正中。
+    var state = { zuo: null, xiang: null, zuoDegree: null, xiangDegree: null, spin: 0 };
     if (xiuGroup) {
       // 用 CSS transform 走合成层，避免每帧改 SVG 属性导致整组重绘
       xiuGroup.style.transformBox = "view-box";
@@ -223,15 +231,25 @@
 
     var api = {
       svg: svg,
-      // 设置坐向：zuo/xiang 为二十四山名，degree 为向首周天度数（0=北，顺时针）
+      // 设置坐向：zuo/xiang 为二十四山名；zuoDegree/xiangDegree 为周天度数（0=北，顺时针）。
+      // 兼容旧接口：degree 视作“向首周天度数”。
       setOrientation: function (o) {
         o = o || {};
         if (o.zuo !== undefined) state.zuo = o.zuo;
         if (o.xiang !== undefined) state.xiang = o.xiang;
-        if (o.degree !== undefined) state.degree = o.degree;
+        if (o.zuoDegree !== undefined) state.zuoDegree = numOrNull(o.zuoDegree);
+        if (o.xiangDegree !== undefined) state.xiangDegree = numOrNull(o.xiangDegree);
+        // 兼容旧接口：degree = 向首周天度数
+        if (o.degree !== undefined) {
+          var d = numOrNull(o.degree);
+          if (d != null) state.xiangDegree = norm360(d);
+        }
         var zi = shanIndex(state.zuo), xi = shanIndex(state.xiang);
-        var zDeg = zi >= 0 ? zi * 15 : null;
-        var xDeg = xi >= 0 ? xi * 15 : (state.degree != null && !isNaN(parseFloat(state.degree)) ? parseFloat(state.degree) : null);
+        var zDeg = state.zuoDegree != null ? state.zuoDegree : (zi >= 0 ? zi * 15 : null);
+        var xDeg = state.xiangDegree != null ? state.xiangDegree : (xi >= 0 ? xi * 15 : null);
+        // 坐山名与坐度不一致时（例：选了癸山但坐度给 200），以坐度反推坐山所在山，保证盘不打架
+        if (zDeg != null) zDeg = norm360(zDeg);
+        if (xDeg != null) xDeg = norm360(xDeg);
         if (needle && xDeg != null) needle.setAttribute("transform", "rotate(" + n(xDeg) + " " + cx + " " + cy + ")");
         if (axis && zDeg != null && xDeg != null) {
           var p1 = pt(cx, cy, R * 0.70, zDeg), p2 = pt(cx, cy, R * 0.70, xDeg);
