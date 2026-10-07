@@ -255,11 +255,21 @@
     ]
   };
 
+  // 动土 / 用事择日（四派共用）。填了日期与方位才联动年太岁、三煞、五黄。
+  var DONGTU_GROUP = { name: "动土 / 用事择日（可选，填了才联动年煞）", fields: [
+    { k: "dt_date", label: "用事/动土日期", t: "date" },
+    { k: "dt_fang", label: "动土方位（二十四山）", t: "mount" },
+    { k: "dt_thing", label: "用事", t: "select", o: ["动土", "修方", "开门", "入宅", "安葬", "上梁"] }
+  ]};
+  ["tianxing", "lvshi", "xuankong", "sanhe"].forEach(function (m) {
+    SCHEMAS[m] = (SCHEMAS[m] || []).concat([DONGTU_GROUP]);
+  });
+
   var REQUIRED = {
-    tianxing: ["zuo", "xiang", "panzhi", "lailong", "sha", "laishui", "qushui"],
+    tianxing: ["zuo", "xiang", "degree", "panzhi", "lailong", "sha", "laishui", "qushui"],
     lvshi:    ["lv_origin", "lv_tai", "lv_sex", "lv_shashui", "lv_duigong"],
-    xuankong: ["year", "zuo", "xiang", "men"],
-    sanhe:    ["zuo", "xiang", "lailong", "laishui", "qushui"]
+    xuankong: ["year", "zuo", "xiang", "degree", "men"],
+    sanhe:    ["zuo", "xiang", "degree", "lailong", "laishui", "qushui"]
   };
 
   // zuo/xiang：山名；zuoDegree/xiangDegree：真实周天度数（0=北，顺时针）。
@@ -390,7 +400,8 @@
     } else if (field.t === "textarea") {
       inner = '<textarea id="' + id + '" rows="2" placeholder="' + esc(field.ph || "") + '"></textarea>';
     } else {
-      inner = '<input type="' + (field.t === "number" ? "number" : "text") + '" id="' + id + '" placeholder="' + esc(field.ph || "") + '">';
+      var inputType = field.t === "number" ? "number" : (field.t === "date" ? "date" : "text");
+      inner = '<input type="' + inputType + '" id="' + id + '" placeholder="' + esc(field.ph || "") + '">';
     }
     return '<div class="' + cls + '" data-key="' + field.k + '"><label>' + esc(field.label) +
       '<span class="ky-req" data-req="' + field.k + '"></span></label>' + inner + "</div>";
@@ -701,10 +712,13 @@
     }
     fields.forEach(function (f) {
       var badge = document.querySelector('#tab-kanyu .ky-req[data-req="' + f.k + '"]');
-      if (!badge) return;
       var need = required.indexOf(f.k) >= 0;
-      badge.textContent = need ? (isFilled(f.k) ? " 必填 ✓" : " 必填") : "";
-      badge.className = "ky-req" + (need ? " needed" : "");
+      if (badge) {
+        badge.textContent = need ? (isFilled(f.k) ? " 必填 ✓" : " 必填") : "";
+        badge.className = "ky-req" + (need ? " needed" : "");
+      }
+      var wrap = document.querySelector('#tab-kanyu .ky-field[data-key="' + f.k + '"]');
+      if (wrap) wrap.classList.toggle("ky-field-missing", need && !isFilled(f.k));
     });
   }
 
@@ -805,6 +819,17 @@
     var result = document.getElementById("ky-result");
     var btn = document.getElementById("ky-run");
     var data = collect();
+    // 必填没齐 → 直接拦下，不出结果
+    if (data._missing && data._missing.length) {
+      status.textContent = "⚠ 必填未齐，暂不出结果";
+      refreshProgress();
+      result.innerHTML = '<div class="card ky-error"><b>还不能出结果：本派关键项未填齐。</b>' +
+        data._missing.map(function (m) { return "<div>· " + esc(m) + "</div>"; }).join("") +
+        '<div class="ky-meta">上面带红框的就是缺的项，补齐后再点“开始分析”。</div></div>';
+      var first = document.querySelector("#tab-kanyu .ky-field-missing");
+      if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     var question = data.question || "请按该体系做完整解析，并告诉我还缺什么、下一步现场测什么";
     var methodName = METHODS.filter(function (m) { return m.id === state.method; })[0].name;
     var pan = window.KANYU_PAN ? window.KANYU_PAN.compute(state.method, data) : { html: "", summary: null };
@@ -814,11 +839,19 @@
       ? window.KANYU_ZUOXIANG.quick(data.zuo, data.xiang, data.degree, state.method, pan.summary)
       : { html: "", summary: null, aiText: "" };
     if (qz && qz.summary) { data._zuoxiang = qz.summary; data._zuoxiangText = qz.aiText; }
+    // 动土/用事择日联动（可选）：填了日期就查年太岁/三煞/五黄
+    var dt = null;
+    if (data.dt_date && window.KANYU_DONGTU) {
+      dt = window.KANYU_DONGTU.analyze(data.dt_date, data.dt_fang, data.dt_thing);
+      if (dt) { data._dongtu = dt.summary; data._dongtuText = dt.aiText; }
+    }
+    var dtHtml = dt ? dt.html : "";
 
     status.textContent = "⏳ 正在按" + methodName + "研判…";
     btn.disabled = true;
     result.innerHTML = (pan.html || "") +
       (qz.html ? '<div class="card kp-card">' + qz.html + "</div>" : "") +
+      (dtHtml ? '<div class="card kp-card">' + dtHtml + "</div>" : "") +
       '<div class="card ky-pending">🤖 正在生成 AI 研判…</div>';
 
     fetch(API + "/api/v1/interpret", {
@@ -829,11 +862,12 @@
       return resp.json().then(function (body) { return { ok: resp.ok, body: body }; });
     }).then(function (out) {
       if (!out.ok) throw new Error(out.body.error || "HTTP_ERROR");
-      renderResult(data, out.body, methodName, pan.html, qz.html);
+      renderResult(data, out.body, methodName, pan.html, qz.html, dtHtml);
       status.textContent = "✅ 分析完成";
     }).catch(function (err) {
       status.textContent = "❌ 生成失败";
       result.innerHTML = (pan.html || "") + (qz.html ? '<div class="card kp-card">' + qz.html + "</div>" : "") +
+        (dtHtml ? '<div class="card kp-card">' + dtHtml + "</div>" : "") +
         '<div class="card ky-error">接口错误：' + esc(err.message) + "</div>";
     }).finally(function () {
       btn.disabled = false;
@@ -841,7 +875,7 @@
     });
   }
 
-  function renderResult(data, body, methodName, panHtml, qzHtml) {
+  function renderResult(data, body, methodName, panHtml, qzHtml, dtHtml) {
     var fields = currentFields();
     var missing = data._missing || [];
     var filled = fields.filter(function (f) { return data[f.k]; }).map(function (f) {
@@ -879,6 +913,7 @@
       : "<p>" + esc(body.interpretation || "") + "</p>";
     document.getElementById("ky-result").innerHTML =
       (qzHtml ? '<div class="card kp-card">' + qzHtml + "</div>" : "") +
+      (dtHtml ? '<div class="card kp-card">' + dtHtml + "</div>" : "") +
       (panHtml || "") +
       declHtml +
       '<div class="card" style="border-color:var(--gold)"><h3>📜 AI 研判（' + esc(methodName) + "）</h3>" +
@@ -908,6 +943,8 @@
       "#tab-kanyu .ky-field label{font-size:.8em;color:var(--dim)}",
       "#tab-kanyu .ky-field input,#tab-kanyu .ky-field select,#tab-kanyu .ky-field textarea{width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--input);color:var(--text);font-family:inherit;font-size:.86em}",
       "#tab-kanyu .ky-req.needed{color:var(--goldL)}",
+      "#tab-kanyu .ky-field.ky-field-missing input,#tab-kanyu .ky-field.ky-field-missing select,#tab-kanyu .ky-field.ky-field-missing textarea{border-color:var(--redL);box-shadow:0 0 0 1px rgba(231,111,81,.35)}",
+      "#tab-kanyu .ky-field.ky-field-missing label{color:var(--redL)}",
       "#tab-kanyu .ky-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}",
       "#tab-kanyu .ky-ghost{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit}",
       "#tab-kanyu .ky-status{color:var(--dim);font-size:.84em}",
