@@ -849,7 +849,7 @@ button:active { transform: scale(0.97); }
 <script src="terms_data.js?v=8658970"></script>
 <script src="bazi.js?v=8658970"></script>
 <script src="ziwei.js?v=8658970"></script>
-<script src="liuren.js?v=8658970"></script>
+<script src="liuren.js?v=20261008a"></script>
 <script src="liuyao.js?v=8658970"></script>
 <script src="analysis.js?v=8658970"></script>
 <script src="lunar.min.js?v=3456789"></script>
@@ -1407,40 +1407,107 @@ function doLiuren() {
     document.getElementById('lr-loading').style.display = 'none';
 }
 
+let _lrLast = null;
+function lrSetNow(){
+  var n = new Date(), p = v => String(v).padStart(2,'0');
+  var ed = document.getElementById('lr-date'), et = document.getElementById('lr-time');
+  if (ed) ed.value = n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate());
+  if (et) et.value = p(n.getHours())+':'+p(n.getMinutes());
+}
+(function lrInjectStyle(){
+  if (document.getElementById('lr-style')) return;
+  var st = document.createElement('style'); st.id = 'lr-style';
+  st.textContent = [
+    '.lr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}',
+    '.lr-cell{border:1px solid var(--border);border-radius:6px;padding:6px 4px;text-align:center;background:var(--input);font-size:.78em;line-height:1.5}',
+    '.lr-cell .lr-di{color:var(--dim);font-size:.85em}',
+    '.lr-cell .lr-tian{font-size:1.25em;font-weight:700;color:var(--goldL);font-family:"Noto Serif SC",serif}',
+    '.lr-cell .lr-tj{color:#8fd0a0}',
+    '.lr-cell .lr-ss{color:var(--redL);font-size:.9em}',
+    '.lr-san{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}',
+    '.lr-san .lr-k{border:1px solid var(--gold);border-radius:8px;padding:8px 4px;background:rgba(200,164,92,.08)}',
+    '.lr-san .lr-k b{font-size:1.5em;color:var(--goldL);font-family:"Noto Serif SC",serif}',
+    '.lr-kv{color:var(--dim);font-size:.78em;line-height:1.6}',
+    '@media(max-width:720px){.lr-grid{grid-template-columns:repeat(3,1fr)}}'
+  ].join('\n');
+  document.head.appendChild(st);
+})();
+
 function renderLiuren(d) {
-    let html = `<div class="card" style="text-align:center"><h3>🔮 大六壬课</h3>
-      <div>占时: <b>${d.zhanShi}</b> | 月将: <b>${d.yueJiang}</b> | 日柱: <b>${d.dayPillar}</b> | ${d.isDay?'昼':'夜'}占</div>
-      ${d.question ? `<div style="color:var(--goldL);margin-top:4px">占问: "${d.question}"</div>` : ''}</div>`;
-
-    // 四课
-    html += `<div class="card"><h3>📋 四课</h3><table><tr><th>课</th><th>上神</th><th>下神</th><th>天将</th></tr>
-      ${d.siKe.map(k => `<tr><td>第${k.num}课</td><td><b>${k.shang}</b></td><td>${k.xia}</td><td>${k.shangJiang||'—'}</td></tr>`).join('')}</table></div>`;
-
-    // 三传
-    html += `<div class="card"><h3>📨 三传</h3>
-      <div style="display:flex;gap:16px;justify-content:center;font-size:1.2em">
-        <span>初传: <b style="color:var(--goldL)">${d.sanChuan.chu}</b></span> →
-        <span>中传: <b style="color:var(--goldL)">${d.sanChuan.zhong}</b></span> →
-        <span>末传: <b style="color:var(--goldL)">${d.sanChuan.mo}</b></span>
-      </div></div>`;
+    if (!d || d.error) {
+        document.getElementById('lr-results').innerHTML = '<div class="card" style="color:var(--redL)">❌ ' + escapeInterpretation((d&&d.error)||'起课失败') + '</div>';
+        return;
+    }
+    _lrLast = d;
+    var sc = d.sanChuan, tj = d.tianJiang;
+    var html = '<div class="card" style="text-align:center"><h3>🔮 大六壬课 · ' + escapeInterpretation(d.dayPillar) + '日 ' + escapeInterpretation(d.shi) + '时</h3>' +
+      (d.question ? '<div style="color:var(--goldL);margin-bottom:4px">占问：' + escapeInterpretation(d.question) + '</div>' : '') +
+      '<div class="lr-kv">月将：<b>' + d.yuejiang + '</b>（' + escapeInterpretation(d.yuejiangName||'') + '）　占时：<b>' + d.shi + '</b>　日柱：<b>' + d.dayPillar + '</b>　年柱：' + (d.yearGz||'—') + '　月柱：' + (d.monthGz||'—') + '</div>' +
+      '<div class="lr-kv">贵人：<b>' + tj.guiren + '</b>（落' + tj.guirenTp + '）　' + tj.dir + '　旬：' + d.xun + '　旬空：<span class="tag tag-warn">' + d.kong + '</span></div>' +
+    '</div>';
 
     // 天地盘
-    html += `<div class="card"><h3>🌐 天地盘</h3><div class="lr-layout">`;
-    for (const cell of d.layout) {
-        html += `<div class="lr-cell"><div style="color:var(--dim);font-size:.75em">地${cell.diBranch}</div><div style="font-weight:700">天${cell.tianBranch}</div><div style="color:var(--dim);font-size:.7em">${cell.general||'—'}</div></div>`;
+    html += '<div class="card"><h3>🌐 天地盘（月将加时 · 十二宫）</h3><div class="lr-grid">';
+    d.layout.forEach(function (c) {
+      html += '<div class="lr-cell"><div class="lr-di">地' + c.di + '</div><div class="lr-tian">' + c.tian + '</div>' +
+        '<div class="lr-tj">' + (c.jiang||'—') + '</div><div class="lr-di">' + (c.dunGan||'') + ' ' + (c.qin||'') + '</div>' +
+        '<div class="lr-di">' + (c.cs||'') + '</div>' + (c.sha ? '<div class="lr-ss">' + c.sha + '</div>' : '') + '</div>';
+    });
+    html += '</div></div>';
+
+    // 四课
+    html += '<div class="card"><h3>📋 四课</h3><div style="overflow-x:auto"><table class="ly-tbl"><thead><tr><th>课</th><th>第1课</th><th>第2课</th><th>第3课</th><th>第4课</th></tr></thead><tbody>' +
+      '<tr><td>上神</td>' + d.siKe.shang.map(function (s) { return '<td class="ly-g"><b>' + s + '</b><br><span class="lr-kv">' + (tj.map[s]||'') + '</span></td>'; }).join('') + '</tr>' +
+      '<tr><td>下神</td>' + d.siKe.xia.map(function (s) { return '<td>' + s + '</td>'; }).join('') + '</tr>' +
+      '</tbody></table></div>' +
+      '<div class="lr-kv" style="margin-top:6px">课体：' + (d.keti.length ? d.keti.map(function (t) { return '<span class="tag tag-info">' + t + '课</span>'; }).join(' ') : '普通课') + '　发用：' + escapeInterpretation(sc.fayong) + '</div>' +
+      '<div class="lr-kv">相克：' + (d.keList.length ? escapeInterpretation(d.keList.join('　')) : '四课无克（取遥克/昴星/别责）') + '</div></div>';
+
+    // 三传
+    function kCard(label, zhi, jiang, dun, qinZhi, qinDun, cs) {
+      return '<div class="lr-k"><div class="lr-kv">' + label + '</div><b>' + zhi + '</b>' +
+        '<div class="lr-kv">' + (jiang||'—') + '　遁' + (dun||'—') + '</div>' +
+        '<div class="lr-kv">六亲(支)：' + (qinZhi||'—') + '</div>' +
+        '<div class="lr-kv">六亲(遁)：' + (qinDun||'—') + '</div>' +
+        '<div class="lr-kv">长生：' + (cs||'—') + '</div></div>';
     }
-    html += `</div></div>`;
+    html += '<div class="card"><h3>📨 三传</h3><div class="lr-san">' +
+      kCard('初传', sc.chu, sc.chuJiang, sc.chuDun, sc.chuQinZhi, sc.chuQin, sc.chuCsGan) +
+      kCard('中传', sc.zhong, sc.zhongJiang, sc.zhongDun, sc.zhongQinZhi, sc.zhongQin, sc.zhongCsGan) +
+      kCard('末传', sc.mo, sc.moJiang, sc.moDun, sc.moQinZhi, sc.moQin, sc.moCsGan) +
+      '</div><div class="lr-kv" style="text-align:center;margin-top:8px">发用：' + escapeInterpretation(sc.fayong) + '　三合：' + sanheOf(sc) + '</div></div>';
 
-    // 课体 + 空亡
-    html += `<div class="card"><h3>📊 课体 & 神煞</h3>
-      <div>课体判断: ${d.keTi.length ? d.keTi.map(t=>'<span class="tag tag-info">'+t+'</span>').join(' ') : '<span class="tag tag-neutral">普通课</span>'}</div>
-      <div style="margin-top:8px">旬空: <span class="tag tag-warn">${d.xunKong.join(' ')}</span></div></div>`;
-
-    // Liuren analysis
-    html += lrAnalysis(d);
+    // AI
+    html += '<div class="card" style="text-align:center"><h3>🤖 大六壬 AI 详解</h3>' +
+      '<p style="color:var(--dim);font-size:.8em;margin:0 0 10px">按 double system 双系统（陈剑/指南系 standard 主判 + 《大六壬心镜》古法复核）分层判断：先课盘事实，再证据分层，冲突不混断。</p>' +
+      '<button class="btn-go" id="lr-ai-btn" onclick="doLiurenAI()">🔮 按大六壬双系统详解</button>' +
+      '<div id="lr-ai-status" style="margin-top:8px;color:var(--dim)"></div>' +
+      '<div id="lr-ai-response" style="display:none"></div></div>';
 
     document.getElementById('lr-results').innerHTML = html;
     scrollTo('lr-results');
+}
+
+function sanheOf(sc){
+  var z = [sc.chu, sc.zhong, sc.mo].join('');
+  if (z.indexOf('申')>=0&&z.indexOf('子')>=0&&z.indexOf('辰')>=0) return '申子辰水局';
+  if (z.indexOf('亥')>=0&&z.indexOf('卯')>=0&&z.indexOf('未')>=0) return '亥卯未木局';
+  if (z.indexOf('寅')>=0&&z.indexOf('午')>=0&&z.indexOf('戌')>=0) return '寅午戌火局';
+  if (z.indexOf('巳')>=0&&z.indexOf('酉')>=0&&z.indexOf('丑')>=0) return '巳酉丑金局';
+  return '不成三合';
+}
+
+async function doLiurenAI(){
+  if (!_lrLast) { alert('请先起课'); return; }
+  var q = _lrLast.question || '';
+  await runInterpretation({
+    mode: 'liuren',
+    chart: _lrLast,
+    question: '请按大六壬双系统体系详断此课。占问：' + q +
+      '。要求：①先出结论卡；②贴出天地盘、四课、三传；③标准系统(陈剑/指南系)与心镜古法分别判断并标注是否一致，不一致只取共同证据、独有细节分列；④按证据分层(本课事实→双系统共同证据→主线证据→专题类神→实战扩展→案例)；⑤按题类取类神(求财/疾病/婚姻/功名/失物/出行/词讼/天时)；⑥给应期、旺空、快慢与趋吉避凶建议。',
+    title: '大六壬 AI 详解 · ' + (_lrLast.dayPillar||''),
+    btnId: 'lr-ai-btn', statusId: 'lr-ai-status', responseId: 'lr-ai-response'
+  });
 }
 
 // ========== LIUYAO ==========
@@ -1605,6 +1672,7 @@ document.addEventListener('DOMContentLoaded', function(){
     b.addEventListener('click', function(){ lySetMode(b.getAttribute('data-mode')); });
   });
   if (!document.getElementById('ly-date').value) lySetNow();
+  if (document.getElementById('lr-date') && !document.getElementById('lr-date').value) lrSetNow();
 });
 
 // ========== QIMEN FUNCTIONS ==========
